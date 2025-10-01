@@ -17,7 +17,7 @@
             </a>
           </SidebarMenuButton>
         </SidebarMenuItem>
-        <SidebarMenuItem>
+        <SidebarMenuItem v-if="userRole === 'student'">
           <div
             class="px-2 pb-2 space-y-1 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:pb-0"
           >

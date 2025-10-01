@@ -50,10 +50,148 @@
         </Button>
       </div>
 
-      <!-- Questions List/Table -->
-      <div class="flex-1 rounded-xl border bg-card p-6">
-        <p class="text-sm text-muted-foreground">
-          Questions will be displayed here based on search and filters.
+      <!-- Questions Data Table -->
+      <div class="flex-1 min-h-0 rounded-xl border bg-card overflow-hidden">
+        <div class="h-full overflow-auto">
+          <Table
+            class="[&_thead_th:first-child]:pl-6 [&_tbody_td:first-child]:pl-6 [&_thead_th:last-child]:pr-6 [&_tbody_td:last-child]:pr-6"
+          >
+            <TableHeader class="sticky top-0 z-10 bg-card shadow-sm">
+              <TableRow>
+                <TableHead class="w-[8rem]">Subject</TableHead>
+                <TableHead class="w-[7rem]">Difficulty</TableHead>
+                <TableHead class="min-w-[15rem]">Question</TableHead>
+                <TableHead class="min-w-[12rem]">Answer Options</TableHead>
+                <TableHead class="w-[10rem]">Correct Answer</TableHead>
+                <TableHead class="w-[8rem]">Created</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <!-- Loading State -->
+              <template v-if="questionStore.loading">
+                <TableRow v-for="i in 5" :key="i">
+                  <TableCell><Skeleton class="h-5 w-24" /></TableCell>
+                  <TableCell><Skeleton class="h-5 w-16" /></TableCell>
+                  <TableCell><Skeleton class="h-5 w-full" /></TableCell>
+                  <TableCell><Skeleton class="h-5 w-full" /></TableCell>
+                  <TableCell><Skeleton class="h-5 w-20" /></TableCell>
+                  <TableCell><Skeleton class="h-5 w-24" /></TableCell>
+                </TableRow>
+              </template>
+
+              <!-- Empty State -->
+              <TableRow v-else-if="filteredQuestions.length === 0">
+                <TableCell colspan="6" class="h-24 text-center">
+                  <p class="text-sm text-muted-foreground">
+                    No questions found. Create your first question to get started.
+                  </p>
+                </TableCell>
+              </TableRow>
+
+              <!-- Questions Data -->
+              <TableRow
+                v-else
+                v-for="question in paginatedQuestions"
+                :key="question.id"
+                class="cursor-pointer"
+              >
+                <TableCell>
+                  <span
+                    class="text-xs font-medium capitalize rounded-full bg-primary/10 px-2 py-1 text-primary"
+                  >
+                    {{ question.subject }}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span
+                    class="text-xs font-medium rounded-full bg-secondary/10 px-2 py-1 text-secondary-foreground"
+                  >
+                    Level {{ question.difficulty }}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div class="max-w-md">
+                    <p class="text-sm font-medium truncate">{{ question.question }}</p>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div class="flex flex-wrap gap-1">
+                    <span
+                      v-for="(option, index) in question.options"
+                      :key="index"
+                      class="text-xs px-1.5 py-0.5 rounded border bg-muted/50"
+                    >
+                      {{ String.fromCharCode(65 + index) }}. {{ option.substring(0, 20)
+                      }}{{ option.length > 20 ? '...' : '' }}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span
+                    class="text-xs font-medium px-2 py-1 rounded bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                  >
+                    {{ String.fromCharCode(65 + question.correct_answer) }}.
+                    {{ question.options[question.correct_answer] }}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span class="text-xs text-muted-foreground">
+                    {{ new Date(question.created_at || '').toLocaleDateString() }}
+                  </span>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="filteredQuestions.length > 0" class="grid grid-cols-3 items-center gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-muted-foreground whitespace-nowrap">Rows per page:</span>
+          <Select v-model="itemsPerPageString">
+            <SelectTrigger class="w-[70px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div class="flex justify-center">
+          <Pagination
+            v-if="totalPages > 1"
+            v-slot="{ page }"
+            :items-per-page="itemsPerPage"
+            :total="filteredQuestions.length"
+            :sibling-count="1"
+            :show-edges="true"
+            v-model:page="currentPage"
+          >
+            <PaginationContent v-slot="{ items }">
+              <PaginationPrevious />
+
+              <template v-for="(item, index) in items" :key="index">
+                <PaginationEllipsis v-if="item.type === 'ellipsis'" :index="index" />
+                <PaginationItem v-else :value="item.value" :is-active="item.value === page">
+                  {{ item.value }}
+                </PaginationItem>
+              </template>
+
+              <PaginationNext />
+            </PaginationContent>
+          </Pagination>
+        </div>
+
+        <p class="flex items-center justify-end text-sm text-muted-foreground whitespace-nowrap">
+          Showing {{ (currentPage - 1) * itemsPerPage + 1 }}-{{
+            Math.min(currentPage * itemsPerPage, filteredQuestions.length)
+          }}
+          of {{ filteredQuestions.length }}
         </p>
       </div>
     </div>
@@ -68,153 +206,228 @@
           </DialogDescription>
         </DialogHeader>
 
-        <div class="space-y-6">
+        <form @submit="onSubmit" class="space-y-6">
           <!-- Subject and Difficulty -->
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-2">
-              <Label class="text-sm font-medium">
-                Subject <span class="text-destructive">*</span>
-              </Label>
-              <Select v-model="newQuestion.subject">
-                <SelectTrigger class="w-full">
-                  <SelectValue placeholder="Select a subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="mathematics">Mathematics</SelectItem>
-                  <SelectItem value="science">Science</SelectItem>
-                  <SelectItem value="english">English</SelectItem>
-                  <SelectItem value="history">History</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div class="grid grid-cols-2 gap-4 items-start">
+            <FormField
+              v-slot="{ componentField }"
+              name="subject"
+              :validateOnBlur="hasAttemptSubmit"
+              :validateOnModelUpdate="hasAttemptSubmit"
+            >
+              <FormItem>
+                <FormLabel>Subject</FormLabel>
+                <Select v-bind="componentField">
+                  <FormControl>
+                    <SelectTrigger class="w-full">
+                      <SelectValue placeholder="Select a subject" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="mathematics">Mathematics</SelectItem>
+                    <SelectItem value="science">Science</SelectItem>
+                    <SelectItem value="english">English</SelectItem>
+                    <SelectItem value="history">History</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            </FormField>
 
-            <div class="space-y-2">
-              <Label class="text-sm font-medium">Difficulty Level</Label>
-              <Select v-model="newQuestion.difficulty">
-                <SelectTrigger class="w-full">
-                  <SelectValue placeholder="Select difficulty" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="easy">Easy (1)</SelectItem>
-                  <SelectItem value="medium">Medium (3)</SelectItem>
-                  <SelectItem value="hard">Hard (5)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FormField
+              v-slot="{ componentField }"
+              name="difficulty"
+              :validateOnBlur="hasAttemptSubmit"
+              :validateOnModelUpdate="hasAttemptSubmit"
+            >
+              <FormItem>
+                <FormLabel>Difficulty Level</FormLabel>
+                <Select v-bind="componentField">
+                  <FormControl>
+                    <SelectTrigger class="w-full">
+                      <SelectValue placeholder="Select difficulty" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="1">1 (Easiest)</SelectItem>
+                    <SelectItem value="2">2</SelectItem>
+                    <SelectItem value="3">3</SelectItem>
+                    <SelectItem value="4">4</SelectItem>
+                    <SelectItem value="5">5 (Hardest)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            </FormField>
           </div>
 
           <!-- Question Content -->
-          <div class="space-y-2">
-            <Label class="text-sm font-medium">
-              Question Content <span class="text-destructive">*</span>
-            </Label>
-            <Textarea
-              v-model="newQuestion.content"
-              placeholder="Enter your question here..."
-              class="min-h-[100px] resize-none"
-            />
-          </div>
+          <FormField
+            v-slot="{ componentField }"
+            name="question"
+            :validateOnBlur="hasAttemptSubmit"
+            :validateOnModelUpdate="hasAttemptSubmit"
+          >
+            <FormItem>
+              <FormLabel>Question Content</FormLabel>
+              <FormControl>
+                <Textarea
+                  v-bind="componentField"
+                  placeholder="Enter your question here..."
+                  class="min-h-[100px] resize-none"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
 
           <!-- Image Upload -->
-          <div class="space-y-2">
-            <Label class="text-sm font-medium">Image (Optional)</Label>
-            <div class="flex items-center gap-4">
+          <FormField name="image">
+            <FormItem>
+              <FormLabel>Image (Optional)</FormLabel>
+              <FormControl>
+                <div class="space-y-2">
+                  <div class="flex items-center gap-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      @click="() => imageInput?.click()"
+                      class="w-full"
+                    >
+                      <Upload class="mr-2 h-4 w-4" />
+                      {{ imageValue ? 'Change Image' : 'Upload Image' }}
+                    </Button>
+                    <input
+                      ref="imageInput"
+                      type="file"
+                      accept="image/*"
+                      class="hidden"
+                      @change="handleImageUpload"
+                    />
+                    <Button
+                      v-if="imageValue"
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      @click="removeImage"
+                    >
+                      <X class="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div v-if="imageValue" class="mt-2">
+                    <img
+                      :src="imageValue"
+                      alt="Question image"
+                      class="max-h-32 rounded-md border"
+                    />
+                  </div>
+                </div>
+              </FormControl>
+            </FormItem>
+          </FormField>
+
+          <!-- Answer Options -->
+          <FormField
+            name="options"
+            :validateOnBlur="hasAttemptSubmit"
+            :validateOnModelUpdate="hasAttemptSubmit"
+          >
+            <FormItem>
+              <FormLabel>Answer Options</FormLabel>
+              <FormControl>
+                <div class="space-y-2">
+                  <div
+                    v-for="(_option, index) in values.options || ['', '', '', '']"
+                    :key="index"
+                    class="flex items-center gap-2"
+                  >
+                    <input
+                      type="radio"
+                      :value="String(index)"
+                      :checked="values.correctAnswer === String(index)"
+                      @change="setFieldValue('correctAnswer', String(index))"
+                      :id="`option-${index}`"
+                      class="h-4 w-4"
+                    />
+                    <Label :for="`option-${index}`" class="sr-only"
+                      >Option {{ String.fromCharCode(65 + index) }}</Label
+                    >
+                    <span class="text-sm font-medium min-w-[20px]">{{
+                      String.fromCharCode(65 + index)
+                    }}</span>
+                    <Input
+                      :model-value="(values.options || ['', '', '', ''])[index]"
+                      @update:model-value="(val) => updateOption(index, val)"
+                      :placeholder="`Option ${String.fromCharCode(65 + index)}`"
+                      class="flex-1"
+                    />
+                    <Button
+                      v-if="(values.options || ['', '', '', '']).length > 2"
+                      variant="ghost"
+                      size="icon"
+                      type="button"
+                      @click="removeOption(index)"
+                      class="h-8 w-8"
+                    >
+                      <X class="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Button variant="outline" size="sm" type="button" @click="addOption" class="mt-2">
+                    <Plus class="mr-2 h-4 w-4" />
+                    Add Option
+                  </Button>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+
+          <!-- Correct Answer (Hidden Field) -->
+          <FormField v-slot="{ componentField }" name="correctAnswer">
+            <FormItem class="hidden">
+              <FormControl>
+                <Input v-bind="componentField" type="hidden" />
+              </FormControl>
+            </FormItem>
+          </FormField>
+
+          <!-- Explanation (Optional) -->
+          <FormField v-slot="{ componentField }" name="explanation">
+            <FormItem>
+              <FormLabel>Explanation (Optional)</FormLabel>
+              <FormControl>
+                <Textarea
+                  v-bind="componentField"
+                  placeholder="Provide an explanation for the correct answer..."
+                  class="min-h-[100px] resize-none"
+                />
+              </FormControl>
+            </FormItem>
+          </FormField>
+
+          <DialogFooter class="flex-col sm:flex-row gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              @click="openPreview"
+              class="w-full sm:w-auto sm:mr-auto"
+            >
+              <Eye class="mr-2 h-4 w-4" />
+              Preview
+            </Button>
+            <div class="flex gap-2 w-full sm:w-auto">
               <Button
                 type="button"
                 variant="outline"
-                @click="() => imageInput?.click()"
-                class="w-full"
+                @click="isCreateDialogOpen = false"
+                class="flex-1 sm:flex-none"
               >
-                <Upload class="mr-2 h-4 w-4" />
-                {{ newQuestion.image ? 'Change Image' : 'Upload Image' }}
+                Cancel
               </Button>
-              <input
-                ref="imageInput"
-                type="file"
-                accept="image/*"
-                class="hidden"
-                @change="handleImageUpload"
-              />
-              <Button
-                v-if="newQuestion.image"
-                type="button"
-                variant="ghost"
-                size="icon"
-                @click="removeImage"
-              >
-                <X class="h-4 w-4" />
-              </Button>
+              <Button type="submit" class="flex-1 sm:flex-none">Create Question</Button>
             </div>
-            <div v-if="newQuestion.image" class="mt-2">
-              <img
-                :src="newQuestion.image"
-                alt="Question image"
-                class="max-h-32 rounded-md border"
-              />
-            </div>
-          </div>
-
-          <!-- Answer Options -->
-          <div class="space-y-2">
-            <Label class="text-sm font-medium">
-              Answer Options <span class="text-destructive">*</span>
-            </Label>
-            <RadioGroup v-model="newQuestion.correctAnswer" class="space-y-2">
-              <div
-                v-for="(option, index) in newQuestion.options"
-                :key="index"
-                class="flex items-center gap-2"
-              >
-                <RadioGroupItem :value="String(index)" :id="`option-${index}`" />
-                <Label :for="`option-${index}`" class="sr-only"
-                  >Option {{ String.fromCharCode(65 + index) }}</Label
-                >
-                <span class="text-sm font-medium min-w-[20px]">{{
-                  String.fromCharCode(65 + index)
-                }}</span>
-                <Input
-                  v-model="newQuestion.options[index]"
-                  :placeholder="`Option ${String.fromCharCode(65 + index)}`"
-                  class="flex-1"
-                />
-                <Button
-                  v-if="newQuestion.options.length > 2"
-                  variant="ghost"
-                  size="icon"
-                  @click="removeOption(index)"
-                  class="h-8 w-8"
-                >
-                  <X class="h-4 w-4" />
-                </Button>
-              </div>
-            </RadioGroup>
-            <Button variant="outline" size="sm" @click="addOption" class="mt-2">
-              <Plus class="mr-2 h-4 w-4" />
-              Add Option
-            </Button>
-          </div>
-
-          <!-- Explanation (Optional) -->
-          <div class="space-y-2">
-            <Label class="text-sm font-medium">Explanation (Optional)</Label>
-            <Textarea
-              v-model="newQuestion.explanation"
-              placeholder="Provide an explanation for the correct answer..."
-              class="min-h-[100px] resize-none"
-            />
-          </div>
-        </div>
-
-        <DialogFooter class="gap-2 sm:justify-between">
-          <Button variant="outline" @click="isPreviewOpen = true" class="sm:mr-auto">
-            <Eye class="mr-2 h-4 w-4" />
-            Preview
-          </Button>
-          <div class="flex gap-2">
-            <Button variant="outline" @click="isCreateDialogOpen = false">Cancel</Button>
-            <Button @click="handleCreateQuestion">Create Question</Button>
-          </div>
-        </DialogFooter>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
 
@@ -231,11 +444,11 @@
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <span class="text-xs font-medium capitalize text-muted-foreground">
-                {{ newQuestion.subject || 'Subject' }}
+                {{ values.subject || 'Subject' }}
               </span>
               <span class="text-xs text-muted-foreground">•</span>
               <span class="text-xs font-medium capitalize text-muted-foreground">
-                {{ newQuestion.difficulty || 'Difficulty' }}
+                {{ values.difficulty || 'Difficulty' }}
               </span>
             </div>
           </div>
@@ -243,26 +456,22 @@
           <!-- Question Content -->
           <div class="space-y-4">
             <p class="text-base font-medium">
-              {{ newQuestion.content || 'Your question will appear here...' }}
+              {{ values.question || 'Your question will appear here...' }}
             </p>
 
             <!-- Image Preview -->
-            <div v-if="newQuestion.image" class="my-4">
-              <img
-                :src="newQuestion.image"
-                alt="Question image"
-                class="max-w-full rounded-md border"
-              />
+            <div v-if="values.image" class="my-4">
+              <img :src="values.image" alt="Question image" class="max-w-full rounded-md border" />
             </div>
 
             <!-- Answer Options Preview -->
             <div class="space-y-2">
               <div
-                v-for="(option, index) in newQuestion.options.filter((o) => o.trim())"
+                v-for="(option, index) in (values.options || []).filter((o: string) => o.trim())"
                 :key="index"
                 :class="[
                   'flex items-center gap-3 rounded-md border p-3 transition-colors',
-                  newQuestion.correctAnswer === String(index)
+                  values.correctAnswer === String(index)
                     ? 'border-primary bg-primary/5'
                     : 'bg-card',
                 ]"
@@ -275,9 +484,9 @@
             </div>
 
             <!-- Explanation Preview -->
-            <div v-if="newQuestion.explanation" class="rounded-md border bg-card p-4">
+            <div v-if="values.explanation" class="rounded-md border bg-card p-4">
               <p class="text-xs font-semibold text-muted-foreground uppercase mb-2">Explanation</p>
-              <p class="text-sm">{{ newQuestion.explanation }}</p>
+              <p class="text-sm">{{ values.explanation }}</p>
             </div>
           </div>
         </div>
@@ -291,20 +500,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import MainLayout from '@/layouts/MainLayout.vue'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -313,59 +509,142 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Search, Plus, X, Upload, Eye } from 'lucide-vue-next'
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Textarea } from '@/components/ui/textarea'
+import MainLayout from '@/layouts/MainLayout.vue'
+import { useQuestionStore } from '@/stores/questions'
+import { toTypedSchema } from '@vee-validate/zod'
+import { Eye, Plus, Search, Upload, X } from 'lucide-vue-next'
+import { useForm } from 'vee-validate'
+import { computed, onMounted, ref, watch } from 'vue'
+import { toast } from 'vue-sonner'
+import * as z from 'zod'
 
 const breadcrumbs = [{ label: 'Questions' }]
+
+const questionStore = useQuestionStore()
 
 // Search and Filter State
 const searchQuery = ref('')
 const selectedSubject = ref('all')
 const selectedDifficulty = ref('all')
 
+// Pagination State
+const currentPage = ref(1)
+const itemsPerPage = ref(parseInt(localStorage.getItem('itemsPerPage') || '10'))
+const itemsPerPageString = computed({
+  get: () => String(itemsPerPage.value),
+  set: (value: string) => {
+    itemsPerPage.value = parseInt(value)
+    currentPage.value = 1 // Reset to first page when changing items per page
+    localStorage.setItem('itemsPerPage', value)
+  },
+})
+
 // Dialog State
 const isCreateDialogOpen = ref(false)
 const isPreviewOpen = ref(false)
+const hasAttemptSubmit = ref(false)
 
 // Image Upload Ref
 const imageInput = ref<HTMLInputElement | null>(null)
 
-// New Question Form State
-const newQuestion = ref({
-  content: '',
-  subject: '',
-  difficulty: '',
-  options: ['', '', '', ''],
-  correctAnswer: '0',
-  explanation: '',
-  image: '',
+// Form Schema
+const formSchema = toTypedSchema(
+  z.object({
+    subject: z.string().min(1, 'Please select a subject'),
+    difficulty: z.string().min(1, 'Please select a difficulty level'),
+    question: z.string().min(1, 'Question content is required'),
+    options: z.array(z.string().min(1, 'Option cannot be blank')),
+    correctAnswer: z.string(),
+    explanation: z.string().optional(),
+    image: z.string().optional(),
+  }),
+)
+
+// Form
+const { handleSubmit, setFieldValue, values, resetForm } = useForm({
+  validationSchema: formSchema,
+  initialValues: {
+    subject: '',
+    difficulty: '',
+    question: '',
+    options: ['', '', '', ''],
+    correctAnswer: '0',
+    explanation: '',
+    image: '',
+  },
 })
 
-// Reset form when dialog is closed
-watch(isCreateDialogOpen, (newState) => {
-  if (!newState) {
-    newQuestion.value = {
-      content: '',
+const imageValue = computed(() => values.image || '')
+
+// Reset form when dialog's state changes
+watch(isCreateDialogOpen, () => {
+  resetForm({
+    values: {
       subject: '',
       difficulty: '',
+      question: '',
       options: ['', '', '', ''],
       correctAnswer: '0',
       explanation: '',
       image: '',
-    }
+    },
+  })
+  if (imageInput.value) {
+    imageInput.value.value = ''
   }
 })
 
+const updateOption = (index: number, value: string | number) => {
+  const currentOptions = [...(values.options || [])]
+  currentOptions[index] = String(value)
+  setFieldValue('options', currentOptions, hasAttemptSubmit.value)
+}
+
 const addOption = () => {
-  newQuestion.value.options.push('')
+  const currentOptions = [...(values.options || [])]
+  currentOptions.push('')
+  setFieldValue('options', currentOptions, hasAttemptSubmit.value)
 }
 
 const removeOption = (index: number) => {
-  if (newQuestion.value.options.length > 2) {
-    newQuestion.value.options.splice(index, 1)
+  const options = values.options || []
+  if (options.length > 2) {
+    const currentOptions = [...options]
+    currentOptions.splice(index, 1)
+    setFieldValue('options', currentOptions, hasAttemptSubmit.value)
+
     // Adjust correct answer if needed
-    const correctIdx = parseInt(newQuestion.value.correctAnswer)
+    const correctIdx = parseInt(values.correctAnswer || '0')
     if (correctIdx >= index && correctIdx > 0) {
-      newQuestion.value.correctAnswer = String(correctIdx - 1)
+      setFieldValue('correctAnswer', String(correctIdx - 1))
     }
   }
 }
@@ -376,39 +655,95 @@ const handleImageUpload = (event: Event) => {
   if (file) {
     const reader = new FileReader()
     reader.onload = (e) => {
-      newQuestion.value.image = e.target?.result as string
+      setFieldValue('image', e.target?.result as string)
     }
     reader.readAsDataURL(file)
   }
 }
 
 const removeImage = () => {
-  newQuestion.value.image = ''
+  setFieldValue('image', '')
   if (imageInput.value) {
     imageInput.value.value = ''
   }
 }
 
-const handleCreateQuestion = () => {
-  // TODO: Implement question creation logic
-  console.log('Creating question:', newQuestion.value)
-
-  // Reset form
-  newQuestion.value = {
-    content: '',
-    subject: '',
-    difficulty: 'medium',
-    options: ['', '', '', ''],
-    correctAnswer: '0',
-    explanation: '',
-    image: '',
-  }
-
-  // Reset image input
-  if (imageInput.value) {
-    imageInput.value.value = ''
-  }
-
-  isCreateDialogOpen.value = false
+const openPreview = () => {
+  isPreviewOpen.value = true
 }
+
+// Computed property for filtered questions
+const filteredQuestions = computed(() => {
+  let filtered = questionStore.questions
+
+  // Filter by search query
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter((q) => q.question.toLowerCase().includes(query))
+  }
+
+  // Filter by subject
+  if (selectedSubject.value !== 'all') {
+    filtered = filtered.filter((q) => q.subject === selectedSubject.value)
+  }
+
+  // Filter by difficulty
+  if (selectedDifficulty.value !== 'all') {
+    const difficultyMap: Record<string, number[]> = {
+      easy: [1, 2],
+      medium: [3],
+      hard: [4, 5],
+    }
+    const levels = difficultyMap[selectedDifficulty.value]
+    if (levels) {
+      filtered = filtered.filter((q) => levels.includes(q.difficulty))
+    }
+  }
+
+  return filtered
+})
+
+// Computed property for total pages
+const totalPages = computed(() => {
+  return Math.ceil(filteredQuestions.value.length / itemsPerPage.value)
+})
+
+// Computed property for paginated questions
+const paginatedQuestions = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  const end = start + itemsPerPage.value
+  return filteredQuestions.value.slice(start, end)
+})
+
+// Reset to first page when filters change
+watch([searchQuery, selectedSubject, selectedDifficulty], () => {
+  currentPage.value = 1
+})
+
+// Fetch questions on mount
+onMounted(async () => {
+  await questionStore.fetchQuestions()
+})
+
+const onSubmit = handleSubmit(async (formValues) => {
+  try {
+    hasAttemptSubmit.value = true
+    const { correctAnswer, difficulty, ...rest } = formValues
+    await questionStore.createQuestion({
+      ...rest,
+      correct_answer: parseInt(correctAnswer),
+      difficulty: parseInt(difficulty),
+    })
+
+    // Show success toast first
+    toast.success('Question created successfully')
+
+    // Close dialog and reset form
+    isCreateDialogOpen.value = false
+    hasAttemptSubmit.value = false
+  } catch (error) {
+    console.error('Error creating question:', error)
+    toast.error('Failed to create question')
+  }
+})
 </script>

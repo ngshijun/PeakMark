@@ -7,15 +7,16 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const session = ref<Session | null>(null)
   const loading = ref(false)
+  const error = ref<string | null>(null)
 
   const initAuth = async () => {
     loading.value = true
+    error.value = null
     const {
       data: { session: currentSession },
     } = await supabase.auth.getSession()
     session.value = currentSession
     user.value = currentSession?.user ?? null
-
     loading.value = false
 
     const {
@@ -31,10 +32,11 @@ export const useAuthStore = defineStore('auth', () => {
   const signUp = async (
     email: string,
     password: string,
-    metaData?: { name: string; role: string },
+    metaData: { full_name: string; dob: string; role: string },
   ) => {
     loading.value = true
-    const { data, error } = await supabase.auth.signUp({
+    error.value = null
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -43,26 +45,43 @@ export const useAuthStore = defineStore('auth', () => {
     })
 
     loading.value = false
-    return { data, error }
+
+    if (signUpError) {
+      error.value = signUpError.message
+      throw signUpError
+    }
   }
 
   const signInWithPassword = async (email: string, password: string) => {
     loading.value = true
-    const { data, error } = await supabase.auth.signInWithPassword({
+    error.value = null
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
     loading.value = false
-    return { data, error }
+
+    if (signInError) {
+      error.value = signInError.message
+      throw signInError
+    }
   }
 
   const signOut = async () => {
     loading.value = true
-    const { error } = await supabase.auth.signOut()
+    error.value = null
+    const { error: signOutError } = await supabase.auth.signOut()
 
     loading.value = false
-    return { error }
+    if (signOutError) {
+      error.value = signOutError.message
+      throw signOutError
+    }
+  }
+
+  const clearError = () => {
+    error.value = null
   }
 
   return {
@@ -70,11 +89,13 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     session,
     loading,
+    error,
 
     // Actions
     initAuth,
     signUp,
     signInWithPassword,
     signOut,
+    clearError,
   }
 })

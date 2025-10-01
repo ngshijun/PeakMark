@@ -6,7 +6,9 @@
       "Bash(npx shadcn-vue@latest add:*)",
       "Bash(npm run dev:*)",
       "Bash(lsof:*)",
-      "Bash(xargs kill:*)"
+      "Bash(xargs kill:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

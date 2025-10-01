@@ -63,6 +63,51 @@
               </FormItem>
             </FormField>
 
+            <FormField name="dateOfBirth">
+              <FormItem class="flex flex-col">
+                <FormLabel>Date of Birth</FormLabel>
+                <Popover>
+                  <PopoverTrigger as-child>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        :class="
+                          cn(
+                            'w-full ps-3 text-start font-normal',
+                            !dobValue && 'text-muted-foreground',
+                          )
+                        "
+                        :disabled="isSubmitting"
+                      >
+                        <span>{{ dobValue ? df.format(toDate(dobValue)) : 'Pick a date' }}</span>
+                        <CalendarIcon class="ms-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent class="w-auto p-0">
+                    <Calendar
+                      v-model:placeholder="dobPlaceholder"
+                      :model-value="dobValue"
+                      calendar-label="Date of birth"
+                      initial-focus
+                      :min-value="new CalendarDate(1900, 1, 1)"
+                      :max-value="today(getLocalTimeZone())"
+                      @update:model-value="
+                        (v) => {
+                          if (v) {
+                            setFieldValue('dateOfBirth', v.toString())
+                          } else {
+                            setFieldValue('dateOfBirth', undefined)
+                          }
+                        }
+                      "
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
             <FormField
               v-slot="{ componentField }"
               name="email"
@@ -177,20 +222,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useAuthStore } from '@/stores/auth'
 
+import {
+  CalendarDate,
+  DateFormatter,
+  getLocalTimeZone,
+  parseDate,
+  today,
+} from '@internationalized/date'
 import { toTypedSchema } from '@vee-validate/zod'
-import { Eye, EyeOff, GraduationCap, Loader2, School } from 'lucide-vue-next'
+import { CalendarIcon, Eye, EyeOff, GraduationCap, Loader2, School } from 'lucide-vue-next'
+import { toDate } from 'reka-ui/date'
 import { useForm } from 'vee-validate'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import * as z from 'zod'
+import { cn } from '@/lib/utils'
 
 const router = useRouter()
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const { signUp } = useAuthStore()
 
+const df = new DateFormatter('en-US', {
+  dateStyle: 'long',
+})
+const dobPlaceholder = ref()
 
 const formSchema = toTypedSchema(
   z
@@ -211,7 +271,7 @@ const formSchema = toTypedSchema(
     }),
 )
 
-const { handleSubmit, isSubmitting } = useForm({
+const { handleSubmit, isSubmitting, setFieldValue, values } = useForm({
   validationSchema: formSchema,
   initialValues: {
     name: '',
@@ -223,9 +283,19 @@ const { handleSubmit, isSubmitting } = useForm({
   },
 })
 
+const dobValue = computed({
+  get: () => (values.dateOfBirth ? parseDate(values.dateOfBirth) : undefined),
+  set: (val) => val,
+})
+
 const onSubmit = handleSubmit(async (values) => {
   try {
-    await signUp(values.email, values.password, { name: values.name, role: values.role })
+    console.log(values)
+    await signUp(values.email, values.password, {
+      full_name: values.name,
+      dob: values.dateOfBirth,
+      role: values.role,
+    })
     router.push('/login')
   } catch (error) {
     console.error('Registration error:', error)
