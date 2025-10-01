@@ -3,7 +3,7 @@ import { Moon, Sun } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useTheme } from '@/composables/useTheme'
 
-const { isDark, toggleTheme } = useTheme()
+const { toggleTheme } = useTheme()
 </script>
 
 <template>

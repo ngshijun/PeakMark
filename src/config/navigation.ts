@@ -9,6 +9,7 @@ import {
   type LucideIcon,
   LayoutDashboard,
   FolderOpen,
+  Medal,
 } from 'lucide-vue-next'
 
 export interface NavItem {
@@ -48,6 +49,11 @@ export const roleNavigation: RoleNavigation = {
           badge: 3,
         },
         {
+          title: 'Achievements',
+          url: '/achievements',
+          icon: Medal,
+        },
+        {
           title: 'Calendar',
           url: '/calendar',
           icon: Calendar,
@@ -82,6 +88,11 @@ export const roleNavigation: RoleNavigation = {
           title: 'Question Sets',
           url: '/question-sets',
           icon: FolderOpen,
+        },
+        {
+          title: 'Students',
+          url: '/students',
+          icon: Users,
         },
         {
           title: 'Reports',

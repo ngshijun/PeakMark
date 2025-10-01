@@ -1,12 +1,19 @@
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 
 type Theme = 'light' | 'dark'
 
 const STORAGE_KEY = 'theme-preference'
 
-export function useTheme() {
-  const theme = ref<Theme>('light')
+// Global reactive theme state (shared across all components)
+const theme = ref<Theme>('light')
 
+// Initialize theme from localStorage immediately
+const stored = localStorage.getItem(STORAGE_KEY) as Theme | null
+if (stored && (stored === 'light' || stored === 'dark')) {
+  theme.value = stored
+}
+
+export function useTheme() {
   const isDark = computed(() => theme.value === 'dark')
 
   function applyTheme() {
@@ -27,16 +34,8 @@ export function useTheme() {
     setTheme(isDark.value ? 'light' : 'dark')
   }
 
-  onMounted(() => {
-    // Load theme from localStorage
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null
-    if (stored && (stored === 'light' || stored === 'dark')) {
-      theme.value = stored
-    }
-
-    // Apply initial theme
-    applyTheme()
-  })
+  // Apply initial theme
+  applyTheme()
 
   return {
     theme,

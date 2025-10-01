@@ -11,7 +11,7 @@ export type Database = {
       questions: {
         Row: {
           correct_answer: number
-          created_at: string | null
+          created_at: string
           created_by: string | null
           difficulty: number
           explanation: string | null
@@ -20,11 +20,12 @@ export type Database = {
           options: string[]
           question: string
           subject: string
-          updated_at: string | null
+          updated_at: string
+          year: string
         }
         Insert: {
           correct_answer: number
-          created_at?: string | null
+          created_at?: string
           created_by?: string | null
           difficulty: number
           explanation?: string | null
@@ -33,11 +34,12 @@ export type Database = {
           options: string[]
           question: string
           subject: string
-          updated_at?: string | null
+          updated_at?: string
+          year: string
         }
         Update: {
           correct_answer?: number
-          created_at?: string | null
+          created_at?: string
           created_by?: string | null
           difficulty?: number
           explanation?: string | null
@@ -46,7 +48,8 @@ export type Database = {
           options?: string[]
           question?: string
           subject?: string
-          updated_at?: string | null
+          updated_at?: string
+          year?: string
         }
         Relationships: [
           {

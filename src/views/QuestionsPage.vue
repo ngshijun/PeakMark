@@ -15,6 +15,19 @@
             />
           </div>
 
+          <!-- Year Filter -->
+          <Select v-model="selectedYear">
+            <SelectTrigger class="w-full sm:w-[180px]">
+              <SelectValue placeholder="All Years" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Years</SelectItem>
+              <span v-for="year in YEARS" :key="year">
+                <SelectItem :value="year">{{ year }}</SelectItem>
+              </span>
+            </SelectContent>
+          </Select>
+
           <!-- Subject Filter -->
           <Select v-model="selectedSubject">
             <SelectTrigger class="w-full sm:w-[180px]">
@@ -22,10 +35,9 @@
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Subjects</SelectItem>
-              <SelectItem value="mathematics">Mathematics</SelectItem>
-              <SelectItem value="science">Science</SelectItem>
-              <SelectItem value="english">English</SelectItem>
-              <SelectItem value="history">History</SelectItem>
+              <span v-for="subject in SUBJECTS" :key="subject">
+                <SelectItem :value="subject">{{ subject }}</SelectItem>
+              </span>
             </SelectContent>
           </Select>
 
@@ -36,9 +48,9 @@
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Difficulties</SelectItem>
-              <SelectItem value="easy">Easy</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="hard">Hard</SelectItem>
+              <span v-for="difficulty in DIFFICULTY" :key="difficulty">
+                <SelectItem :value="difficulty">{{ difficulty }}</SelectItem>
+              </span>
             </SelectContent>
           </Select>
         </div>
@@ -58,30 +70,34 @@
           >
             <TableHeader class="sticky top-0 z-10 bg-card shadow-sm">
               <TableRow>
-                <TableHead class="w-[8rem]">Subject</TableHead>
-                <TableHead class="w-[7rem]">Difficulty</TableHead>
+                <TableHead class="w-[6rem]">Year</TableHead>
+                <TableHead class="w-[6rem]">Subject</TableHead>
+                <TableHead class="w-[6rem]">Difficulty</TableHead>
                 <TableHead class="min-w-[15rem]">Question</TableHead>
                 <TableHead class="min-w-[12rem]">Answer Options</TableHead>
-                <TableHead class="w-[10rem]">Correct Answer</TableHead>
+                <TableHead class="min-w-[10rem]">Correct Answer</TableHead>
+                <TableHead class="min-w-[15rem]">Explanation</TableHead>
                 <TableHead class="w-[8rem]">Created</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               <!-- Loading State -->
               <template v-if="questionStore.loading">
-                <TableRow v-for="i in 5" :key="i">
-                  <TableCell><Skeleton class="h-5 w-24" /></TableCell>
+                <TableRow v-for="i in 8" :key="i">
+                  <TableCell><Skeleton class="h-5 w-16" /></TableCell>
+                  <TableCell><Skeleton class="h-5 w-16" /></TableCell>
                   <TableCell><Skeleton class="h-5 w-16" /></TableCell>
                   <TableCell><Skeleton class="h-5 w-full" /></TableCell>
                   <TableCell><Skeleton class="h-5 w-full" /></TableCell>
-                  <TableCell><Skeleton class="h-5 w-20" /></TableCell>
+                  <TableCell><Skeleton class="h-5 w-full" /></TableCell>
+                  <TableCell><Skeleton class="h-5 w-full" /></TableCell>
                   <TableCell><Skeleton class="h-5 w-24" /></TableCell>
                 </TableRow>
               </template>
 
               <!-- Empty State -->
               <TableRow v-else-if="filteredQuestions.length === 0">
-                <TableCell colspan="6" class="h-24 text-center">
+                <TableCell colspan="8" class="h-24 text-center">
                   <p class="text-sm text-muted-foreground">
                     No questions found. Create your first question to get started.
                   </p>
@@ -89,57 +105,79 @@
               </TableRow>
 
               <!-- Questions Data -->
-              <TableRow
-                v-else
-                v-for="question in paginatedQuestions"
-                :key="question.id"
-                class="cursor-pointer"
-              >
-                <TableCell>
-                  <span
-                    class="text-xs font-medium capitalize rounded-full bg-primary/10 px-2 py-1 text-primary"
-                  >
-                    {{ question.subject }}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span
-                    class="text-xs font-medium rounded-full bg-secondary/10 px-2 py-1 text-secondary-foreground"
-                  >
-                    Level {{ question.difficulty }}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div class="max-w-md">
-                    <p class="text-sm font-medium truncate">{{ question.question }}</p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div class="flex flex-wrap gap-1">
-                    <span
-                      v-for="(option, index) in question.options"
-                      :key="index"
-                      class="text-xs px-1.5 py-0.5 rounded border bg-muted/50"
-                    >
-                      {{ String.fromCharCode(65 + index) }}. {{ option.substring(0, 20)
-                      }}{{ option.length > 20 ? '...' : '' }}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span
-                    class="text-xs font-medium px-2 py-1 rounded bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                  >
-                    {{ String.fromCharCode(65 + question.correct_answer) }}.
-                    {{ question.options[question.correct_answer] }}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span class="text-xs text-muted-foreground">
-                    {{ new Date(question.created_at || '').toLocaleDateString() }}
-                  </span>
-                </TableCell>
-              </TableRow>
+              <ContextMenu v-else v-for="question in paginatedQuestions" :key="question.id">
+                <ContextMenuTrigger as-child>
+                  <TableRow class="cursor-pointer">
+                    <TableCell>
+                      <span class="text-xs font-medium text-muted-foreground">
+                        {{ question.year }}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        class="text-xs font-medium capitalize rounded-full bg-primary/10 px-2 py-1 text-primary"
+                      >
+                        {{ question.subject }}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        class="text-xs font-medium rounded-full bg-secondary/10 px-2 py-1 text-secondary-foreground"
+                      >
+                        Level {{ question.difficulty }}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div class="max-w-md">
+                        <p class="text-sm font-medium text-wrap">{{ question.question }}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div class="flex flex-wrap gap-1">
+                        <span
+                          v-for="(option, index) in question.options"
+                          :key="index"
+                          class="text-xs px-1.5 py-0.5 rounded border bg-muted/50"
+                        >
+                          {{ String.fromCharCode(65 + index) }}. {{ option.substring(0, 20)
+                          }}{{ option.length > 20 ? '...' : '' }}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        class="text-xs font-medium px-2 py-1 rounded bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                      >
+                        {{ String.fromCharCode(65 + question.correct_answer) }}.
+                        {{ question.options[question.correct_answer] }}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div class="max-w-md">
+                        <p class="text-sm text-muted-foreground text-wrap">
+                          {{ question.explanation || '-' }}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span class="text-xs text-muted-foreground">
+                        {{ new Date(question.created_at || '').toLocaleDateString() }}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                </ContextMenuTrigger>
+                <ContextMenuContent class="w-48">
+                  <ContextMenuItem @click="editQuestion(question)">
+                    <Pencil class="mr-2 h-4 w-4" />
+                    Edit Question
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem @click="deleteQuestion(question.id)" class="text-destructive">
+                    <Trash2 class="mr-2 h-4 w-4" />
+                    Delete Question
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             </TableBody>
           </Table>
         </div>
@@ -150,7 +188,7 @@
         <div class="flex items-center gap-2">
           <span class="text-sm text-muted-foreground whitespace-nowrap">Rows per page:</span>
           <Select v-model="itemsPerPageString">
-            <SelectTrigger class="w-[70px] h-9">
+            <SelectTrigger class="w-[80px] h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -207,8 +245,32 @@
         </DialogHeader>
 
         <form @submit="onSubmit" class="space-y-6">
-          <!-- Subject and Difficulty -->
-          <div class="grid grid-cols-2 gap-4 items-start">
+          <!-- Year, Subject and Difficulty -->
+          <div class="grid grid-cols-3 gap-4 items-start">
+            <FormField
+              v-slot="{ componentField }"
+              name="year"
+              :validateOnBlur="hasAttemptSubmit"
+              :validateOnModelUpdate="hasAttemptSubmit"
+            >
+              <FormItem>
+                <FormLabel>Year</FormLabel>
+                <Select v-bind="componentField">
+                  <FormControl>
+                    <SelectTrigger class="w-full">
+                      <SelectValue placeholder="Select year" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem v-for="year in YEARS" :key="year" :value="year">
+                      {{ year }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
             <FormField
               v-slot="{ componentField }"
               name="subject"
@@ -220,14 +282,13 @@
                 <Select v-bind="componentField">
                   <FormControl>
                     <SelectTrigger class="w-full">
-                      <SelectValue placeholder="Select a subject" />
+                      <SelectValue placeholder="Select subject" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="mathematics">Mathematics</SelectItem>
-                    <SelectItem value="science">Science</SelectItem>
-                    <SelectItem value="english">English</SelectItem>
-                    <SelectItem value="history">History</SelectItem>
+                    <SelectItem v-for="subject in SUBJECTS" :key="subject" :value="subject">
+                      {{ subject }}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -249,11 +310,13 @@
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="1">1 (Easiest)</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                    <SelectItem value="5">5 (Hardest)</SelectItem>
+                    <SelectItem
+                      v-for="difficulty in DIFFICULTY"
+                      :key="difficulty"
+                      :value="difficulty"
+                    >
+                      {{ difficulty }}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -424,7 +487,9 @@
               >
                 Cancel
               </Button>
-              <Button type="submit" class="flex-1 sm:flex-none">Create Question</Button>
+              <Button type="submit" @click="hasAttemptSubmit = true" class="flex-1 sm:flex-none"
+                >Create Question</Button
+              >
             </div>
           </DialogFooter>
         </form>
@@ -502,6 +567,13 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
 import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -539,19 +611,23 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useQuestionStore } from '@/stores/questions'
+import { useAuthStore } from '@/stores/auth'
 import { toTypedSchema } from '@vee-validate/zod'
-import { Eye, Plus, Search, Upload, X } from 'lucide-vue-next'
+import { Eye, Pencil, Plus, Search, Trash2, Upload, X } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import * as z from 'zod'
+import { SUBJECTS, DIFFICULTY, YEARS } from '@/types/constants'
 
 const breadcrumbs = [{ label: 'Questions' }]
 
 const questionStore = useQuestionStore()
+const authStore = useAuthStore()
 
 // Search and Filter State
 const searchQuery = ref('')
+const selectedYear = ref('all')
 const selectedSubject = ref('all')
 const selectedDifficulty = ref('all')
 
@@ -578,6 +654,7 @@ const imageInput = ref<HTMLInputElement | null>(null)
 // Form Schema
 const formSchema = toTypedSchema(
   z.object({
+    year: z.string().min(1, 'Please select a year'),
     subject: z.string().min(1, 'Please select a subject'),
     difficulty: z.string().min(1, 'Please select a difficulty level'),
     question: z.string().min(1, 'Question content is required'),
@@ -592,6 +669,7 @@ const formSchema = toTypedSchema(
 const { handleSubmit, setFieldValue, values, resetForm } = useForm({
   validationSchema: formSchema,
   initialValues: {
+    year: '',
     subject: '',
     difficulty: '',
     question: '',
@@ -608,6 +686,7 @@ const imageValue = computed(() => values.image || '')
 watch(isCreateDialogOpen, () => {
   resetForm({
     values: {
+      year: '',
       subject: '',
       difficulty: '',
       question: '',
@@ -682,6 +761,11 @@ const filteredQuestions = computed(() => {
     filtered = filtered.filter((q) => q.question.toLowerCase().includes(query))
   }
 
+  // Filter by year
+  if (selectedYear.value !== 'all') {
+    filtered = filtered.filter((q) => q.year === selectedYear.value)
+  }
+
   // Filter by subject
   if (selectedSubject.value !== 'all') {
     filtered = filtered.filter((q) => q.subject === selectedSubject.value)
@@ -689,15 +773,7 @@ const filteredQuestions = computed(() => {
 
   // Filter by difficulty
   if (selectedDifficulty.value !== 'all') {
-    const difficultyMap: Record<string, number[]> = {
-      easy: [1, 2],
-      medium: [3],
-      hard: [4, 5],
-    }
-    const levels = difficultyMap[selectedDifficulty.value]
-    if (levels) {
-      filtered = filtered.filter((q) => levels.includes(q.difficulty))
-    }
+    filtered = filtered.filter((q) => q.difficulty === parseInt(selectedDifficulty.value))
   }
 
   return filtered
@@ -716,7 +792,7 @@ const paginatedQuestions = computed(() => {
 })
 
 // Reset to first page when filters change
-watch([searchQuery, selectedSubject, selectedDifficulty], () => {
+watch([searchQuery, selectedYear, selectedSubject, selectedDifficulty], () => {
   currentPage.value = 1
 })
 
@@ -727,12 +803,12 @@ onMounted(async () => {
 
 const onSubmit = handleSubmit(async (formValues) => {
   try {
-    hasAttemptSubmit.value = true
     const { correctAnswer, difficulty, ...rest } = formValues
     await questionStore.createQuestion({
       ...rest,
       correct_answer: parseInt(correctAnswer),
       difficulty: parseInt(difficulty),
+      created_by: authStore.user?.id,
     })
 
     // Show success toast first
@@ -746,4 +822,26 @@ const onSubmit = handleSubmit(async (formValues) => {
     toast.error('Failed to create question')
   }
 })
+
+// Edit question function
+const editQuestion = (question: (typeof questionStore.questions)[0]) => {
+  // TODO: Implement edit functionality
+  toast.info('Edit functionality coming soon')
+  console.log('Edit question:', question)
+}
+
+// Delete question function
+const deleteQuestion = async (questionId: string) => {
+  if (!confirm('Are you sure you want to delete this question?')) {
+    return
+  }
+
+  try {
+    await questionStore.deleteQuestion(questionId)
+    toast.success('Question deleted successfully')
+  } catch (error) {
+    console.error('Error deleting question:', error)
+    toast.error('Failed to delete question')
+  }
+}
 </script>
