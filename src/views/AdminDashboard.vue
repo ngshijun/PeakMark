@@ -9,48 +9,48 @@
 
       <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <!-- Total Revenue Card -->
-        <Card>
+        <Card class="flex flex-col">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Total Revenue</CardTitle>
             <DollarSign class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent class="flex-1 flex flex-col justify-end">
             <div class="text-2xl font-bold">${{ stats.totalRevenue.toLocaleString() }}</div>
             <p class="text-xs text-muted-foreground">All time revenue</p>
           </CardContent>
         </Card>
 
         <!-- Total Students Card -->
-        <Card>
+        <Card class="flex flex-col">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Total Students</CardTitle>
             <Users class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent class="flex-1 flex flex-col justify-end">
             <div class="text-2xl font-bold">{{ stats.totalStudents }}</div>
             <p class="text-xs text-muted-foreground">Registered students</p>
           </CardContent>
         </Card>
 
         <!-- Total Questions Created Card -->
-        <Card>
+        <Card class="flex flex-col">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Questions Created</CardTitle>
             <FileQuestion class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent class="flex-1 flex flex-col justify-end">
             <div class="text-2xl font-bold">{{ stats.totalQuestionsCreated }}</div>
             <p class="text-xs text-muted-foreground">Total questions</p>
           </CardContent>
         </Card>
 
         <!-- Active Now Card -->
-        <Card>
+        <Card class="flex flex-col">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Active Now</CardTitle>
             <Activity class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent class="flex-1 flex flex-col justify-end">
             <div class="text-2xl font-bold">{{ stats.activeNow }}</div>
             <p class="text-xs text-muted-foreground">Users online</p>
           </CardContent>

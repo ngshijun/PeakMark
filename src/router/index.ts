@@ -40,6 +40,12 @@ const router = createRouter({
       component: () => import('@/views/PracticePage.vue'),
       meta: { requiresAuth: true, role: ['student'] },
     },
+    {
+      path: '/practice/questions',
+      name: 'practice-questions',
+      component: () => import('@/views/PracticeQuestionsPage.vue'),
+      meta: { requiresAuth: true, role: ['student'] },
+    },
   ],
 })
 

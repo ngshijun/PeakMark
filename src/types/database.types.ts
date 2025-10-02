@@ -14,42 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
-      exp: {
+      practice_session: {
         Row: {
           created_at: string
-          exp: number
+          ended_at: string | null
           id: string
+          is_active: boolean
+          questions_attempted: number
+          started_at: string
+          subject: string
           updated_at: string
+          user_id: string
+          year: string
         }
         Insert: {
           created_at?: string
-          exp?: number
-          id: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean
+          questions_attempted?: number
+          started_at?: string
+          subject: string
           updated_at?: string
+          user_id: string
+          year: string
         }
         Update: {
           created_at?: string
-          exp?: number
+          ended_at?: string | null
           id?: string
+          is_active?: boolean
+          questions_attempted?: number
+          started_at?: string
+          subject?: string
           updated_at?: string
+          user_id?: string
+          year?: string
         }
         Relationships: [
           {
-            foreignKeyName: "exp_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
+            foreignKeyName: "practice_session_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
       }
-      question_attemps: {
+      question_attempts: {
         Row: {
           attempted_by: string
           created_at: string
           id: string
           is_correct: boolean
+          next_review_date: string | null
+          question_elo_before: number | null
           question_id: string
+          session_id: string
+          student_elo_after: number | null
+          student_elo_before: number | null
           updated_at: string | null
         }
         Insert: {
@@ -57,7 +80,12 @@ export type Database = {
           created_at?: string
           id?: string
           is_correct: boolean
+          next_review_date?: string | null
+          question_elo_before?: number | null
           question_id: string
+          session_id: string
+          student_elo_after?: number | null
+          student_elo_before?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -65,7 +93,12 @@ export type Database = {
           created_at?: string
           id?: string
           is_correct?: boolean
+          next_review_date?: string | null
+          question_elo_before?: number | null
           question_id?: string
+          session_id?: string
+          student_elo_after?: number | null
+          student_elo_before?: number | null
           updated_at?: string | null
         }
         Relationships: [
@@ -81,6 +114,13 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_attemps_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "practice_session"
             referencedColumns: ["id"]
           },
         ]
@@ -133,6 +173,73 @@ export type Database = {
             foreignKeyName: "questions_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_elo: {
+        Row: {
+          created_at: string
+          elo_rating: number
+          id: string
+          subject: string
+          updated_at: string
+          user_id: string
+          year: string
+        }
+        Insert: {
+          created_at?: string
+          elo_rating?: number
+          id?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+          year: string
+        }
+        Update: {
+          created_at?: string
+          elo_rating?: number
+          id?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+          year?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_elo_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_exp: {
+        Row: {
+          created_at: string
+          exp: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exp?: number
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exp?: number
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exp_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
           },

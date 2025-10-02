@@ -5,7 +5,7 @@ import { computed, ref } from 'vue'
 import { useAuthStore } from './auth'
 
 type UserRow = Tables<'users'>
-type ExpRow = Tables<'exp'>
+type ExpRow = Tables<'student_exp'>
 
 interface StudentStats {
   questionsAnswered: number
@@ -88,7 +88,7 @@ export const useProfileStore = defineStore('profile', () => {
   const fetchUserExp = async (userId: string) => {
     try {
       const { data, error: fetchError } = await supabase
-        .from('exp')
+        .from('student_exp')
         .select('*')
         .eq('id', userId)
         .single()
@@ -109,7 +109,7 @@ export const useProfileStore = defineStore('profile', () => {
   const fetchStudentStats = async (userId: string) => {
     try {
       const { data: attempts, error: fetchError } = await supabase
-        .from('question_attemps')
+        .from('question_attempts')
         .select('is_correct, created_at')
         .eq('attempted_by', userId)
 
@@ -167,14 +167,14 @@ export const useProfileStore = defineStore('profile', () => {
         }
       }
 
-      // TODO: Calculate sets completed (requires practice session tracking)
-      const setsCompleted = 0
+      // Calculate sets completed (practice sessions that have ended)
+      // TODO: Fetch practice sets that have been completed
 
       studentStats.value = {
         questionsAnswered,
         accuracyRate,
         studyStreak,
-        setsCompleted,
+        setsCompleted: 0,
       }
     } catch (err) {
       console.error('Error fetching student stats:', err)
@@ -269,7 +269,7 @@ export const useProfileStore = defineStore('profile', () => {
 
     try {
       const { data, error: updateError } = await supabase
-        .from('exp')
+        .from('student_exp')
         .update({ exp: newExp, updated_at: new Date().toISOString() })
         .eq('id', userId)
         .select()

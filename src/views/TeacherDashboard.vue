@@ -9,48 +9,48 @@
 
       <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <!-- Questions Created Card -->
-        <Card>
+        <Card class="flex flex-col">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Questions Created</CardTitle>
             <FileText class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent class="flex-1 flex flex-col justify-end">
             <div class="text-2xl font-bold">{{ stats.questionsCreated }}</div>
             <p class="text-xs text-muted-foreground">Total questions</p>
           </CardContent>
         </Card>
 
         <!-- Active Students Card -->
-        <Card>
+        <Card class="flex flex-col">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Active Students</CardTitle>
             <Users class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent class="flex-1 flex flex-col justify-end">
             <div class="text-2xl font-bold">{{ stats.activeStudents }}</div>
             <p class="text-xs text-muted-foreground">Students this month</p>
           </CardContent>
         </Card>
 
         <!-- Question Sets Card -->
-        <Card>
+        <Card class="flex flex-col">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Question Sets</CardTitle>
             <FolderOpen class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent class="flex-1 flex flex-col justify-end">
             <div class="text-2xl font-bold">{{ stats.questionSets }}</div>
             <p class="text-xs text-muted-foreground">Total sets</p>
           </CardContent>
         </Card>
 
         <!-- Average Score Card -->
-        <Card>
+        <Card class="flex flex-col">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Average Score</CardTitle>
             <BarChart3 class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent class="flex-1 flex flex-col justify-end">
             <div class="text-2xl font-bold">{{ stats.averageScore }}%</div>
             <p class="text-xs text-muted-foreground">Across all students</p>
           </CardContent>

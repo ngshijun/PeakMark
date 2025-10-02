@@ -57,8 +57,7 @@
                 <div class="space-y-1">
                   <p class="text-sm font-medium">Practice Set Ready</p>
                   <p class="text-sm text-muted-foreground">
-                    {{ getQuestionCount() }} questions available for {{ selectedYearLabel }} -
-                    {{ selectedSubjectLabel }}
+                    Questions available for {{ selectedYearLabel }} - {{ selectedSubjectLabel }}
                   </p>
                 </div>
               </div>
@@ -83,7 +82,13 @@
             <CardDescription>Continue from where you left off</CardDescription>
           </CardHeader>
           <CardContent>
-            <div class="space-y-4">
+            <div v-if="loadingSessions" class="text-center py-8">
+              <p class="text-sm text-muted-foreground">Loading sessions...</p>
+            </div>
+            <div v-else-if="recentPractice.length === 0" class="text-center py-8">
+              <p class="text-sm text-muted-foreground">No active practice sessions</p>
+            </div>
+            <div v-else class="space-y-4">
               <div
                 v-for="practice in recentPractice"
                 :key="practice.id"
@@ -97,11 +102,10 @@
                   <div>
                     <p class="font-medium">{{ practice.year }} - {{ practice.subject }}</p>
                     <p class="text-sm text-muted-foreground">
-                      {{ practice.progress }} of {{ practice.total }} questions
+                      {{ practice.questions_attempted }} questions attempted
                     </p>
                   </div>
                 </div>
-                <Progress :model-value="(practice.progress / practice.total) * 100" class="w-24" />
               </div>
             </div>
           </CardContent>
@@ -122,7 +126,6 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { Progress } from '@/components/ui/progress'
 import {
   Select,
   SelectContent,
@@ -131,12 +134,18 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import MainLayout from '@/layouts/MainLayout.vue'
+import { supabase } from '@/lib/supabaseClient'
+import { useAuthStore } from '@/stores/auth'
+import type { Tables } from '@/types/database.types'
 import { SUBJECTS, YEARS } from '@/types/constants'
 import { BookOpen, FileText, PlayCircle } from 'lucide-vue-next'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+type PracticeSession = Tables<'practice_session'>
+
 const router = useRouter()
+const authStore = useAuthStore()
 const breadcrumbs = [{ label: 'Practice' }]
 
 // Selection state
@@ -144,22 +153,8 @@ const selectedYear = ref<string>('')
 const selectedSubject = ref<string>('')
 
 // Recent practice sessions
-const recentPractice = ref([
-  {
-    id: 1,
-    year: 'Year 10',
-    subject: 'Mathematics',
-    progress: 5,
-    total: 20,
-  },
-  {
-    id: 2,
-    year: 'Year 9',
-    subject: 'Science',
-    progress: 12,
-    total: 15,
-  },
-])
+const recentPractice = ref<PracticeSession[]>([])
+const loadingSessions = ref(false)
 
 // Computed labels
 const selectedYearLabel = computed(() => {
@@ -170,14 +165,45 @@ const selectedSubjectLabel = computed(() => {
   return SUBJECTS.find((s) => s === selectedSubject.value) || ''
 })
 
-// Get question count (mock for now)
-const getQuestionCount = () => {
-  return Math.floor(Math.random() * 20) + 10 // Mock: 10-30 questions
+// Fetch recent practice sessions
+const fetchRecentSessions = async () => {
+  const userId = authStore.user?.id
+  if (!userId) return
+
+  loadingSessions.value = true
+
+  try {
+    const { data, error } = await supabase
+      .from('practice_session')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .order('updated_at', { ascending: false })
+      .limit(5)
+
+    if (error) throw error
+    recentPractice.value = data || []
+  } catch (err) {
+    console.error('Error fetching recent sessions:', err)
+  } finally {
+    loadingSessions.value = false
+  }
 }
 
 // Start practice
 const startPractice = () => {
-  // TODO: Navigate to questions page with selected filters
+  // Check if there's already an active session for this year and subject
+  const existingSession = recentPractice.value.find(
+    (session) => session.year === selectedYear.value && session.subject === selectedSubject.value
+  )
+
+  if (existingSession) {
+    // Resume existing session instead of creating new one
+    continuePractice(existingSession.id)
+    return
+  }
+
+  // Create new session
   router.push({
     path: '/practice/questions',
     query: {
@@ -188,13 +214,17 @@ const startPractice = () => {
 }
 
 // Continue practice
-const continuePractice = (id: number) => {
-  // TODO: Navigate to questions page with practice session ID
+const continuePractice = (sessionId: string) => {
   router.push({
     path: '/practice/questions',
     query: {
-      sessionId: id,
+      sessionId,
     },
   })
 }
+
+// Initialize
+onMounted(() => {
+  fetchRecentSessions()
+})
 </script>

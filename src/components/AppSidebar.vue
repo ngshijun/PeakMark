@@ -19,7 +19,7 @@
         </SidebarMenuItem>
         <SidebarMenuItem v-if="userRole === 'student'">
           <div
-            class="px-2 pb-2 space-y-1 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:pb-0"
+            class="px-2 pb-2 space-y-1 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:pb-0 group-data-[collapsible=icon]:space-y-0.5"
           >
             <div
               class="flex items-center justify-between text-xs group-data-[collapsible=icon]:hidden"
@@ -28,6 +28,11 @@
               <span class="text-muted-foreground"
                 >{{ expInCurrentLevel }} / {{ expToNextLevel }} XP</span
               >
+            </div>
+            <div
+              class="hidden group-data-[collapsible=icon]:flex justify-center text-xs font-semibold pt-2"
+            >
+              {{ currentLevel }}
             </div>
             <div
               class="h-2 w-full bg-muted rounded-full overflow-hidden group-data-[collapsible=icon]:h-1"
