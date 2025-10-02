@@ -106,6 +106,7 @@
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useProfileStore } from '@/stores/profile'
 import { useLevel } from '@/composables/useLevel'
 import { roleNavigation } from '@/config/navigation'
 import {
@@ -133,14 +134,15 @@ import { GraduationCap, School, Settings, LogOut, UserCog } from 'lucide-vue-nex
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const profileStore = useProfileStore()
 const { currentLevel, expToNextLevel, expProgress, expInCurrentLevel } = useLevel()
 
 const userRole = computed(() => {
-  return authStore.user?.user_metadata?.role || 'student'
+  return profileStore.role || 'student'
 })
 
 const userName = computed(() => {
-  return authStore.user?.user_metadata?.name || 'User'
+  return profileStore.fullName || 'User'
 })
 
 const userEmail = computed(() => {
