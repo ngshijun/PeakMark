@@ -4,7 +4,36 @@
       <ThemeToggle />
     </div>
     <div class="w-full max-w-sm">
-      <form @submit="onSubmit">
+      <!-- Email Confirmation Message -->
+      <div v-if="isRegistered" class="flex flex-col gap-6">
+        <div class="flex flex-col items-center gap-4">
+          <div class="rounded-full bg-primary/10 p-3">
+            <Mail class="h-8 w-8 text-primary" />
+          </div>
+          <h1 class="text-xl font-bold text-center">Check your email</h1>
+          <p class="text-center text-sm text-muted-foreground">
+            A confirmation email has been sent to
+            <span class="font-medium text-foreground">{{ registeredEmail }}</span>
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-3">
+          <div class="rounded-lg border border-border bg-muted/50 p-4">
+            <div class="flex items-start gap-3">
+              <Info class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+              <p class="text-sm">Please check your inbox and click the confirmation link to activate your account.</p>
+            </div>
+          </div>
+          <p class="text-sm text-center text-muted-foreground">Can't find it? Check your spam or junk folder.</p>
+        </div>
+
+        <router-link to="/login">
+          <Button class="w-full">Go to Login</Button>
+        </router-link>
+      </div>
+
+      <!-- Registration Form -->
+      <form v-else @submit="onSubmit">
         <div class="flex flex-col gap-6">
           <div class="flex flex-col items-center gap-2">
             <h1 class="text-xl font-bold">Create an account</h1>
@@ -78,6 +107,7 @@
                           )
                         "
                         :disabled="isSubmitting"
+                        tabindex="0"
                       >
                         <span>{{ dobValue ? df.format(toDate(dobValue)) : 'Pick a date' }}</span>
                         <CalendarIcon class="ms-auto h-4 w-4 opacity-50" />
@@ -234,17 +264,18 @@ import {
   today,
 } from '@internationalized/date'
 import { toTypedSchema } from '@vee-validate/zod'
-import { CalendarIcon, Eye, EyeOff, GraduationCap, Loader2, School } from 'lucide-vue-next'
+import { CalendarIcon, Eye, EyeOff, GraduationCap, Info, Loader2, Mail, School } from 'lucide-vue-next'
 import { toDate } from 'reka-ui/date'
 import { useForm } from 'vee-validate'
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { toast } from 'vue-sonner'
 import * as z from 'zod'
 import { cn } from '@/lib/utils'
 
-const router = useRouter()
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
+const isRegistered = ref(false)
+const registeredEmail = ref('')
 const { signUp } = useAuthStore()
 
 const df = new DateFormatter('en-US', {
@@ -296,9 +327,26 @@ const onSubmit = handleSubmit(async (values) => {
       dob: values.dateOfBirth,
       role: values.role,
     })
-    router.push('/login')
+    registeredEmail.value = values.email
+    isRegistered.value = true
   } catch (error) {
     console.error('Registration error:', error)
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+
+    if (errorMessage.includes('Invalid email')) {
+      toast.error('Invalid Email', {
+        description: 'Please provide a valid email address.',
+      })
+    } else if (errorMessage.includes('User already registered')) {
+      toast.error('Email Already Exists', {
+        description: 'An account with this email already exists. Please login instead.',
+      })
+    } else {
+      toast.error('Registration Failed', {
+        description: errorMessage || 'An error occurred during registration. Please try again.',
+      })
+    }
   }
 })
 </script>

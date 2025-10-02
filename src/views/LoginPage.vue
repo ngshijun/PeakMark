@@ -103,6 +103,7 @@ import { Eye, EyeOff, Loader2 } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { toast } from 'vue-sonner'
 import * as z from 'zod'
 
 const router = useRouter()
@@ -130,6 +131,22 @@ const onSubmit = handleSubmit(async (values) => {
     router.push('/dashboard')
   } catch (error) {
     console.error('Login error:', error)
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+
+    if (errorMessage.includes('Email not confirmed')) {
+      toast.error('Email Not Confirmed', {
+        description: 'Please check your email and confirm your account before logging in.',
+      })
+    } else if (errorMessage.includes('Invalid login credentials')) {
+      toast.error('Invalid Credentials', {
+        description: 'The email or password you entered is incorrect. Please try again.',
+      })
+    } else {
+      toast.error('Login Failed', {
+        description: errorMessage || 'An error occurred during login. Please try again.',
+      })
+    }
   }
 })
 </script>
