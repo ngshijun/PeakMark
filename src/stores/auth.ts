@@ -78,6 +78,11 @@ export const useAuthStore = defineStore('auth', () => {
       error.value = signOutError.message
       throw signOutError
     }
+
+    // Clear profile store on sign out
+    const { useProfileStore } = await import('./profile')
+    const profileStore = useProfileStore()
+    profileStore.clearProfile()
   }
 
   const clearError = () => {
