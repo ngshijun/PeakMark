@@ -21,9 +21,21 @@ export const useAuthStore = defineStore('auth', () => {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       user.value = newSession?.user ?? null
       session.value = newSession
+
+      // Import profile store dynamically to avoid circular dependency
+      const { useProfileStore } = await import('./profile')
+      const profileStore = useProfileStore()
+
+      if (event === 'SIGNED_IN' && newSession?.user) {
+        // Fetch new user's profile
+        await profileStore.fetchProfile()
+      } else if (event === 'SIGNED_OUT') {
+        // Clear profile data
+        profileStore.clearProfile()
+      }
     })
 
     return subscription
@@ -78,11 +90,6 @@ export const useAuthStore = defineStore('auth', () => {
       error.value = signOutError.message
       throw signOutError
     }
-
-    // Clear profile store on sign out
-    const { useProfileStore } = await import('./profile')
-    const profileStore = useProfileStore()
-    profileStore.clearProfile()
   }
 
   const clearError = () => {
