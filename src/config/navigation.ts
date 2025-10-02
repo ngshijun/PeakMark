@@ -38,6 +38,11 @@ export const roleNavigation: RoleNavigation = {
           icon: LayoutDashboard,
         },
         {
+          title: 'Practice',
+          url: '/practice',
+          icon: FileText,
+        },
+        {
           title: 'My Courses',
           url: '/courses',
           icon: BookOpen,

@@ -25,7 +25,9 @@
               class="flex items-center justify-between text-xs group-data-[collapsible=icon]:hidden"
             >
               <span class="font-semibold">Level {{ currentLevel }}</span>
-              <span class="text-muted-foreground">{{ currentExp }} / {{ expToNextLevel }} XP</span>
+              <span class="text-muted-foreground"
+                >{{ expInCurrentLevel }} / {{ expToNextLevel }} XP</span
+              >
             </div>
             <div
               class="h-2 w-full bg-muted rounded-full overflow-hidden group-data-[collapsible=icon]:h-1"
@@ -99,6 +101,7 @@
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useLevel } from '@/composables/useLevel'
 import { roleNavigation } from '@/config/navigation'
 import {
   Sidebar,
@@ -125,6 +128,7 @@ import { GraduationCap, School, Settings, LogOut, UserCog } from 'lucide-vue-nex
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const { currentLevel, expToNextLevel, expProgress, expInCurrentLevel } = useLevel()
 
 const userRole = computed(() => {
   return authStore.user?.user_metadata?.role || 'student'
@@ -162,24 +166,4 @@ const handleSignOut = async () => {
   await authStore.signOut()
   router.push('/login')
 }
-
-// Level and Experience
-const currentLevel = computed(() => {
-  // TODO: Replace with actual level from user data/store
-  return 5
-})
-
-const currentExp = computed(() => {
-  // TODO: Replace with actual exp from user data/store
-  return 350
-})
-
-const expToNextLevel = computed(() => {
-  // TODO: Replace with actual calculation based on level
-  return 500
-})
-
-const expProgress = computed(() => {
-  return (currentExp.value / expToNextLevel.value) * 100
-})
 </script>
