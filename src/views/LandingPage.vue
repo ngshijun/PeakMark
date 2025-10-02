@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Trophy, BarChart3, Users, Brain } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const router = useRouter()
 
@@ -31,13 +32,13 @@ const features = [
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
     <!-- Header -->
-    <header class="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+    <header class="border-b bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
       <div class="container mx-auto px-4 py-4 flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <Trophy class="w-8 h-8 text-blue-600" />
-          <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <Trophy class="w-8 h-8 text-blue-600 dark:text-blue-400" />
+          <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
             PeakMark
           </h1>
         </div>
@@ -48,13 +49,18 @@ const features = [
       </div>
     </header>
 
+    <!-- Theme Toggle -->
+    <div class="fixed top-4 right-4 z-50">
+      <ThemeToggle />
+    </div>
+
     <!-- Hero Section -->
     <section class="container mx-auto px-4 py-20 md:py-32">
       <div class="max-w-4xl mx-auto text-center">
-        <h2 class="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+        <h2 class="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
           Reach Your Peak Performance
         </h2>
-        <p class="text-xl md:text-2xl text-gray-600 mb-8 max-w-2xl mx-auto">
+        <p class="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
           A comprehensive learning platform where teachers create questions and students practice to excel
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
@@ -73,9 +79,9 @@ const features = [
       <div class="max-w-6xl mx-auto">
         <h3 class="text-3xl md:text-4xl font-bold text-center mb-12">Why Choose PeakMark?</h3>
         <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card v-for="feature in features" :key="feature.title" class="border-2 hover:border-blue-400 transition-all hover:shadow-lg">
+          <Card v-for="feature in features" :key="feature.title" class="border-2 hover:border-blue-400 dark:hover:border-blue-500 transition-all hover:shadow-lg">
             <CardHeader>
-              <component :is="feature.icon" class="w-12 h-12 mb-4 text-blue-600" />
+              <component :is="feature.icon" class="w-12 h-12 mb-4 text-blue-600 dark:text-blue-400" />
               <CardTitle>{{ feature.title }}</CardTitle>
               <CardDescription>{{ feature.description }}</CardDescription>
             </CardHeader>
@@ -100,8 +106,8 @@ const features = [
     </section>
 
     <!-- Footer -->
-    <footer class="border-t bg-white/80 backdrop-blur-sm">
-      <div class="container mx-auto px-4 py-8 text-center text-gray-600">
+    <footer class="border-t bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm">
+      <div class="container mx-auto px-4 py-8 text-center text-gray-600 dark:text-gray-400">
         <p>&copy; 2025 PeakMark. All rights reserved.</p>
       </div>
     </footer>

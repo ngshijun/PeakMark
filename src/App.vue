@@ -9,8 +9,8 @@ const { theme } = useTheme()
 </script>
 
 <template>
+  <SpeedInsights />
   <div class="relative min-h-screen">
-    <SpeedInsights />
     <RouterView />
     <Toaster richColors position="top-center" :theme="theme" />
   </div>
