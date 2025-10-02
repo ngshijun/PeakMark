@@ -12,7 +12,7 @@
             <BreadcrumbList>
               <template v-for="(crumb, index) in breadcrumbs" :key="index">
                 <BreadcrumbItem>
-                  <BreadcrumbLink v-if="crumb.href" :href="crumb.href">
+                  <BreadcrumbLink v-if="crumb.href || crumb.to" :href="crumb.href || crumb.to">
                     {{ crumb.label }}
                   </BreadcrumbLink>
                   <BreadcrumbPage v-else>
@@ -52,6 +52,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/s
 interface Breadcrumb {
   label: string
   href?: string
+  to?: string
 }
 
 interface Props {

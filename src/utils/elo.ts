@@ -47,7 +47,7 @@ export const calculateExpectedScore = (studentElo: number, questionElo: number):
 export const calculateNewStudentElo = (
   currentElo: number,
   questionElo: number,
-  isCorrect: boolean
+  isCorrect: boolean,
 ): number => {
   const expectedScore = calculateExpectedScore(currentElo, questionElo)
   const actualScore = isCorrect ? 1 : 0

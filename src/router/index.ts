@@ -79,7 +79,7 @@ router.beforeEach((to, from, next) => {
 
   // Check role-based access
   if (requiredRoles && Array.isArray(requiredRoles)) {
-    if (!user.role) {
+    if (!user.user_metadata.role) {
       // User has no role - redirect to login
       if (to.name !== 'login-page') {
         next({ name: 'login-page' })

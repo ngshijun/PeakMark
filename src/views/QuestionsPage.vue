@@ -172,7 +172,7 @@
                     Edit Question
                   </ContextMenuItem>
                   <ContextMenuSeparator />
-                  <ContextMenuItem @click="deleteQuestion(question.id)" class="text-destructive">
+                  <ContextMenuItem @click="openDeleteDialog(question.id)" class="text-destructive">
                     <Trash2 class="mr-2 h-4 w-4" />
                     Delete Question
                   </ContextMenuItem>
@@ -561,6 +561,22 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <Dialog v-model:open="isDeleteDialogOpen">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Delete Question</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete this question? This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter class="gap-2 sm:gap-0">
+          <Button variant="outline" @click="cancelDelete">Cancel</Button>
+          <Button variant="destructive" @click="confirmDelete">Delete</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </MainLayout>
 </template>
 
@@ -647,6 +663,8 @@ const itemsPerPageString = computed({
 const isCreateDialogOpen = ref(false)
 const isPreviewOpen = ref(false)
 const hasAttemptSubmit = ref(false)
+const isDeleteDialogOpen = ref(false)
+const questionToDelete = ref<string | null>(null)
 
 // Image Upload Ref
 const imageInput = ref<HTMLInputElement | null>(null)
@@ -827,21 +845,30 @@ const onSubmit = handleSubmit(async (formValues) => {
 const editQuestion = (question: (typeof questionStore.questions)[0]) => {
   // TODO: Implement edit functionality
   toast.info('Edit functionality coming soon')
-  console.log('Edit question:', question)
 }
 
 // Delete question function
-const deleteQuestion = async (questionId: string) => {
-  if (!confirm('Are you sure you want to delete this question?')) {
-    return
-  }
+const openDeleteDialog = (questionId: string) => {
+  questionToDelete.value = questionId
+  isDeleteDialogOpen.value = true
+}
+
+const confirmDelete = async () => {
+  if (!questionToDelete.value) return
 
   try {
-    await questionStore.deleteQuestion(questionId)
+    await questionStore.deleteQuestion(questionToDelete.value)
     toast.success('Question deleted successfully')
+    isDeleteDialogOpen.value = false
+    questionToDelete.value = null
   } catch (error) {
     console.error('Error deleting question:', error)
     toast.error('Failed to delete question')
   }
+}
+
+const cancelDelete = () => {
+  isDeleteDialogOpen.value = false
+  questionToDelete.value = null
 }
 </script>

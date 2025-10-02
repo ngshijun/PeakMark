@@ -38,7 +38,7 @@ export const usePracticeStore = defineStore('practice', () => {
   const getOrCreateStudentElo = async (
     userId: string,
     subject: string,
-    year: string
+    year: string,
   ): Promise<number> => {
     // Try to fetch existing ELO
     const { data: existingElo, error: fetchError } = await supabase
@@ -47,29 +47,27 @@ export const usePracticeStore = defineStore('practice', () => {
       .eq('user_id', userId)
       .eq('subject', subject)
       .eq('year', year)
-      .single()
+      .maybeSingle()
+
+    if (fetchError) throw fetchError
 
     if (existingElo) {
       return existingElo.elo_rating
     }
 
     // Create new ELO record if doesn't exist
-    if (fetchError?.code === 'PGRST116') {
-      const { data: newElo, error: createError } = await supabase
-        .from('student_elo')
-        .insert({
-          user_id: userId,
-          subject,
-          year,
-          elo_rating: ELO_CONSTANTS.DEFAULT_STUDENT_ELO,
-        })
-        .select()
-        .single()
-      if (createError) throw createError
-      return newElo.elo_rating
-    }
-
-    throw fetchError
+    const { data: newElo, error: createError } = await supabase
+      .from('student_elo')
+      .insert({
+        user_id: userId,
+        subject,
+        year,
+        elo_rating: ELO_CONSTANTS.DEFAULT_STUDENT_ELO,
+      })
+      .select()
+      .single()
+    if (createError) throw createError
+    return newElo.elo_rating
   }
 
   /**
@@ -79,7 +77,7 @@ export const usePracticeStore = defineStore('practice', () => {
     userId: string,
     subject: string,
     year: string,
-    newElo: number
+    newElo: number,
   ): Promise<void> => {
     const { data, error: updateError } = await supabase
       .from('student_elo')
@@ -100,8 +98,6 @@ export const usePracticeStore = defineStore('practice', () => {
       console.error('No student ELO record found to update', { userId, subject, year })
       throw new Error('Failed to update student ELO: No matching record found')
     }
-
-    console.log('Student ELO updated successfully:', { userId, subject, year, newElo })
   }
 
   /**
@@ -110,7 +106,7 @@ export const usePracticeStore = defineStore('practice', () => {
   const fetchQuestionsForSession = async (
     subject: string,
     year: string,
-    currentStudentElo: number
+    currentStudentElo: number,
   ): Promise<Question[]> => {
     const userId = authStore.user?.id
     if (!userId) throw new Error('No user authenticated')
@@ -129,7 +125,7 @@ export const usePracticeStore = defineStore('practice', () => {
 
     if (questionIdsError) throw questionIdsError
 
-    const ids = questionIds?.map(q => q.id) || []
+    const ids = questionIds?.map((q) => q.id) || []
 
     // Parallel fetch: attempts and questions at the same time
     const [attemptsResult, questionsResult] = await Promise.all([
@@ -148,7 +144,7 @@ export const usePracticeStore = defineStore('practice', () => {
         .eq('subject', subject)
         .eq('year', year)
         .gte('difficulty', min)
-        .lte('difficulty', max)
+        .lte('difficulty', max),
     ])
 
     if (attemptsResult.error) throw attemptsResult.error
@@ -172,9 +168,7 @@ export const usePracticeStore = defineStore('practice', () => {
     })
 
     // Filter out correctly answered questions
-    let availableQuestions = allQuestions.filter(
-      (q) => !excludedQuestionIds.has(q.id)
-    )
+    let availableQuestions = allQuestions.filter((q) => !excludedQuestionIds.has(q.id))
 
     // FALLBACK: If no questions found in optimal range, expand search to all difficulties
     if (availableQuestions.length === 0) {
@@ -186,9 +180,7 @@ export const usePracticeStore = defineStore('practice', () => {
 
       if (fallbackError) throw fallbackError
 
-      availableQuestions = (fallbackQuestions || []).filter(
-        (q) => !excludedQuestionIds.has(q.id)
-      )
+      availableQuestions = (fallbackQuestions || []).filter((q) => !excludedQuestionIds.has(q.id))
 
       // Sort by proximity to student ELO (closest difficulty first)
       const studentDifficulty = (currentStudentElo - 800) / 200
@@ -233,10 +225,10 @@ export const usePracticeStore = defineStore('practice', () => {
             is_active: true,
           })
           .select()
-          .single()
+          .single(),
       ])
 
-      if (sessionResult.error) throw sessionResult.error
+      if (sessionResult.error) throw 'test' + sessionResult.error
 
       studentElo.value = currentElo
       currentSession.value = sessionResult.data
@@ -250,8 +242,6 @@ export const usePracticeStore = defineStore('practice', () => {
         error.value = 'No suitable questions available for this subject and year level'
         throw new Error('No suitable questions available for this subject and year level')
       }
-
-      console.log("XX3", currentSession.value)
 
       // Load questions
       questionQueue.value = questions
@@ -312,13 +302,8 @@ export const usePracticeStore = defineStore('practice', () => {
       const newExp = currentExp + EXP_PER_QUESTION
 
       await Promise.all([
-        updateStudentElo(
-          userId,
-          currentSession.value.subject,
-          currentSession.value.year,
-          newElo
-        ),
-        profileStore.updateExp(newExp)
+        updateStudentElo(userId, currentSession.value.subject, currentSession.value.year, newElo),
+        profileStore.updateExp(newExp),
       ])
 
       studentElo.value = newElo
@@ -371,7 +356,6 @@ export const usePracticeStore = defineStore('practice', () => {
    * End current practice session
    */
   const endSession = async (): Promise<void> => {
-    console.log("XX4", currentSession.value)
     if (!currentSession.value) return
 
     loading.value = true
@@ -426,10 +410,7 @@ export const usePracticeStore = defineStore('practice', () => {
           .eq('id', sessionId)
           .eq('user_id', userId)
           .single(),
-        supabase
-          .from('question_attempts')
-          .select('question_id')
-          .eq('session_id', sessionId)
+        supabase.from('question_attempts').select('question_id').eq('session_id', sessionId),
       ])
 
       if (sessionResult.error) throw sessionResult.error
@@ -438,15 +419,17 @@ export const usePracticeStore = defineStore('practice', () => {
       const session = sessionResult.data
       currentSession.value = session
 
-      console.log("XX5", currentSession.value)
-
       const answeredIds = new Set(attemptsResult.data?.map((a) => a.question_id) || [])
       answeredQuestions.value = answeredIds
 
       // OPTIMIZED: Fetch ELO and questions in parallel
       const [currentElo, questions] = await Promise.all([
         getOrCreateStudentElo(userId, session.subject, session.year),
-        fetchQuestionsForSession(session.subject, session.year, studentElo.value || ELO_CONSTANTS.DEFAULT_STUDENT_ELO)
+        fetchQuestionsForSession(
+          session.subject,
+          session.year,
+          studentElo.value || ELO_CONSTANTS.DEFAULT_STUDENT_ELO,
+        ),
       ])
 
       studentElo.value = currentElo

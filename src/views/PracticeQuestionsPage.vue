@@ -56,11 +56,7 @@
         <CardContent class="space-y-6">
           <!-- Question Image (if exists) -->
           <div v-if="currentQuestion.image" class="rounded-lg border overflow-hidden">
-            <img
-              :src="currentQuestion.image"
-              :alt="'Question image'"
-              class="w-full h-auto"
-            />
+            <img :src="currentQuestion.image" :alt="'Question image'" class="w-full h-auto" />
           </div>
 
           <!-- Question Text -->
@@ -77,18 +73,33 @@
               :class="{
                 'border-primary bg-primary/5': selectedAnswer === index && !showResult,
                 'cursor-pointer hover:bg-muted/50': !showResult,
-                'border-green-500 bg-green-500/10': showResult && index === currentQuestion.correct_answer,
-                'border-red-500 bg-red-500/10': showResult && index === selectedAnswer && !isCorrect,
-                'cursor-not-allowed opacity-60': showResult && index !== currentQuestion.correct_answer && index !== selectedAnswer
+                'border-green-500 bg-green-500/10':
+                  showResult && index === currentQuestion.correct_answer,
+                'border-red-500 bg-red-500/10':
+                  showResult && index === selectedAnswer && !isCorrect,
+                'cursor-not-allowed opacity-60':
+                  showResult &&
+                  index !== currentQuestion.correct_answer &&
+                  index !== selectedAnswer,
               }"
               @click="!showResult && (selectedAnswer = index)"
             >
               <RadioGroupItem :value="index" :id="`option-${index}`" :disabled="showResult" />
-              <Label :for="`option-${index}`" class="flex-1" :class="{ 'cursor-pointer': !showResult, 'cursor-not-allowed': showResult }">
+              <Label
+                :for="`option-${index}`"
+                class="flex-1"
+                :class="{ 'cursor-pointer': !showResult, 'cursor-not-allowed': showResult }"
+              >
                 {{ option }}
               </Label>
-              <CheckCircle v-if="showResult && index === currentQuestion.correct_answer" class="h-5 w-5 text-green-500" />
-              <XCircle v-if="showResult && index === selectedAnswer && !isCorrect" class="h-5 w-5 text-red-500" />
+              <CheckCircle
+                v-if="showResult && index === currentQuestion.correct_answer"
+                class="h-5 w-5 text-green-500"
+              />
+              <XCircle
+                v-if="showResult && index === selectedAnswer && !isCorrect"
+                class="h-5 w-5 text-red-500"
+              />
             </div>
           </RadioGroup>
 
@@ -132,14 +143,14 @@
               {{ practiceStore.error }}
             </p>
           </div>
-          <Button @click="router.push('/practice')">
-            Return to Practice
-          </Button>
+          <Button @click="router.push('/practice')"> Return to Practice </Button>
         </CardContent>
       </Card>
 
       <!-- No Questions Available -->
-      <Card v-if="!currentQuestion && !loading && !showResult && currentSession && !practiceStore.error">
+      <Card
+        v-if="!currentQuestion && !loading && !showResult && currentSession && !practiceStore.error"
+      >
         <CardContent class="pt-6 text-center space-y-4">
           <div class="flex justify-center">
             <div class="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
@@ -152,12 +163,11 @@
               {{ currentSession.subject }} - {{ currentSession.year }}
             </p>
             <p class="text-sm text-muted-foreground">
-              There are no questions available for your current skill level, or all questions have been completed. Try a different subject or year.
+              There are no questions available for your current skill level, or all questions have
+              been completed. Try a different subject or year.
             </p>
           </div>
-          <Button @click="handleEndSession">
-            Return to Practice
-          </Button>
+          <Button @click="handleEndSession"> Return to Practice </Button>
         </CardContent>
       </Card>
 
@@ -165,7 +175,9 @@
       <Card v-if="loading && !currentQuestion">
         <CardContent class="pt-6 text-center space-y-4">
           <div class="flex justify-center">
-            <div class="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+            <div
+              class="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"
+            ></div>
           </div>
           <p class="text-muted-foreground">Loading questions...</p>
         </CardContent>
@@ -177,26 +189,12 @@
 <script setup lang="ts">
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { usePracticeStore } from '@/stores/practice'
-import {
-  ArrowRight,
-  CheckCircle,
-  FileText,
-  Send,
-  Target,
-  X,
-  XCircle,
-} from 'lucide-vue-next'
+import { ArrowRight, CheckCircle, FileText, Send, Target, X, XCircle } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -205,10 +203,7 @@ const router = useRouter()
 const route = useRoute()
 const practiceStore = usePracticeStore()
 
-const breadcrumbs = [
-  { label: 'Practice', to: '/practice' },
-  { label: 'Questions' },
-]
+const breadcrumbs = [{ label: 'Practice', to: '/practice' }, { label: 'Questions' }]
 
 // Component state
 const selectedAnswer = ref<number | null>(null)
@@ -218,14 +213,8 @@ const submitting = ref(false)
 const previousElo = ref(0)
 
 // Get reactive refs from store
-const {
-  currentSession,
-  currentQuestion,
-  studentElo,
-  loading,
-  questionQueue,
-  answeredQuestions,
-} = storeToRefs(practiceStore)
+const { currentSession, currentQuestion, studentElo, loading, questionQueue, answeredQuestions } =
+  storeToRefs(practiceStore)
 
 const hasMoreQuestions = computed(() => {
   return questionQueue.value.some((q) => !answeredQuestions.value.has(q.id))

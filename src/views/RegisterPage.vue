@@ -21,10 +21,14 @@
           <div class="rounded-lg border border-border bg-muted/50 p-4">
             <div class="flex items-start gap-3">
               <Info class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-              <p class="text-sm">Please check your inbox and click the confirmation link to activate your account.</p>
+              <p class="text-sm">
+                Please check your inbox and click the confirmation link to activate your account.
+              </p>
             </div>
           </div>
-          <p class="text-sm text-center text-muted-foreground">Can't find it? Check your spam or junk folder.</p>
+          <p class="text-sm text-center text-muted-foreground">
+            Can't find it? Check your spam or junk folder.
+          </p>
         </div>
 
         <router-link to="/login">
@@ -264,7 +268,16 @@ import {
   today,
 } from '@internationalized/date'
 import { toTypedSchema } from '@vee-validate/zod'
-import { CalendarIcon, Eye, EyeOff, GraduationCap, Info, Loader2, Mail, School } from 'lucide-vue-next'
+import {
+  CalendarIcon,
+  Eye,
+  EyeOff,
+  GraduationCap,
+  Info,
+  Loader2,
+  Mail,
+  School,
+} from 'lucide-vue-next'
 import { toDate } from 'reka-ui/date'
 import { useForm } from 'vee-validate'
 import { computed, ref } from 'vue'
@@ -321,7 +334,6 @@ const dobValue = computed({
 
 const onSubmit = handleSubmit(async (values) => {
   try {
-    console.log(values)
     await signUp(values.email, values.password, {
       full_name: values.name,
       dob: values.dateOfBirth,

@@ -42,7 +42,7 @@ export const useQuestionStore = defineStore('question', () => {
       .from('questions')
       .select('*')
       .eq('id', id)
-      .single()
+      .maybeSingle()
 
     loading.value = false
 
@@ -68,7 +68,6 @@ export const useQuestionStore = defineStore('question', () => {
     loading.value = false
 
     if (createError) {
-      console.log(createError)
       error.value = createError.message
       throw createError
     }

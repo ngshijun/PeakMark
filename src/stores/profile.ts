@@ -91,7 +91,7 @@ export const useProfileStore = defineStore('profile', () => {
         .from('student_exp')
         .select('*')
         .eq('id', userId)
-        .single()
+        .maybeSingle()
 
       if (fetchError) {
         error.value = fetchError.message

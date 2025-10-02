@@ -194,7 +194,7 @@ const fetchRecentSessions = async () => {
 const startPractice = () => {
   // Check if there's already an active session for this year and subject
   const existingSession = recentPractice.value.find(
-    (session) => session.year === selectedYear.value && session.subject === selectedSubject.value
+    (session) => session.year === selectedYear.value && session.subject === selectedSubject.value,
   )
 
   if (existingSession) {

@@ -3,7 +3,7 @@ import { RouterView } from 'vue-router'
 import { Toaster } from '@/components/ui/sonner'
 import 'vue-sonner/style.css'
 import { useTheme } from '@/composables/useTheme'
-import { SpeedInsights } from "@vercel/speed-insights/vue"
+import { SpeedInsights } from '@vercel/speed-insights/vue'
 
 const { theme } = useTheme()
 </script>

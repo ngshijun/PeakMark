@@ -9,7 +9,8 @@
       "Bash(xargs kill:*)",
       "Bash(npm run type-check:*)",
       "Bash(npm install:*)",
-      "Bash(xargs -r kill)"
+      "Bash(xargs -r kill)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []
