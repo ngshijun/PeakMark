@@ -1,6 +1,6 @@
 <template>
   <MainLayout :breadcrumbs="breadcrumbs">
-    <div class="space-y-6">
+    <div class="space-y-4">
       <!-- Header -->
       <div class="space-y-2">
         <h1 class="text-3xl font-bold tracking-tight">Welcome back, {{ userName }}!</h1>

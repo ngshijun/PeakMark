@@ -1,6 +1,6 @@
 <template>
   <MainLayout :breadcrumbs="breadcrumbs">
-    <div class="space-y-6">
+    <div class="flex flex-col h-full space-y-4">
       <!-- Header with Progress -->
       <div class="flex items-center justify-between">
         <div class="space-y-1">
@@ -42,7 +42,7 @@
       </Card>
 
       <!-- Question Card -->
-      <Card v-if="currentQuestion">
+      <Card v-if="currentQuestion" class="flex overflow-auto mb-4">
         <CardHeader>
           <div class="flex items-start justify-between">
             <div class="flex items-center gap-2">
@@ -55,8 +55,8 @@
         </CardHeader>
         <CardContent class="space-y-6">
           <!-- Question Image (if exists) -->
-          <div v-if="currentQuestion.image" class="rounded-lg border overflow-hidden">
-            <img :src="currentQuestion.image" :alt="'Question image'" class="w-full h-auto" />
+          <div v-if="currentQuestion.image" class="rounded-lg border overflow-hidden flex justify-center">
+            <img :src="currentQuestion.image" :alt="'Question image'" class="max-w-full h-auto" />
           </div>
 
           <!-- Question Text -->

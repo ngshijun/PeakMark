@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   FolderOpen,
   Medal,
+  Video,
 } from 'lucide-vue-next'
 
 export interface NavItem {
@@ -41,6 +42,11 @@ export const roleNavigation: RoleNavigation = {
           title: 'Practice',
           url: '/practice',
           icon: FileText,
+        },
+        {
+          title: 'Videos',
+          url: '/student/videos',
+          icon: Video,
         },
         {
           title: 'My Courses',
@@ -88,6 +94,11 @@ export const roleNavigation: RoleNavigation = {
           title: 'Questions',
           url: '/questions',
           icon: FileText,
+        },
+        {
+          title: 'Videos',
+          url: '/teacher/videos',
+          icon: Video,
         },
         {
           title: 'Question Sets',
