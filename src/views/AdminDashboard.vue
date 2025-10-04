@@ -8,53 +8,67 @@
       </div>
 
       <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <!-- Total Revenue Card -->
-        <Card class="flex flex-col">
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign class="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent class="flex-1 flex flex-col justify-end">
-            <div class="text-2xl font-bold">${{ stats.totalRevenue.toLocaleString() }}</div>
-            <p class="text-xs text-muted-foreground">All time revenue</p>
-          </CardContent>
-        </Card>
+        <template v-if="loading">
+          <Card v-for="i in 4" :key="i" class="flex flex-col">
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Skeleton class="h-4 w-32" />
+              <Skeleton class="h-4 w-4 rounded" />
+            </CardHeader>
+            <CardContent class="flex-1 flex flex-col justify-end">
+              <Skeleton class="h-8 w-20 mb-2" />
+              <Skeleton class="h-3 w-24" />
+            </CardContent>
+          </Card>
+        </template>
+        <template v-else>
+          <!-- Total Revenue Card -->
+          <Card class="flex flex-col">
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign class="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent class="flex-1 flex flex-col justify-end">
+              <div class="text-2xl font-bold">${{ stats.totalRevenue.toLocaleString() }}</div>
+              <p class="text-xs text-muted-foreground">All time revenue</p>
+            </CardContent>
+          </Card>
 
-        <!-- Total Students Card -->
-        <Card class="flex flex-col">
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Total Students</CardTitle>
-            <Users class="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent class="flex-1 flex flex-col justify-end">
-            <div class="text-2xl font-bold">{{ stats.totalStudents }}</div>
-            <p class="text-xs text-muted-foreground">Registered students</p>
-          </CardContent>
-        </Card>
+          <!-- Total Students Card -->
+          <Card class="flex flex-col">
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Total Students</CardTitle>
+              <Users class="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent class="flex-1 flex flex-col justify-end">
+              <div class="text-2xl font-bold">{{ stats.totalStudents }}</div>
+              <p class="text-xs text-muted-foreground">Registered students</p>
+            </CardContent>
+          </Card>
 
-        <!-- Total Questions Created Card -->
-        <Card class="flex flex-col">
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Questions Created</CardTitle>
-            <FileQuestion class="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent class="flex-1 flex flex-col justify-end">
-            <div class="text-2xl font-bold">{{ stats.totalQuestionsCreated }}</div>
-            <p class="text-xs text-muted-foreground">Total questions</p>
-          </CardContent>
-        </Card>
+          <!-- Total Questions Created Card -->
+          <Card class="flex flex-col">
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Questions Created</CardTitle>
+              <FileQuestion class="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent class="flex-1 flex flex-col justify-end">
+              <div class="text-2xl font-bold">{{ stats.totalQuestionsCreated }}</div>
+              <p class="text-xs text-muted-foreground">Total questions</p>
+            </CardContent>
+          </Card>
 
-        <!-- Active Now Card -->
-        <Card class="flex flex-col">
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Active Now</CardTitle>
-            <Activity class="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent class="flex-1 flex flex-col justify-end">
-            <div class="text-2xl font-bold">{{ stats.activeNow }}</div>
-            <p class="text-xs text-muted-foreground">Users online</p>
-          </CardContent>
-        </Card>
+          <!-- Active Now Card -->
+          <Card class="flex flex-col">
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Active Now</CardTitle>
+              <Activity class="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent class="flex-1 flex flex-col justify-end">
+              <div class="text-2xl font-bold">{{ stats.activeNow }}</div>
+              <p class="text-xs text-muted-foreground">Users online</p>
+            </CardContent>
+          </Card>
+        </template>
       </div>
 
       <div class="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
@@ -66,6 +80,7 @@
 import { computed, ref } from 'vue'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { DollarSign, Users, FileQuestion, Activity } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 
@@ -76,6 +91,7 @@ const userName = computed(() => {
   return authStore.user?.user_metadata?.full_name?.split(' ')[0] || 'Admin'
 })
 
+const loading = ref(false)
 const stats = ref({
   totalRevenue: 0,
   totalStudents: 0,

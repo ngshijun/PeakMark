@@ -116,11 +116,11 @@
           <Button
             v-if="!showResult"
             class="w-full"
-            :disabled="selectedAnswer === null || submitting"
+            :disabled="selectedAnswer === null || isSubmitting"
             @click="handleSubmitAnswer"
           >
             <Send class="mr-2 h-4 w-4" />
-            {{ submitting ? 'Submitting...' : 'Submit Answer' }}
+            {{ isSubmitting ? 'Submitting...' : 'Submit Answer' }}
           </Button>
           <Button v-else class="w-full" @click="handleNextQuestion" :disabled="loading">
             {{ hasMoreQuestions ? 'Next Question' : 'Finish Session' }}
@@ -173,14 +173,27 @@
 
       <!-- Loading State -->
       <Card v-if="loading && !currentQuestion">
-        <CardContent class="pt-6 text-center space-y-4">
-          <div class="flex justify-center">
-            <div
-              class="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"
-            ></div>
+        <CardHeader>
+          <div class="flex items-start justify-between">
+            <Skeleton class="h-7 w-32" />
+            <Skeleton class="h-6 w-20 rounded-full" />
           </div>
-          <p class="text-muted-foreground">Loading questions...</p>
+        </CardHeader>
+        <CardContent class="space-y-6">
+          <div class="space-y-2">
+            <Skeleton class="h-5 w-full" />
+            <Skeleton class="h-5 w-3/4" />
+          </div>
+          <div class="space-y-3">
+            <Skeleton class="h-16 w-full rounded-lg" />
+            <Skeleton class="h-16 w-full rounded-lg" />
+            <Skeleton class="h-16 w-full rounded-lg" />
+            <Skeleton class="h-16 w-full rounded-lg" />
+          </div>
         </CardContent>
+        <CardFooter>
+          <Skeleton class="h-10 w-full" />
+        </CardFooter>
       </Card>
     </div>
   </MainLayout>
@@ -192,6 +205,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Skeleton } from '@/components/ui/skeleton'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { usePracticeStore } from '@/stores/practice'
 import { ArrowRight, CheckCircle, FileText, Send, Target, X, XCircle } from 'lucide-vue-next'
@@ -209,7 +223,7 @@ const breadcrumbs = [{ label: 'Practice', to: '/practice' }, { label: 'Questions
 const selectedAnswer = ref<number | null>(null)
 const showResult = ref(false)
 const isCorrect = ref(false)
-const submitting = ref(false)
+const isSubmitting = ref(false)
 const previousElo = ref(0)
 
 // Get reactive refs from store
@@ -224,7 +238,7 @@ const hasMoreQuestions = computed(() => {
 const handleSubmitAnswer = async () => {
   if (selectedAnswer.value === null) return
 
-  submitting.value = true
+  isSubmitting.value = true
   previousElo.value = studentElo.value
 
   try {
@@ -234,7 +248,7 @@ const handleSubmitAnswer = async () => {
   } catch (err) {
     console.error('Error submitting answer:', err)
   } finally {
-    submitting.value = false
+    isSubmitting.value = false
   }
 }
 

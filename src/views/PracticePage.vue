@@ -82,8 +82,14 @@
             <CardDescription>Continue from where you left off</CardDescription>
           </CardHeader>
           <CardContent>
-            <div v-if="loadingSessions" class="text-center py-8">
-              <p class="text-sm text-muted-foreground">Loading sessions...</p>
+            <div v-if="loadingSessions" class="space-y-4">
+              <div v-for="i in 3" :key="i" class="flex items-center gap-3 rounded-lg border p-4">
+                <Skeleton class="h-10 w-10 rounded-lg" />
+                <div class="flex-1 space-y-2">
+                  <Skeleton class="h-4 w-32" />
+                  <Skeleton class="h-3 w-48" />
+                </div>
+              </div>
             </div>
             <div v-else-if="recentPractice.length === 0" class="text-center py-8">
               <p class="text-sm text-muted-foreground">No active practice sessions</p>
@@ -133,6 +139,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/stores/auth'

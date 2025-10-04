@@ -255,7 +255,7 @@
             >
               <FormItem>
                 <FormLabel>Year</FormLabel>
-                <Select v-bind="componentField">
+                <Select v-bind="componentField" :disabled="isSubmitting">
                   <FormControl>
                     <SelectTrigger class="w-full">
                       <SelectValue placeholder="Select year" />
@@ -279,7 +279,7 @@
             >
               <FormItem>
                 <FormLabel>Subject</FormLabel>
-                <Select v-bind="componentField">
+                <Select v-bind="componentField" :disabled="isSubmitting">
                   <FormControl>
                     <SelectTrigger class="w-full">
                       <SelectValue placeholder="Select subject" />
@@ -303,7 +303,7 @@
             >
               <FormItem>
                 <FormLabel>Difficulty Level</FormLabel>
-                <Select v-bind="componentField">
+                <Select v-bind="componentField" :disabled="isSubmitting">
                   <FormControl>
                     <SelectTrigger class="w-full">
                       <SelectValue placeholder="Select difficulty" />
@@ -338,6 +338,7 @@
                   v-bind="componentField"
                   placeholder="Enter your question here..."
                   class="min-h-[100px] resize-none"
+                  :disabled="isSubmitting"
                 />
               </FormControl>
               <FormMessage />
@@ -356,6 +357,7 @@
                       variant="outline"
                       @click="() => imageInput?.click()"
                       class="w-full"
+                      :disabled="isSubmitting"
                     >
                       <Upload class="mr-2 h-4 w-4" />
                       {{ imageValue ? 'Change Image' : 'Upload Image' }}
@@ -366,6 +368,7 @@
                       accept="image/*"
                       class="hidden"
                       @change="handleImageUpload"
+                      :disabled="isSubmitting"
                     />
                     <Button
                       v-if="imageValue"
@@ -373,6 +376,7 @@
                       variant="ghost"
                       size="icon"
                       @click="removeImage"
+                      :disabled="isSubmitting"
                     >
                       <X class="h-4 w-4" />
                     </Button>
@@ -411,6 +415,7 @@
                       @change="setFieldValue('correctAnswer', String(index))"
                       :id="`option-${index}`"
                       class="h-4 w-4"
+                      :disabled="isSubmitting"
                     />
                     <Label :for="`option-${index}`" class="sr-only"
                       >Option {{ String.fromCharCode(65 + index) }}</Label
@@ -423,6 +428,7 @@
                       @update:model-value="(val) => updateOption(index, val)"
                       :placeholder="`Option ${String.fromCharCode(65 + index)}`"
                       class="flex-1"
+                      :disabled="isSubmitting"
                     />
                     <Button
                       v-if="(values.options || ['', '', '', '']).length > 2"
@@ -431,11 +437,19 @@
                       type="button"
                       @click="removeOption(index)"
                       class="h-8 w-8"
+                      :disabled="isSubmitting"
                     >
                       <X class="h-4 w-4" />
                     </Button>
                   </div>
-                  <Button variant="outline" size="sm" type="button" @click="addOption" class="mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    @click="addOption"
+                    class="mt-2"
+                    :disabled="isSubmitting"
+                  >
                     <Plus class="mr-2 h-4 w-4" />
                     Add Option
                   </Button>
@@ -463,6 +477,7 @@
                   v-bind="componentField"
                   placeholder="Provide an explanation for the correct answer..."
                   class="min-h-[100px] resize-none"
+                  :disabled="isSubmitting"
                 />
               </FormControl>
             </FormItem>
@@ -484,12 +499,18 @@
                 variant="outline"
                 @click="isCreateDialogOpen = false"
                 class="flex-1 sm:flex-none"
+                :disabled="isSubmitting"
               >
                 Cancel
               </Button>
-              <Button type="submit" @click="hasAttemptSubmit = true" class="flex-1 sm:flex-none"
-                >Create Question</Button
+              <Button
+                type="submit"
+                @click="hasAttemptSubmit = true"
+                class="flex-1 sm:flex-none"
+                :disabled="isSubmitting"
               >
+                {{ isSubmitting ? 'Creating...' : 'Create Question' }}
+              </Button>
             </div>
           </DialogFooter>
         </form>
@@ -840,6 +861,8 @@ const onSubmit = handleSubmit(async (formValues) => {
     toast.error('Failed to create question')
   }
 })
+
+const isSubmitting = computed(() => questionStore.loading)
 
 // Edit question function
 const editQuestion = (question: (typeof questionStore.questions)[0]) => {
