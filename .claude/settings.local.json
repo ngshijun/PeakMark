@@ -10,7 +10,8 @@
       "Bash(npm run type-check:*)",
       "Bash(npm install:*)",
       "Bash(xargs -r kill)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(npm run lint:*)"
     ],
     "deny": [],
     "ask": []

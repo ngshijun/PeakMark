@@ -45,13 +45,8 @@ export const roleNavigation: RoleNavigation = {
         },
         {
           title: 'Videos',
-          url: '/student/videos',
+          url: '/videos',
           icon: Video,
-        },
-        {
-          title: 'My Courses',
-          url: '/courses',
-          icon: BookOpen,
         },
         {
           title: 'Assignments',
@@ -97,7 +92,7 @@ export const roleNavigation: RoleNavigation = {
         },
         {
           title: 'Videos',
-          url: '/teacher/videos',
+          url: '/videos',
           icon: Video,
         },
         {

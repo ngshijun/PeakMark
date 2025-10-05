@@ -55,7 +55,10 @@
         </CardHeader>
         <CardContent class="space-y-6">
           <!-- Question Image (if exists) -->
-          <div v-if="currentQuestion.image" class="rounded-lg border overflow-hidden flex justify-center">
+          <div
+            v-if="currentQuestion.image"
+            class="rounded-lg border overflow-hidden flex justify-center"
+          >
             <img :src="currentQuestion.image" :alt="'Question image'" class="max-w-full h-auto" />
           </div>
 

@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/stores/auth'
+import { useClassroomSelectionStore } from '@/stores/classroomSelection'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -26,46 +27,64 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/views/DashboardWrapper.vue'),
-      meta: { requiresAuth: true, role: ['admin', 'teacher', 'student'] },
+      meta: { requiresAuth: true, role: ['admin', 'teacher', 'student'], requiresClassroom: true },
     },
     {
       path: '/questions',
       name: 'questions',
       component: () => import('@/views/QuestionsPage.vue'),
-      meta: { requiresAuth: true, role: ['teacher'] },
+      meta: { requiresAuth: true, role: ['teacher'], requiresClassroom: true },
     },
     {
       path: '/practice',
       name: 'practice',
       component: () => import('@/views/PracticePage.vue'),
-      meta: { requiresAuth: true, role: ['student'] },
+      meta: { requiresAuth: true, role: ['student'], requiresClassroom: true },
     },
     {
       path: '/practice/questions',
       name: 'practice-questions',
       component: () => import('@/views/PracticeQuestionsPage.vue'),
-      meta: { requiresAuth: true, role: ['student'] },
+      meta: { requiresAuth: true, role: ['student'], requiresClassroom: true },
+    },
+    {
+      path: '/videos',
+      name: 'videos',
+      component: () => import('@/views/VideosWrapper.vue'),
+      meta: { requiresAuth: true, role: ['teacher', 'student'], requiresClassroom: true },
     },
     {
       path: '/teacher/videos',
-      name: 'teacher-videos',
-      component: () => import('@/views/TeacherVideosPage.vue'),
-      meta: { requiresAuth: true, role: ['teacher'] },
+      redirect: '/videos',
     },
     {
       path: '/student/videos',
-      name: 'student-videos',
-      component: () => import('@/views/StudentVideosPage.vue'),
-      meta: { requiresAuth: true, role: ['student'] },
+      redirect: '/videos',
+    },
+    {
+      path: '/classrooms',
+      name: 'classrooms',
+      component: () => import('@/views/ClassroomsWrapper.vue'),
+      meta: { requiresAuth: true, role: ['teacher', 'student'] },
+    },
+    {
+      path: '/teacher/classrooms',
+      redirect: '/classrooms',
+    },
+    {
+      path: '/student/classrooms',
+      redirect: '/classrooms',
     },
   ],
 })
 
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
+  const classroomSelectionStore = useClassroomSelectionStore()
   const { user, loading } = authStore
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
   const requiredRoles = to.meta.role as string[] | undefined
+  const requiresClassroom = to.meta.requiresClassroom as boolean | undefined
 
   // Wait for auth to initialize
   if (loading) {
@@ -101,23 +120,27 @@ router.beforeEach((to, from, next) => {
       return
     }
 
-    if (requiredRoles.includes(user.user_metadata.role)) {
-      // User has required role - allow access
-      next()
-    } else {
-      // User doesn't have required role - redirect based on their role
-      if (to.name === 'dashboard') {
-        // Already on dashboard, allow access
-        next()
+    if (!requiredRoles.includes(user.user_metadata.role)) {
+      // User doesn't have required role - redirect to classrooms or dashboard
+      const role = user.user_metadata.role
+      if (role === 'student' || role === 'teacher') {
+        next({ name: 'classrooms' })
       } else {
-        // Redirect to dashboard
         next({ name: 'dashboard' })
       }
+      return
     }
-  } else {
-    // No specific role required - just needs to be authenticated
-    next()
   }
+
+  // Check classroom selection for routes that require it
+  if (requiresClassroom && !classroomSelectionStore.selectedClassroom) {
+    // Redirect to classroom selection page
+    next({ name: 'classrooms' })
+    return
+  }
+
+  // All checks passed - allow access
+  next()
 })
 
 export default router

@@ -649,6 +649,8 @@ import { Textarea } from '@/components/ui/textarea'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useQuestionStore } from '@/stores/questions'
 import { useAuthStore } from '@/stores/auth'
+import { useClassroomStore } from '@/stores/classrooms'
+import { useClassroomSelectionStore } from '@/stores/classroomSelection'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Eye, Pencil, Plus, Search, Trash2, Upload, X } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
@@ -661,6 +663,8 @@ const breadcrumbs = [{ label: 'Questions' }]
 
 const questionStore = useQuestionStore()
 const authStore = useAuthStore()
+const classroomStore = useClassroomStore()
+const classroomSelectionStore = useClassroomSelectionStore()
 
 // Search and Filter State
 const searchQuery = ref('')
@@ -792,7 +796,13 @@ const openPreview = () => {
 
 // Computed property for filtered questions
 const filteredQuestions = computed(() => {
+  const selectedClassroomId = classroomSelectionStore.selectedClassroom?.id
+  if (!selectedClassroomId) return []
+
   let filtered = questionStore.questions
+
+  // Filter by selected classroom
+  filtered = filtered.filter((q) => q.classroom_id === selectedClassroomId)
 
   // Filter by search query
   if (searchQuery.value) {
@@ -837,17 +847,27 @@ watch([searchQuery, selectedYear, selectedSubject, selectedDifficulty], () => {
 
 // Fetch questions on mount
 onMounted(async () => {
-  await questionStore.fetchQuestions()
+  await Promise.all([
+    questionStore.fetchQuestions(),
+    classroomStore.fetchTeacherClassrooms(authStore.user!.id),
+  ])
 })
 
 const onSubmit = handleSubmit(async (formValues) => {
   try {
+    const selectedClassroomId = classroomSelectionStore.selectedClassroom?.id
+    if (!selectedClassroomId) {
+      toast.error('No classroom selected')
+      return
+    }
+
     const { correctAnswer, difficulty, ...rest } = formValues
     await questionStore.createQuestion({
       ...rest,
       correct_answer: parseInt(correctAnswer),
       difficulty: parseInt(difficulty),
-      created_by: authStore.user?.id,
+      classroom_id: selectedClassroomId,
+      created_by: authStore.user!.id,
     })
 
     // Show success toast first

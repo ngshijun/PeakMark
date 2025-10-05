@@ -9,43 +9,10 @@
 
       <!-- Filters and Actions -->
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div class="flex flex-1 flex-col gap-4 sm:flex-row sm:items-center">
-          <!-- Search Input -->
-          <div class="relative flex-1 sm:max-w-md">
-            <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              v-model="searchQuery"
-              type="search"
-              placeholder="Search videos..."
-              class="pl-8"
-            />
-          </div>
-
-          <!-- Year Filter -->
-          <Select v-model="selectedYear">
-            <SelectTrigger class="w-full sm:w-[180px]">
-              <SelectValue placeholder="All Years" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Years</SelectItem>
-              <SelectItem v-for="year in YEARS" :key="year" :value="year">
-                {{ year }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-          <!-- Subject Filter -->
-          <Select v-model="selectedSubject">
-            <SelectTrigger class="w-full sm:w-[180px]">
-              <SelectValue placeholder="All Subjects" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Subjects</SelectItem>
-              <SelectItem v-for="subject in SUBJECTS" :key="subject" :value="subject">
-                {{ subject }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
+        <!-- Search Input -->
+        <div class="relative flex-1 sm:max-w-md">
+          <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input v-model="searchQuery" type="search" placeholder="Search videos..." class="pl-8" />
         </div>
 
         <!-- Upload Video Button -->
@@ -78,11 +45,7 @@
             <div class="space-y-2">
               <Video class="mx-auto h-12 w-12 text-muted-foreground" />
               <p class="text-muted-foreground">
-                {{
-                  searchQuery || selectedYear !== 'all' || selectedSubject !== 'all'
-                    ? 'No videos found'
-                    : 'No videos yet. Upload your first video!'
-                }}
+                {{ searchQuery ? 'No videos found' : 'No videos yet. Upload your first video!' }}
               </p>
             </div>
           </div>
@@ -118,11 +81,6 @@
                     <p class="text-sm text-muted-foreground line-clamp-2">
                       {{ video.description || 'No description' }}
                     </p>
-                  </div>
-
-                  <div class="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Badge variant="outline">{{ video.subject }}</Badge>
-                    <Badge variant="outline">{{ video.year }}</Badge>
                   </div>
                 </div>
 
@@ -275,56 +233,6 @@
             </FormItem>
           </FormField>
 
-          <div class="grid grid-cols-2 gap-4">
-            <FormField
-              v-slot="{ componentField }"
-              name="year"
-              :validateOnBlur="hasAttemptSubmit"
-              :validateOnModelUpdate="hasAttemptSubmit"
-            >
-              <FormItem>
-                <FormLabel>Year <span class="text-destructive">*</span></FormLabel>
-                <Select v-bind="componentField" :disabled="isSubmitting">
-                  <FormControl>
-                    <SelectTrigger class="w-full">
-                      <SelectValue placeholder="Select year" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem v-for="year in YEARS" :key="year" :value="year">
-                      {{ year }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-
-            <FormField
-              v-slot="{ componentField }"
-              name="subject"
-              :validateOnBlur="hasAttemptSubmit"
-              :validateOnModelUpdate="hasAttemptSubmit"
-            >
-              <FormItem>
-                <FormLabel>Subject <span class="text-destructive">*</span></FormLabel>
-                <Select v-bind="componentField" :disabled="isSubmitting">
-                  <FormControl>
-                    <SelectTrigger class="w-full">
-                      <SelectValue placeholder="Select subject" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem v-for="subject in SUBJECTS" :key="subject" :value="subject">
-                      {{ subject }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-          </div>
-
           <DialogFooter>
             <Button
               type="button"
@@ -400,7 +308,6 @@
 </template>
 
 <script setup lang="ts">
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -438,8 +345,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useClassroomStore } from '@/stores/classrooms'
+import { useClassroomSelectionStore } from '@/stores/classroomSelection'
 import { useVideoStore } from '@/stores/videos'
-import { SUBJECTS, YEARS } from '@/types/constants'
 import type { Tables } from '@/types/database.types'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Pencil, Play, Plus, Search, Trash2, Video } from 'lucide-vue-next'
@@ -448,14 +356,14 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import * as z from 'zod'
 
-const breadcrumbs = [{ label: 'Videos', href: '/teacher/videos' }]
+const breadcrumbs = [{ label: 'Videos', href: '/videos' }]
 
 const videoStore = useVideoStore()
+const classroomStore = useClassroomStore()
+const classroomSelectionStore = useClassroomSelectionStore()
 const authStore = useAuthStore()
 
 const searchQuery = ref('')
-const selectedYear = ref('all')
-const selectedSubject = ref('all')
 
 // Pagination State
 const currentPage = ref(1)
@@ -495,8 +403,6 @@ const formSchema = toTypedSchema(
       }, 'Please enter a valid YouTube URL'),
     title: z.string().min(1, 'Title is required'),
     description: z.string().optional(),
-    subject: z.string().min(1, 'Please select a subject'),
-    year: z.string().min(1, 'Please select a year'),
   }),
 )
 
@@ -507,8 +413,6 @@ const { handleSubmit, resetForm } = useForm({
     youtubeUrl: '',
     title: '',
     description: '',
-    subject: '',
-    year: '',
   },
 })
 
@@ -522,20 +426,19 @@ watch(isUploadDialogOpen, (newVal) => {
         youtubeUrl: '',
         title: '',
         description: '',
-        subject: '',
-        year: '',
       },
     })
   }
 })
 
 const filteredVideos = computed(() => {
+  const selectedClassroomId = classroomSelectionStore.selectedClassroom?.id
+  if (!selectedClassroomId) return []
+
   return videoStore.videos.filter((video) => {
     const matchesSearch = video.title.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchesYear = selectedYear.value === 'all' || video.year === selectedYear.value
-    const matchesSubject =
-      selectedSubject.value === 'all' || video.subject === selectedSubject.value
-    return matchesSearch && matchesYear && matchesSubject
+    const matchesClassroom = video.classroom_id === selectedClassroomId
+    return matchesSearch && matchesClassroom
   })
 })
 
@@ -552,7 +455,7 @@ const paginatedVideos = computed(() => {
 })
 
 // Reset to first page when filters change
-watch([searchQuery, selectedYear, selectedSubject], () => {
+watch(searchQuery, () => {
   currentPage.value = 1
 })
 
@@ -573,6 +476,12 @@ const extractYouTubeVideoId = (url: string): string | null => {
 
 const onSubmit = handleSubmit(async (formValues) => {
   try {
+    const selectedClassroomId = classroomSelectionStore.selectedClassroom?.id
+    if (!selectedClassroomId) {
+      toast.error('No classroom selected')
+      return
+    }
+
     const videoId = extractYouTubeVideoId(formValues.youtubeUrl)
     if (!videoId) {
       toast.error('Invalid YouTube URL')
@@ -584,8 +493,7 @@ const onSubmit = handleSubmit(async (formValues) => {
       description: formValues.description || null,
       youtube_url: formValues.youtubeUrl,
       youtube_video_id: videoId,
-      subject: formValues.subject,
-      year: formValues.year,
+      classroom_id: selectedClassroomId,
       uploaded_by: authStore.user!.id,
     }
 
@@ -613,8 +521,6 @@ const editVideo = (video: Tables<'videos'>) => {
       youtubeUrl: video.youtube_url,
       title: video.title,
       description: video.description || '',
-      subject: video.subject,
-      year: video.year,
     },
   })
   isUploadDialogOpen.value = true
@@ -655,9 +561,12 @@ const openVideo = (video: Tables<'videos'>) => {
 
 onMounted(async () => {
   try {
-    await videoStore.fetchVideos()
+    await Promise.all([
+      videoStore.fetchVideos(),
+      classroomStore.fetchTeacherClassrooms(authStore.user!.id),
+    ])
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to load videos'
+    const errorMessage = error instanceof Error ? error.message : 'Failed to load data'
     toast.error(errorMessage)
   }
 })

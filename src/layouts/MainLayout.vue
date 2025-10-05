@@ -24,7 +24,19 @@
             </BreadcrumbList>
           </Breadcrumb>
         </div>
-        <div class="px-4">
+        <div class="px-4 flex items-center gap-3">
+          <div v-if="classroomSelectionStore.selectedClassroom" class="flex items-center gap-2">
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-md border bg-muted/50">
+              <School class="h-4 w-4 text-muted-foreground" />
+              <span class="text-sm font-medium">{{
+                classroomSelectionStore.selectedClassroom.name
+              }}</span>
+            </div>
+            <Button variant="ghost" size="sm" @click="switchClassroom" title="Switch classroom">
+              <ArrowLeftRight class="h-4 w-4" />
+            </Button>
+          </div>
+          <Separator orientation="vertical" class="h-4" />
           <ThemeToggle />
         </div>
       </header>
@@ -46,8 +58,12 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
+import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import { useClassroomSelectionStore } from '@/stores/classroomSelection'
+import { ArrowLeftRight, School } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 
 interface Breadcrumb {
   label: string
@@ -60,4 +76,11 @@ interface Props {
 }
 
 defineProps<Props>()
+
+const classroomSelectionStore = useClassroomSelectionStore()
+const router = useRouter()
+
+const switchClassroom = () => {
+  router.push({ name: 'classrooms' })
+}
 </script>

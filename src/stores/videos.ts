@@ -33,6 +33,49 @@ export const useVideoStore = defineStore('video', () => {
     return data
   }
 
+  // Fetch videos for student (from enrolled classrooms)
+  const fetchStudentVideos = async (studentId: string) => {
+    loading.value = true
+    error.value = null
+
+    // First get enrolled classroom IDs
+    const { data: memberships, error: memberError } = await supabase
+      .from('classroom_members')
+      .select('classroom_id')
+      .eq('student_id', studentId)
+
+    if (memberError) {
+      loading.value = false
+      error.value = memberError.message
+      throw memberError
+    }
+
+    const classroomIds = memberships?.map((m) => m.classroom_id) || []
+
+    if (classroomIds.length === 0) {
+      loading.value = false
+      videos.value = []
+      return []
+    }
+
+    // Fetch videos from those classrooms
+    const { data, error: fetchError } = await supabase
+      .from('videos')
+      .select('*')
+      .in('classroom_id', classroomIds)
+      .order('created_at', { ascending: false })
+
+    loading.value = false
+
+    if (fetchError) {
+      error.value = fetchError.message
+      throw fetchError
+    }
+
+    videos.value = data || []
+    return data
+  }
+
   // Fetch videos by subject and year
   const fetchVideosBySubjectYear = async (subject: string, year: string) => {
     loading.value = true
@@ -160,6 +203,7 @@ export const useVideoStore = defineStore('video', () => {
 
     // Actions
     fetchVideos,
+    fetchStudentVideos,
     fetchVideosBySubjectYear,
     fetchVideoById,
     createVideo,
