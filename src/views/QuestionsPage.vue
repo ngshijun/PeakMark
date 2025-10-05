@@ -796,7 +796,7 @@ const openPreview = () => {
 
 // Computed property for filtered questions
 const filteredQuestions = computed(() => {
-  const selectedClassroomId = classroomSelectionStore.selectedClassroom?.id
+  const selectedClassroomId = classroomSelectionStore.selectedClassroomId
   if (!selectedClassroomId) return []
 
   let filtered = questionStore.questions
@@ -855,7 +855,7 @@ onMounted(async () => {
 
 const onSubmit = handleSubmit(async (formValues) => {
   try {
-    const selectedClassroomId = classroomSelectionStore.selectedClassroom?.id
+    const selectedClassroomId = classroomSelectionStore.selectedClassroomId
     if (!selectedClassroomId) {
       toast.error('No classroom selected')
       return

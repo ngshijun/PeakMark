@@ -4,7 +4,7 @@
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton size="lg" as-child>
-            <a href="/dashboard">
+            <router-link :to="dashboardUrl">
               <div
                 class="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"
               >
@@ -14,7 +14,7 @@
                 <span class="truncate font-semibold">PeakMark</span>
                 <span class="truncate text-xs capitalize">{{ userRole }}</span>
               </div>
-            </a>
+            </router-link>
           </SidebarMenuButton>
         </SidebarMenuItem>
         <SidebarMenuItem v-if="userRole === 'student'">
@@ -107,6 +107,7 @@ import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useProfileStore } from '@/stores/profile'
+import { useClassroomSelectionStore } from '@/stores/classroomSelection'
 import { useLevel } from '@/composables/useLevel'
 import { roleNavigation } from '@/config/navigation'
 import {
@@ -135,6 +136,7 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
+const classroomSelectionStore = useClassroomSelectionStore()
 const { currentLevel, expToNextLevel, expProgress, expInCurrentLevel } = useLevel()
 
 const userRole = computed(() => {
@@ -160,9 +162,38 @@ const roleIcon = computed(() => {
   }
 })
 
+const dashboardUrl = computed(() => {
+  const classroomId = classroomSelectionStore.selectedClassroomId
+  return classroomId ? `/classroom/${classroomId}/dashboard` : '/classrooms'
+})
+
 const navigation = computed(() => {
   const role = userRole.value as 'student' | 'teacher' | 'admin'
-  return roleNavigation[role] || roleNavigation.student
+  const baseNav = roleNavigation[role] || roleNavigation.student
+  const classroomId = classroomSelectionStore.selectedClassroomId
+
+  // If no classroom is selected, return navigation that points to /classrooms
+  if (!classroomId) {
+    return baseNav.map((group) => ({
+      ...group,
+      items: group.items.map((item) => ({
+        ...item,
+        url: item.url === '/settings' ? item.url : '/classrooms',
+      })),
+    }))
+  }
+
+  // Replace URLs with classroom-scoped versions
+  return baseNav.map((group) => ({
+    ...group,
+    items: group.items.map((item) => ({
+      ...item,
+      url:
+        item.url === '/settings'
+          ? item.url
+          : item.url.replace(/^\//, `/classroom/${classroomId}/`),
+    })),
+  }))
 })
 
 const isActive = (url: string) => {

@@ -1,5 +1,5 @@
 import { useAuthStore } from '@/stores/auth'
-import { useClassroomSelectionStore } from '@/stores/classroomSelection'
+import { useClassroomStore } from '@/stores/classrooms'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -24,42 +24,34 @@ const router = createRouter({
       meta: { requiresAuth: false },
     },
     {
-      path: '/dashboard',
+      path: '/classroom/:classroomId/dashboard',
       name: 'dashboard',
       component: () => import('@/views/DashboardWrapper.vue'),
-      meta: { requiresAuth: true, role: ['admin', 'teacher', 'student'], requiresClassroom: true },
+      meta: { requiresAuth: true, role: ['admin', 'teacher', 'student'] },
     },
     {
-      path: '/questions',
+      path: '/classroom/:classroomId/questions',
       name: 'questions',
       component: () => import('@/views/QuestionsPage.vue'),
-      meta: { requiresAuth: true, role: ['teacher'], requiresClassroom: true },
+      meta: { requiresAuth: true, role: ['teacher'] },
     },
     {
-      path: '/practice',
+      path: '/classroom/:classroomId/practice',
       name: 'practice',
       component: () => import('@/views/PracticePage.vue'),
-      meta: { requiresAuth: true, role: ['student'], requiresClassroom: true },
+      meta: { requiresAuth: true, role: ['student'] },
     },
     {
-      path: '/practice/questions',
+      path: '/classroom/:classroomId/practice/questions',
       name: 'practice-questions',
       component: () => import('@/views/PracticeQuestionsPage.vue'),
-      meta: { requiresAuth: true, role: ['student'], requiresClassroom: true },
+      meta: { requiresAuth: true, role: ['student'] },
     },
     {
-      path: '/videos',
+      path: '/classroom/:classroomId/videos',
       name: 'videos',
       component: () => import('@/views/VideosWrapper.vue'),
-      meta: { requiresAuth: true, role: ['teacher', 'student'], requiresClassroom: true },
-    },
-    {
-      path: '/teacher/videos',
-      redirect: '/videos',
-    },
-    {
-      path: '/student/videos',
-      redirect: '/videos',
+      meta: { requiresAuth: true, role: ['teacher', 'student'] },
     },
     {
       path: '/classrooms',
@@ -78,18 +70,25 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
-  const classroomSelectionStore = useClassroomSelectionStore()
+  const classroomStore = useClassroomStore()
   const { user, loading } = authStore
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
   const requiredRoles = to.meta.role as string[] | undefined
-  const requiresClassroom = to.meta.requiresClassroom as boolean | undefined
+  const classroomId = to.params.classroomId as string | undefined
 
-  // Wait for auth to initialize
+  // Wait for auth to initialize - don't proceed if still loading
   if (loading) {
-    next()
-    return
+    // Wait for auth to finish initializing
+    const unsubscribe = authStore.$subscribe((mutation, state) => {
+      if (!state.loading) {
+        unsubscribe()
+        // Retry navigation after auth loads
+        router.push(to.fullPath)
+      }
+    })
+    return next(false) // Cancel this navigation
   }
 
   // Public routes - allow access
@@ -121,22 +120,36 @@ router.beforeEach((to, from, next) => {
     }
 
     if (!requiredRoles.includes(user.user_metadata.role)) {
-      // User doesn't have required role - redirect to classrooms or dashboard
-      const role = user.user_metadata.role
-      if (role === 'student' || role === 'teacher') {
-        next({ name: 'classrooms' })
-      } else {
-        next({ name: 'dashboard' })
-      }
+      // User doesn't have required role - redirect to classrooms
+      next({ name: 'classrooms' })
       return
     }
   }
 
-  // Check classroom selection for routes that require it
-  if (requiresClassroom && !classroomSelectionStore.selectedClassroom) {
-    // Redirect to classroom selection page
-    next({ name: 'classrooms' })
-    return
+  // Check classroom access for routes with classroomId parameter
+  if (classroomId && user.user_metadata.role) {
+    console.log('🔒 Checking classroom access:', {
+      userId: user.id,
+      classroomId,
+      role: user.user_metadata.role,
+    })
+
+    const hasAccess = await classroomStore.hasAccessToClassroom(
+      user.id,
+      classroomId,
+      user.user_metadata.role,
+    )
+
+    console.log('🔒 Access result:', hasAccess)
+
+    if (!hasAccess) {
+      console.log('❌ Access denied - redirecting to classrooms')
+      // User doesn't have access to this classroom - redirect to classrooms
+      next({ name: 'classrooms' })
+      return
+    }
+
+    console.log('✅ Access granted')
   }
 
   // All checks passed - allow access

@@ -25,12 +25,10 @@
           </Breadcrumb>
         </div>
         <div class="px-4 flex items-center gap-3">
-          <div v-if="classroomSelectionStore.selectedClassroom" class="flex items-center gap-2">
+          <div v-if="currentClassroom" class="flex items-center gap-2">
             <div class="flex items-center gap-2 px-3 py-1.5 rounded-md border bg-muted/50">
               <School class="h-4 w-4 text-muted-foreground" />
-              <span class="text-sm font-medium">{{
-                classroomSelectionStore.selectedClassroom.name
-              }}</span>
+              <span class="text-sm font-medium">{{ currentClassroom.name }}</span>
             </div>
             <Button variant="ghost" size="sm" @click="switchClassroom" title="Switch classroom">
               <ArrowLeftRight class="h-4 w-4" />
@@ -62,7 +60,9 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { useClassroomSelectionStore } from '@/stores/classroomSelection'
+import { useClassroomStore } from '@/stores/classrooms'
 import { ArrowLeftRight, School } from 'lucide-vue-next'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 interface Breadcrumb {
@@ -78,7 +78,17 @@ interface Props {
 defineProps<Props>()
 
 const classroomSelectionStore = useClassroomSelectionStore()
+const classroomStore = useClassroomStore()
 const router = useRouter()
+
+const currentClassroom = computed(() => {
+  const classroomId = classroomSelectionStore.selectedClassroomId
+  if (!classroomId) return null
+  return (
+    classroomStore.classrooms.find((c) => c.id === classroomId) ||
+    classroomStore.enrolledClassrooms.find((c) => c.id === classroomId)
+  )
+})
 
 const switchClassroom = () => {
   router.push({ name: 'classrooms' })

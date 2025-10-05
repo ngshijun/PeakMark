@@ -216,7 +216,7 @@ const isWatchDialogOpen = ref(false)
 const watchingVideo = ref<Tables<'videos'> | null>(null)
 
 const filteredVideos = computed(() => {
-  const selectedClassroomId = classroomSelectionStore.selectedClassroom?.id
+  const selectedClassroomId = classroomSelectionStore.selectedClassroomId
   if (!selectedClassroomId) return []
 
   return videoStore.videos.filter((video) => {

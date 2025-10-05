@@ -432,7 +432,7 @@ watch(isUploadDialogOpen, (newVal) => {
 })
 
 const filteredVideos = computed(() => {
-  const selectedClassroomId = classroomSelectionStore.selectedClassroom?.id
+  const selectedClassroomId = classroomSelectionStore.selectedClassroomId
   if (!selectedClassroomId) return []
 
   return videoStore.videos.filter((video) => {
@@ -476,7 +476,7 @@ const extractYouTubeVideoId = (url: string): string | null => {
 
 const onSubmit = handleSubmit(async (formValues) => {
   try {
-    const selectedClassroomId = classroomSelectionStore.selectedClassroom?.id
+    const selectedClassroomId = classroomSelectionStore.selectedClassroomId
     if (!selectedClassroomId) {
       toast.error('No classroom selected')
       return
