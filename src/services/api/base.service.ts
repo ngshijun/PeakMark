@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabaseClient'
+import { AppError, handleSupabaseError } from '@/utils/errors'
 import type { PostgrestError, PostgrestSingleResponse } from '@supabase/supabase-js'
 
 /**
@@ -65,11 +66,7 @@ export class BaseService {
    * @throws AppError with appropriate message and code
    */
   protected handleError(error: PostgrestError): never {
-    throw new AppError(
-      error.message || 'An error occurred',
-      error.code || 'UNKNOWN_ERROR',
-      parseInt(error.code) || 500,
-    )
+    return handleSupabaseError(error)
   }
 
   /**
@@ -77,25 +74,5 @@ export class BaseService {
    */
   protected get client() {
     return supabase
-  }
-}
-
-/**
- * Custom application error class
- * Extends Error with additional properties for error handling
- */
-export class AppError extends Error {
-  constructor(
-    message: string,
-    public code?: string,
-    public statusCode?: number,
-  ) {
-    super(message)
-    this.name = 'AppError'
-
-    // Maintains proper stack trace for where our error was thrown (only available on V8)
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, AppError)
-    }
   }
 }

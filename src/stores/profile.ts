@@ -1,6 +1,6 @@
 import { profileService } from '@/services/api/profile.service'
-import type { StudentStats } from '@/services/api/profile.service'
 import type { Tables } from '@/types/database.types'
+import type { StudentStats } from '@/utils/stats'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { useAuthStore } from './auth'

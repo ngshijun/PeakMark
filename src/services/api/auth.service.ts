@@ -1,5 +1,6 @@
 import type { Session, User, AuthChangeEvent, Subscription } from '@supabase/supabase-js'
-import { BaseService, AppError } from './base.service'
+import { AppError, handleAuthError } from '@/utils/errors'
+import { BaseService } from './base.service'
 
 /**
  * Authentication service
@@ -40,7 +41,7 @@ export class AuthService extends BaseService {
     })
 
     if (error) {
-      throw error
+      handleAuthError(error)
     }
   }
 
@@ -54,11 +55,11 @@ export class AuthService extends BaseService {
     })
 
     if (error) {
-      throw error
+      handleAuthError(error)
     }
 
     if (!data.user) {
-      throw new Error('No user returned from sign in')
+      throw new AppError('No user returned from sign in', 'AUTH_ERROR', 401)
     }
 
     return data.user
@@ -71,7 +72,7 @@ export class AuthService extends BaseService {
     const { error } = await this.client.auth.signOut()
 
     if (error) {
-      throw error
+      handleAuthError(error)
     }
   }
 

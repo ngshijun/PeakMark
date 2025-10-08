@@ -1,15 +1,12 @@
 import type { Tables } from '@/types/database.types'
+import { calculateStudentStats } from '@/utils/stats'
+import type { StudentStats } from '@/utils/stats'
 import { BaseService } from './base.service'
 
 type UserRow = Tables<'users'>
 type QuestionAttempt = Tables<'question_attempts'>
 
-export interface StudentStats {
-  questionsAnswered: number
-  accuracyRate: number
-  studyStreak: number
-  setsCompleted: number
-}
+export type { StudentStats }
 
 /**
  * User profile service
@@ -74,61 +71,7 @@ export class ProfileService extends BaseService {
    */
   async getStudentStatistics(userId: string): Promise<StudentStats> {
     const attempts = await this.getQuestionAttempts(userId)
-
-    if (!attempts || attempts.length === 0) {
-      return {
-        questionsAnswered: 0,
-        accuracyRate: 0,
-        studyStreak: 0,
-        setsCompleted: 0,
-      }
-    }
-
-    // Calculate questions answered
-    const questionsAnswered = attempts.length
-
-    // Calculate accuracy rate
-    const correctAnswers = attempts.filter((a) => a.is_correct).length
-    const accuracyRate = Math.round((correctAnswers / questionsAnswered) * 100)
-
-    // Calculate study streak (consecutive days with activity)
-    const uniqueDates: string[] = [
-      ...new Set(attempts.map((a) => new Date(a.created_at).toDateString())),
-    ].sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
-
-    let studyStreak = 0
-    const today = new Date().toDateString()
-    const yesterday = new Date(Date.now() - 86400000).toDateString()
-
-    if (uniqueDates.length > 0) {
-      // Only count streak if activity is today or yesterday
-      if (uniqueDates[0] === today || uniqueDates[0] === yesterday) {
-        studyStreak = 1
-        for (let i = 1; i < uniqueDates.length; i++) {
-          const currentDateStr = uniqueDates[i - 1]
-          const prevDateStr = uniqueDates[i]
-          if (!currentDateStr || !prevDateStr) continue
-
-          const currentDate = new Date(currentDateStr)
-          const prevDate = new Date(prevDateStr)
-          const diffTime = currentDate.getTime() - prevDate.getTime()
-          const diffDays = Math.round(diffTime / 86400000)
-
-          if (diffDays === 1) {
-            studyStreak++
-          } else {
-            break
-          }
-        }
-      }
-    }
-
-    return {
-      questionsAnswered,
-      accuracyRate,
-      studyStreak,
-      setsCompleted: 0, // TODO: Implement when practice sets are added
-    }
+    return calculateStudentStats(attempts)
   }
 }
 
