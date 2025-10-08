@@ -234,12 +234,6 @@ export const useClassroomStore = defineStore('classroom', () => {
     }
   }
 
-  // Check if user has access to a classroom
-  // TODO: Move to permissions service in Phase 2
-  const hasAccessToClassroom = async (userId: string, classroomId: string, role: string) => {
-    return classroomService.hasAccessToClassroom(userId, classroomId, role)
-  }
-
   // Clear error
   const clearError = () => {
     error.value = null
@@ -280,7 +274,6 @@ export const useClassroomStore = defineStore('classroom', () => {
     fetchClassroomSettings,
     fetchStudentExp,
     updateStudentExp,
-    hasAccessToClassroom,
     selectClassroom,
     clearSelection,
     clearError,

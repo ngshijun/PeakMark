@@ -243,48 +243,6 @@ export class ClassroomService extends BaseService {
     return !!data
   }
 
-  /**
-   * Check if a user has access to a classroom
-   * TODO: Move to permissions service in Phase 2
-   */
-  async hasAccessToClassroom(
-    userId: string,
-    classroomId: string,
-    role: string,
-  ): Promise<boolean> {
-    try {
-      // Teachers: check if they own the classroom
-      if (role === 'teacher') {
-        const { data } = await this.client
-          .from('classrooms')
-          .select('id')
-          .eq('id', classroomId)
-          .eq('teacher_id', userId)
-          .maybeSingle()
-        return !!data
-      }
-
-      // Students: check if they are a member
-      if (role === 'student') {
-        const { data } = await this.client
-          .from('classroom_members')
-          .select('id')
-          .eq('classroom_id', classroomId)
-          .eq('student_id', userId)
-          .maybeSingle()
-        return !!data
-      }
-
-      // Admins have access to all classrooms
-      if (role === 'admin') {
-        return true
-      }
-
-      return false
-    } catch {
-      return false
-    }
-  }
 }
 
 // Export a singleton instance

@@ -1,5 +1,5 @@
 import { useAuthStore } from '@/stores/auth'
-import { useClassroomStore } from '@/stores/classrooms'
+import { permissionsService } from '@/services/permissions.service'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -70,7 +70,6 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
-  const classroomStore = useClassroomStore()
   const { user, loading } = authStore
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
   const requiredRoles = to.meta.role as string[] | undefined
@@ -126,7 +125,7 @@ router.beforeEach(async (to, from, next) => {
 
   // Check classroom access for routes with classroomId parameter
   if (classroomId && user.user_metadata.role) {
-    const hasAccess = await classroomStore.hasAccessToClassroom(
+    const hasAccess = await permissionsService.canAccessClassroom(
       user.id,
       classroomId,
       user.user_metadata.role,
