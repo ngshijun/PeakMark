@@ -11,7 +11,8 @@
       "Bash(npm install:*)",
       "Bash(xargs -r kill)",
       "Bash(tree:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []

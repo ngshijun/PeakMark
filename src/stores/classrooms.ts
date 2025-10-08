@@ -1,4 +1,6 @@
-import { supabase } from '@/lib/supabaseClient'
+import { classroomService } from '@/services/api/classroom.service'
+import { expService } from '@/services/api/exp.service'
+import type { ClassroomWithMemberCount } from '@/services/api/classroom.service'
 import type { Tables, TablesInsert, TablesUpdate } from '@/types/database.types'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
@@ -9,10 +11,7 @@ type ClassroomInsert = TablesInsert<'classrooms'>
 type ClassroomUpdate = TablesUpdate<'classrooms'>
 type ExpRow = Tables<'student_exp'>
 
-export interface ClassroomWithMemberCount extends Classroom {
-  member_count?: number
-  teacher_name?: string
-}
+export type { ClassroomWithMemberCount }
 
 export const useClassroomStore = defineStore('classroom', () => {
   const router = useRouter()
@@ -34,30 +33,16 @@ export const useClassroomStore = defineStore('classroom', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: fetchError } = await supabase
-      .from('classrooms')
-      .select(
-        `
-        *,
-        classroom_members(count)
-      `,
-      )
-      .eq('teacher_id', teacherId)
-      .order('created_at', { ascending: false })
-
-    loading.value = false
-
-    if (fetchError) {
-      error.value = fetchError.message
-      throw fetchError
+    try {
+      const data = await classroomService.getTeacherClassrooms(teacherId)
+      teacherClassrooms.value = data
+      return teacherClassrooms.value
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    teacherClassrooms.value = (data || []).map((classroom) => ({
-      ...classroom,
-      member_count: classroom.classroom_members?.count || 0,
-    }))
-
-    return teacherClassrooms.value
   }
 
   // Fetch classrooms student is enrolled in
@@ -65,34 +50,16 @@ export const useClassroomStore = defineStore('classroom', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: fetchError } = await supabase
-      .from('classroom_members')
-      .select(
-        `
-        classrooms!classroom_members_classroom_id_fkey(
-          *,
-          users!classrooms_teacher_id_fkey(
-            full_name
-          )
-        )
-      `,
-      )
-      .eq('student_id', studentId)
-      .order('joined_at', { ascending: false })
-
-    loading.value = false
-
-    if (fetchError) {
-      error.value = fetchError.message
-      throw fetchError
+    try {
+      const data = await classroomService.getStudentClassrooms(studentId)
+      studentClassrooms.value = data
+      return studentClassrooms.value
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    studentClassrooms.value = (data || []).map((member) => ({
-      ...member.classrooms,
-      teacher_name: member.classrooms?.users?.full_name || 'Unknown Teacher',
-    }))
-
-    return studentClassrooms.value
   }
 
   // Create a new classroom
@@ -100,24 +67,16 @@ export const useClassroomStore = defineStore('classroom', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: createError } = await supabase
-      .from('classrooms')
-      .insert(classroom)
-      .select()
-      .single()
-
-    loading.value = false
-
-    if (createError) {
-      error.value = createError.message
-      throw createError
-    }
-
-    if (data) {
+    try {
+      const data = await classroomService.createClassroom(classroom)
       teacherClassrooms.value.unshift({ ...data, member_count: 0 })
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    return data
   }
 
   // Update a classroom
@@ -125,28 +84,19 @@ export const useClassroomStore = defineStore('classroom', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: updateError } = await supabase
-      .from('classrooms')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
-
-    loading.value = false
-
-    if (updateError) {
-      error.value = updateError.message
-      throw updateError
-    }
-
-    if (data) {
+    try {
+      const data = await classroomService.updateClassroom(id, updates)
       const index = teacherClassrooms.value.findIndex((c) => c.id === id)
       if (index !== -1) {
         teacherClassrooms.value[index] = { ...teacherClassrooms.value[index], ...data }
       }
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    return data
   }
 
   // Delete a classroom
@@ -154,16 +104,15 @@ export const useClassroomStore = defineStore('classroom', () => {
     loading.value = true
     error.value = null
 
-    const { error: deleteError } = await supabase.from('classrooms').delete().eq('id', id)
-
-    loading.value = false
-
-    if (deleteError) {
-      error.value = deleteError.message
-      throw deleteError
+    try {
+      await classroomService.deleteClassroom(id)
+      teacherClassrooms.value = teacherClassrooms.value.filter((c) => c.id !== id)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    teacherClassrooms.value = teacherClassrooms.value.filter((c) => c.id !== id)
   }
 
   // Join a classroom via classroom ID
@@ -171,72 +120,38 @@ export const useClassroomStore = defineStore('classroom', () => {
     loading.value = true
     error.value = null
 
-    // Find classroom by ID
-    const { data: classroom, error: findError } = await supabase
-      .from('classrooms')
-      .select('*')
-      .eq('id', classroomId)
-      .maybeSingle()
+    try {
+      // Check if classroom exists
+      const exists = await classroomService.classroomExists(classroomId)
+      if (!exists) {
+        error.value = 'Classroom not found'
+        throw new Error('Classroom not found')
+      }
 
-    if (findError || !classroom) {
+      // Check if already a member
+      const isMember = await classroomService.checkMembership(classroomId, studentId)
+      if (isMember) {
+        error.value = 'You are already a member of this classroom'
+        throw new Error('You are already a member of this classroom')
+      }
+
+      // Add member
+      const data = await classroomService.addMember(classroomId, studentId)
+
+      // Add exp
+      const experience = await expService.createStudentExp(studentId, classroomId)
+      studentExp.value = experience
+
+      // Refresh enrolled classrooms
+      await fetchStudentClassrooms(studentId)
+
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
       loading.value = false
-      error.value = findError?.message || 'Classroom not found'
-      throw new Error('Classroom not found')
     }
-
-    // Check if already a member
-    const { data: existing } = await supabase
-      .from('classroom_members')
-      .select('id')
-      .eq('classroom_id', classroom.id)
-      .eq('student_id', studentId)
-      .maybeSingle()
-
-    if (existing) {
-      loading.value = false
-      error.value = 'You are already a member of this classroom'
-      throw new Error('You are already a member of this classroom')
-    }
-
-    // Add member
-    const { data, error: joinError } = await supabase
-      .from('classroom_members')
-      .insert({
-        classroom_id: classroom.id,
-        student_id: studentId,
-      })
-      .select()
-      .single()
-
-    // Add exp
-    const { data: experience, error: expError } = await supabase
-      .from('student_exp')
-      .insert({
-        student_id: studentId,
-        classroom_id: classroom.id,
-        exp: 0,
-      })
-      .select()
-      .single()
-
-    loading.value = false
-
-    studentExp.value = experience
-
-    if (joinError) {
-      error.value = joinError.message
-      throw joinError
-    }
-
-    if (expError) {
-      error.value = expError.message
-      throw expError
-    }
-
-    // Refresh enrolled classrooms
-    await fetchStudentClassrooms(studentId)
-
-    return data
   }
 
   // Leave a classroom
@@ -244,20 +159,15 @@ export const useClassroomStore = defineStore('classroom', () => {
     loading.value = true
     error.value = null
 
-    const { error: leaveError } = await supabase
-      .from('classroom_members')
-      .delete()
-      .eq('classroom_id', classroomId)
-      .eq('student_id', studentId)
-
-    loading.value = false
-
-    if (leaveError) {
-      error.value = leaveError.message
-      throw leaveError
+    try {
+      await classroomService.removeMember(classroomId, studentId)
+      studentClassrooms.value = studentClassrooms.value.filter((c) => c.id !== classroomId)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    studentClassrooms.value = studentClassrooms.value.filter((c) => c.id !== classroomId)
   }
 
   // Fetch classroom members
@@ -265,29 +175,15 @@ export const useClassroomStore = defineStore('classroom', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: fetchError } = await supabase
-      .from('classroom_members')
-      .select(
-        `
-        *,
-        users!classroom_members_student_id_fkey(
-          id,
-          full_name,
-          created_at
-        )
-      `,
-      )
-      .eq('classroom_id', classroomId)
-      .order('joined_at', { ascending: false })
-
-    loading.value = false
-
-    if (fetchError) {
-      error.value = fetchError.message
-      throw fetchError
+    try {
+      const data = await classroomService.getClassroomMembers(classroomId)
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    return data || []
   }
 
   // Fetch classroom settings
@@ -295,104 +191,53 @@ export const useClassroomStore = defineStore('classroom', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: fetchError } = await supabase
-      .from('classrooms')
-      .select('*')
-      .eq('id', classroomId)
-      .single()
-
-    loading.value = false
-
-    if (fetchError) {
-      error.value = fetchError.message
-      throw fetchError
+    try {
+      const data = await classroomService.getClassroomById(classroomId)
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    return data
   }
 
   const fetchStudentExp = async (studentId: string, classroomId: string) => {
     loading.value = true
     error.value = null
 
-    const { data, error: fetchError } = await supabase
-      .from('student_exp')
-      .select('*')
-      .eq('student_id', studentId)
-      .eq('classroom_id', classroomId)
-      .maybeSingle()
-
-    loading.value = false
-
-    studentExp.value = data
-
-    if (fetchError) {
-      error.value = fetchError.message
-      throw fetchError
+    try {
+      const data = await expService.getStudentExp(studentId, classroomId)
+      studentExp.value = data
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    return data
   }
 
   const updateStudentExp = async (studentId: string, classroomId: string, exp: number) => {
     loading.value = true
     error.value = null
 
-    const { data, error: updateError } = await supabase
-      .from('student_exp')
-      .update({ exp })
-      .eq('student_id', studentId)
-      .eq('classroom_id', classroomId)
-      .select()
-      .single()
-
-    loading.value = false
-    console.log('data', data)
-    studentExp.value = data
-
-    if (updateError) {
-      console.log('error')
-      error.value = updateError.message
-      throw updateError
+    try {
+      const data = await expService.updateStudentExp(studentId, classroomId, exp)
+      studentExp.value = data
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    return data
   }
 
   // Check if user has access to a classroom
+  // TODO: Move to permissions service in Phase 2
   const hasAccessToClassroom = async (userId: string, classroomId: string, role: string) => {
-    try {
-      // Teachers: check if they own the classroom
-      if (role === 'teacher') {
-        const { data } = await supabase
-          .from('classrooms')
-          .select('id')
-          .eq('id', classroomId)
-          .eq('teacher_id', userId)
-          .maybeSingle()
-        return !!data
-      }
-
-      // Students: check if they are a member
-      if (role === 'student') {
-        const { data } = await supabase
-          .from('classroom_members')
-          .select('id')
-          .eq('classroom_id', classroomId)
-          .eq('student_id', userId)
-          .maybeSingle()
-        return !!data
-      }
-
-      // Admins have access to all classrooms
-      if (role === 'admin') {
-        return true
-      }
-
-      return false
-    } catch {
-      return false
-    }
+    return classroomService.hasAccessToClassroom(userId, classroomId, role)
   }
 
   // Clear error

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient'
+import { questionService } from '@/services/api/question.service'
 import type { Tables, TablesInsert, TablesUpdate } from '@/types/database.types'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
@@ -17,21 +17,16 @@ export const useQuestionStore = defineStore('question', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: fetchError } = await supabase
-      .from('questions')
-      .select('*')
-      .eq('classroom_id', classroomId)
-      .order('created_at', { ascending: false })
-
-    loading.value = false
-
-    if (fetchError) {
-      error.value = fetchError.message
-      throw fetchError
+    try {
+      const data = await questionService.getQuestions(classroomId)
+      questions.value = data
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    questions.value = data || []
-    return data
   }
 
   // Fetch a single question by ID
@@ -39,20 +34,15 @@ export const useQuestionStore = defineStore('question', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: fetchError } = await supabase
-      .from('questions')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle()
-
-    loading.value = false
-
-    if (fetchError) {
-      error.value = fetchError.message
-      throw fetchError
+    try {
+      const data = await questionService.getQuestionById(id)
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    return data
   }
 
   // Create a new question
@@ -60,24 +50,16 @@ export const useQuestionStore = defineStore('question', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: createError } = await supabase
-      .from('questions')
-      .insert(question)
-      .select()
-      .single()
-
-    loading.value = false
-
-    if (createError) {
-      error.value = createError.message
-      throw createError
-    }
-
-    if (data) {
+    try {
+      const data = await questionService.createQuestion(question)
       questions.value.unshift(data)
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    return data
   }
 
   // Update an existing question
@@ -85,28 +67,19 @@ export const useQuestionStore = defineStore('question', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: updateError } = await supabase
-      .from('questions')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
-
-    loading.value = false
-
-    if (updateError) {
-      error.value = updateError.message
-      throw updateError
-    }
-
-    if (data) {
+    try {
+      const data = await questionService.updateQuestion(id, updates)
       const index = questions.value.findIndex((q) => q.id === id)
       if (index !== -1) {
         questions.value[index] = data
       }
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    return data
   }
 
   // Delete a question
@@ -114,16 +87,15 @@ export const useQuestionStore = defineStore('question', () => {
     loading.value = true
     error.value = null
 
-    const { error: deleteError } = await supabase.from('questions').delete().eq('id', id)
-
-    loading.value = false
-
-    if (deleteError) {
-      error.value = deleteError.message
-      throw deleteError
+    try {
+      await questionService.deleteQuestion(id)
+      questions.value = questions.value.filter((q) => q.id !== id)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    questions.value = questions.value.filter((q) => q.id !== id)
   }
 
   // Clear error

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient'
+import { authService } from '@/services/api/auth.service'
 import type { Session, User } from '@supabase/supabase-js'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
@@ -12,16 +12,18 @@ export const useAuthStore = defineStore('auth', () => {
   const initAuth = async () => {
     loading.value = true
     error.value = null
-    const {
-      data: { session: currentSession },
-    } = await supabase.auth.getSession()
-    session.value = currentSession
-    user.value = currentSession?.user ?? null
-    loading.value = false
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+    try {
+      const currentSession = await authService.getSession()
+      session.value = currentSession
+      user.value = currentSession?.user ?? null
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+    } finally {
+      loading.value = false
+    }
+
+    const subscription = authService.onAuthStateChange(async (event, newSession) => {
       user.value = newSession?.user ?? null
       session.value = newSession
 
@@ -48,48 +50,42 @@ export const useAuthStore = defineStore('auth', () => {
   ) => {
     loading.value = true
     error.value = null
-    const { error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: metaData,
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-      },
-    })
 
-    loading.value = false
-
-    if (signUpError) {
-      error.value = signUpError.message
-      throw signUpError
+    try {
+      await authService.signUp(email, password, metaData)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
   }
 
   const signInWithPassword = async (email: string, password: string) => {
     loading.value = true
     error.value = null
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
 
-    loading.value = false
-
-    if (signInError) {
-      error.value = signInError.message
-      throw signInError
+    try {
+      await authService.signInWithPassword(email, password)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
   }
 
   const signOut = async () => {
     loading.value = true
     error.value = null
-    const { error: signOutError } = await supabase.auth.signOut()
 
-    loading.value = false
-    if (signOutError) {
-      error.value = signOutError.message
-      throw signOutError
+    try {
+      await authService.signOut()
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
   }
 

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient'
+import { videoService } from '@/services/api/video.service'
 import type { Tables, TablesInsert, TablesUpdate } from '@/types/database.types'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
@@ -17,20 +17,16 @@ export const useVideoStore = defineStore('video', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: fetchError } = await supabase
-      .from('videos')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    loading.value = false
-
-    if (fetchError) {
-      error.value = fetchError.message
-      throw fetchError
+    try {
+      const data = await videoService.getVideos()
+      videos.value = data
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    videos.value = data || []
-    return data
   }
 
   // Fetch videos for student (from enrolled classrooms)
@@ -38,42 +34,16 @@ export const useVideoStore = defineStore('video', () => {
     loading.value = true
     error.value = null
 
-    // First get enrolled classroom IDs
-    const { data: memberships, error: memberError } = await supabase
-      .from('classroom_members')
-      .select('classroom_id')
-      .eq('student_id', studentId)
-
-    if (memberError) {
+    try {
+      const data = await videoService.getStudentVideos(studentId)
+      videos.value = data
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
       loading.value = false
-      error.value = memberError.message
-      throw memberError
     }
-
-    const classroomIds = memberships?.map((m) => m.classroom_id) || []
-
-    if (classroomIds.length === 0) {
-      loading.value = false
-      videos.value = []
-      return []
-    }
-
-    // Fetch videos from those classrooms
-    const { data, error: fetchError } = await supabase
-      .from('videos')
-      .select('*')
-      .in('classroom_id', classroomIds)
-      .order('created_at', { ascending: false })
-
-    loading.value = false
-
-    if (fetchError) {
-      error.value = fetchError.message
-      throw fetchError
-    }
-
-    videos.value = data || []
-    return data
   }
 
   // Fetch videos by subject and year
@@ -81,21 +51,15 @@ export const useVideoStore = defineStore('video', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: fetchError } = await supabase
-      .from('videos')
-      .select('*')
-      .eq('subject', subject)
-      .eq('year', year)
-      .order('created_at', { ascending: false })
-
-    loading.value = false
-
-    if (fetchError) {
-      error.value = fetchError.message
-      throw fetchError
+    try {
+      const data = await videoService.getVideosBySubjectYear(subject, year)
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    return data || []
   }
 
   // Fetch a single video by ID
@@ -103,20 +67,15 @@ export const useVideoStore = defineStore('video', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: fetchError } = await supabase
-      .from('videos')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle()
-
-    loading.value = false
-
-    if (fetchError) {
-      error.value = fetchError.message
-      throw fetchError
+    try {
+      const data = await videoService.getVideoById(id)
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    return data
   }
 
   // Create a new video
@@ -124,24 +83,16 @@ export const useVideoStore = defineStore('video', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: createError } = await supabase
-      .from('videos')
-      .insert(video)
-      .select()
-      .single()
-
-    loading.value = false
-
-    if (createError) {
-      error.value = createError.message
-      throw createError
-    }
-
-    if (data) {
+    try {
+      const data = await videoService.createVideo(video)
       videos.value.unshift(data)
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    return data
   }
 
   // Update an existing video
@@ -149,28 +100,19 @@ export const useVideoStore = defineStore('video', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: updateError } = await supabase
-      .from('videos')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
-
-    loading.value = false
-
-    if (updateError) {
-      error.value = updateError.message
-      throw updateError
-    }
-
-    if (data) {
+    try {
+      const data = await videoService.updateVideo(id, updates)
       const index = videos.value.findIndex((v) => v.id === id)
       if (index !== -1) {
         videos.value[index] = data
       }
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    return data
   }
 
   // Delete a video
@@ -178,16 +120,15 @@ export const useVideoStore = defineStore('video', () => {
     loading.value = true
     error.value = null
 
-    const { error: deleteError } = await supabase.from('videos').delete().eq('id', id)
-
-    loading.value = false
-
-    if (deleteError) {
-      error.value = deleteError.message
-      throw deleteError
+    try {
+      await videoService.deleteVideo(id)
+      videos.value = videos.value.filter((v) => v.id !== id)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
     }
-
-    videos.value = videos.value.filter((v) => v.id !== id)
   }
 
   // Clear error
