@@ -35,18 +35,18 @@ const router = createRouter({
       component: () => import('@/views/QuestionsPage.vue'),
       meta: { requiresAuth: true, role: ['teacher'] },
     },
-    {
-      path: '/classroom/:classroomId/practice',
-      name: 'practice',
-      component: () => import('@/views/PracticePage.vue'),
-      meta: { requiresAuth: true, role: ['student'] },
-    },
-    {
-      path: '/classroom/:classroomId/practice/questions',
-      name: 'practice-questions',
-      component: () => import('@/views/PracticeQuestionsPage.vue'),
-      meta: { requiresAuth: true, role: ['student'] },
-    },
+    // {
+    //   path: '/classroom/:classroomId/practice',
+    //   name: 'practice',
+    //   component: () => import('@/views/PracticePage.vue'),
+    //   meta: { requiresAuth: true, role: ['student'] },
+    // },
+    // {
+    //   path: '/classroom/:classroomId/practice/questions',
+    //   name: 'practice-questions',
+    //   component: () => import('@/views/PracticeQuestionsPage.vue'),
+    //   meta: { requiresAuth: true, role: ['student'] },
+    // },
     {
       path: '/classroom/:classroomId/videos',
       name: 'videos',
@@ -60,12 +60,10 @@ const router = createRouter({
       meta: { requiresAuth: true, role: ['teacher', 'student'] },
     },
     {
-      path: '/teacher/classrooms',
-      redirect: '/classrooms',
-    },
-    {
-      path: '/student/classrooms',
-      redirect: '/classrooms',
+      path: '/classroom/:classroomId/settings',
+      name: 'classroom-settings',
+      component: () => import('@/views/ClassroomSettingsPage.vue'),
+      meta: { requiresAuth: true, role: ['teacher'] },
     },
   ],
 })
@@ -128,28 +126,17 @@ router.beforeEach(async (to, from, next) => {
 
   // Check classroom access for routes with classroomId parameter
   if (classroomId && user.user_metadata.role) {
-    console.log('🔒 Checking classroom access:', {
-      userId: user.id,
-      classroomId,
-      role: user.user_metadata.role,
-    })
-
     const hasAccess = await classroomStore.hasAccessToClassroom(
       user.id,
       classroomId,
       user.user_metadata.role,
     )
 
-    console.log('🔒 Access result:', hasAccess)
-
     if (!hasAccess) {
-      console.log('❌ Access denied - redirecting to classrooms')
       // User doesn't have access to this classroom - redirect to classrooms
       next({ name: 'classrooms' })
       return
     }
-
-    console.log('✅ Access granted')
   }
 
   // All checks passed - allow access

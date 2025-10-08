@@ -107,7 +107,7 @@ import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useProfileStore } from '@/stores/profile'
-import { useClassroomSelectionStore } from '@/stores/classroomSelection'
+import { useClassroomStore } from '@/stores/classrooms'
 import { useLevel } from '@/composables/useLevel'
 import { roleNavigation } from '@/config/navigation'
 import {
@@ -136,7 +136,7 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
-const classroomSelectionStore = useClassroomSelectionStore()
+const classroomStore = useClassroomStore()
 const { currentLevel, expToNextLevel, expProgress, expInCurrentLevel } = useLevel()
 
 const userRole = computed(() => {
@@ -163,14 +163,14 @@ const roleIcon = computed(() => {
 })
 
 const dashboardUrl = computed(() => {
-  const classroomId = classroomSelectionStore.selectedClassroomId
+  const classroomId = classroomStore.selectedClassroomId
   return classroomId ? `/classroom/${classroomId}/dashboard` : '/classrooms'
 })
 
 const navigation = computed(() => {
   const role = userRole.value as 'student' | 'teacher' | 'admin'
   const baseNav = roleNavigation[role] || roleNavigation.student
-  const classroomId = classroomSelectionStore.selectedClassroomId
+  const classroomId = classroomStore.selectedClassroomId
 
   // If no classroom is selected, return navigation that points to /classrooms
   if (!classroomId) {
@@ -188,10 +188,7 @@ const navigation = computed(() => {
     ...group,
     items: group.items.map((item) => ({
       ...item,
-      url:
-        item.url === '/settings'
-          ? item.url
-          : item.url.replace(/^\//, `/classroom/${classroomId}/`),
+      url: item.url.replace(/^\//, `/classroom/${classroomId}/`),
     })),
   }))
 })

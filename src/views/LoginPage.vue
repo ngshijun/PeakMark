@@ -128,7 +128,7 @@ const { handleSubmit, isSubmitting } = useForm({
 const onSubmit = handleSubmit(async (values) => {
   try {
     await signInWithPassword(values.email, values.password)
-    router.push('/dashboard')
+    router.push('/classrooms')
   } catch (error) {
     console.error('Login error:', error)
 

@@ -96,10 +96,8 @@ export type Database = {
           is_active: boolean
           questions_attempted: number
           started_at: string
-          subject: string
           updated_at: string
           user_id: string
-          year: string
         }
         Insert: {
           created_at?: string
@@ -108,10 +106,8 @@ export type Database = {
           is_active?: boolean
           questions_attempted?: number
           started_at?: string
-          subject: string
           updated_at?: string
           user_id: string
-          year: string
         }
         Update: {
           created_at?: string
@@ -120,10 +116,8 @@ export type Database = {
           is_active?: boolean
           questions_attempted?: number
           started_at?: string
-          subject?: string
           updated_at?: string
           user_id?: string
-          year?: string
         }
         Relationships: [
           {
@@ -211,9 +205,7 @@ export type Database = {
           image: string | null
           options: string[]
           question: string
-          subject: string
           updated_at: string
-          year: string
         }
         Insert: {
           classroom_id?: string | null
@@ -226,9 +218,7 @@ export type Database = {
           image?: string | null
           options: string[]
           question: string
-          subject: string
           updated_at?: string
-          year: string
         }
         Update: {
           classroom_id?: string | null
@@ -241,9 +231,7 @@ export type Database = {
           image?: string | null
           options?: string[]
           question?: string
-          subject?: string
           updated_at?: string
-          year?: string
         }
         Relationships: [
           {
@@ -264,33 +252,37 @@ export type Database = {
       }
       student_elo: {
         Row: {
+          classroom_id: string | null
           created_at: string
           elo_rating: number
           id: string
-          subject: string
           updated_at: string
           user_id: string
-          year: string
         }
         Insert: {
+          classroom_id?: string | null
           created_at?: string
           elo_rating?: number
           id?: string
-          subject: string
           updated_at?: string
           user_id: string
-          year: string
         }
         Update: {
+          classroom_id?: string | null
           created_at?: string
           elo_rating?: number
           id?: string
-          subject?: string
           updated_at?: string
           user_id?: string
-          year?: string
         }
         Relationships: [
+          {
+            foreignKeyName: 'student_elo_classroom_id_fkey'
+            columns: ['classroom_id']
+            isOneToOne: false
+            referencedRelation: 'classrooms'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'student_elo_user_id_fkey'
             columns: ['user_id']
@@ -302,28 +294,41 @@ export type Database = {
       }
       student_exp: {
         Row: {
+          classroom_id: string | null
           created_at: string
           exp: number
           id: string
+          student_id: string
           updated_at: string
         }
         Insert: {
-          created_at?: string
-          exp?: number
-          id: string
-          updated_at?: string
-        }
-        Update: {
+          classroom_id?: string | null
           created_at?: string
           exp?: number
           id?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          classroom_id?: string | null
+          created_at?: string
+          exp?: number
+          id?: string
+          student_id?: string
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'student_exp_id_fkey'
-            columns: ['id']
-            isOneToOne: true
+            foreignKeyName: 'student_exp_classroom_id_fkey'
+            columns: ['classroom_id']
+            isOneToOne: false
+            referencedRelation: 'classrooms'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'student_exp_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
             referencedRelation: 'users'
             referencedColumns: ['id']
           },

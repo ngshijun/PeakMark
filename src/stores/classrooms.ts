@@ -1,11 +1,13 @@
 import { supabase } from '@/lib/supabaseClient'
 import type { Tables, TablesInsert, TablesUpdate } from '@/types/database.types'
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 type Classroom = Tables<'classrooms'>
 type ClassroomInsert = TablesInsert<'classrooms'>
 type ClassroomUpdate = TablesUpdate<'classrooms'>
+type ExpRow = Tables<'student_exp'>
 
 export interface ClassroomWithMemberCount extends Classroom {
   member_count?: number
@@ -13,10 +15,19 @@ export interface ClassroomWithMemberCount extends Classroom {
 }
 
 export const useClassroomStore = defineStore('classroom', () => {
-  const classrooms = ref<ClassroomWithMemberCount[]>([])
-  const enrolledClassrooms = ref<ClassroomWithMemberCount[]>([])
+  const router = useRouter()
+  const route = useRoute()
+
+  const teacherClassrooms = ref<ClassroomWithMemberCount[]>([])
+  const studentClassrooms = ref<ClassroomWithMemberCount[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+
+  const studentExp = ref<ExpRow | null>(null)
+  const exp = computed(() => studentExp.value?.exp || 0)
+
+  // Get classroom ID from URL
+  const selectedClassroomId = computed(() => route.params.classroomId as string | undefined)
 
   // Fetch classrooms created by teacher
   const fetchTeacherClassrooms = async (teacherId: string) => {
@@ -41,13 +52,12 @@ export const useClassroomStore = defineStore('classroom', () => {
       throw fetchError
     }
 
-    classrooms.value = (data || []).map((classroom: any) => ({
+    teacherClassrooms.value = (data || []).map((classroom) => ({
       ...classroom,
-      member_count: classroom.classroom_members?.[0]?.count || 0,
-      classroom_members: undefined, // Remove from result
+      member_count: classroom.classroom_members?.count || 0,
     }))
 
-    return classrooms.value
+    return teacherClassrooms.value
   }
 
   // Fetch classrooms student is enrolled in
@@ -77,13 +87,12 @@ export const useClassroomStore = defineStore('classroom', () => {
       throw fetchError
     }
 
-    enrolledClassrooms.value = (data || []).map((member: any) => ({
+    studentClassrooms.value = (data || []).map((member) => ({
       ...member.classrooms,
       teacher_name: member.classrooms?.users?.full_name || 'Unknown Teacher',
-      users: undefined, // Remove from result
     }))
 
-    return enrolledClassrooms.value
+    return studentClassrooms.value
   }
 
   // Create a new classroom
@@ -105,7 +114,7 @@ export const useClassroomStore = defineStore('classroom', () => {
     }
 
     if (data) {
-      classrooms.value.unshift({ ...data, member_count: 0 })
+      teacherClassrooms.value.unshift({ ...data, member_count: 0 })
     }
 
     return data
@@ -131,9 +140,9 @@ export const useClassroomStore = defineStore('classroom', () => {
     }
 
     if (data) {
-      const index = classrooms.value.findIndex((c) => c.id === id)
+      const index = teacherClassrooms.value.findIndex((c) => c.id === id)
       if (index !== -1) {
-        classrooms.value[index] = { ...classrooms.value[index], ...data }
+        teacherClassrooms.value[index] = { ...teacherClassrooms.value[index], ...data }
       }
     }
 
@@ -154,7 +163,7 @@ export const useClassroomStore = defineStore('classroom', () => {
       throw deleteError
     }
 
-    classrooms.value = classrooms.value.filter((c) => c.id !== id)
+    teacherClassrooms.value = teacherClassrooms.value.filter((c) => c.id !== id)
   }
 
   // Join a classroom via classroom ID
@@ -199,11 +208,29 @@ export const useClassroomStore = defineStore('classroom', () => {
       .select()
       .single()
 
+    // Add exp
+    const { data: experience, error: expError } = await supabase
+      .from('student_exp')
+      .insert({
+        student_id: studentId,
+        classroom_id: classroom.id,
+        exp: 0,
+      })
+      .select()
+      .single()
+
     loading.value = false
+
+    studentExp.value = experience
 
     if (joinError) {
       error.value = joinError.message
       throw joinError
+    }
+
+    if (expError) {
+      error.value = expError.message
+      throw expError
     }
 
     // Refresh enrolled classrooms
@@ -230,7 +257,7 @@ export const useClassroomStore = defineStore('classroom', () => {
       throw leaveError
     }
 
-    enrolledClassrooms.value = enrolledClassrooms.value.filter((c) => c.id !== classroomId)
+    studentClassrooms.value = studentClassrooms.value.filter((c) => c.id !== classroomId)
   }
 
   // Fetch classroom members
@@ -261,6 +288,75 @@ export const useClassroomStore = defineStore('classroom', () => {
     }
 
     return data || []
+  }
+
+  // Fetch classroom settings
+  const fetchClassroomSettings = async (classroomId: string) => {
+    loading.value = true
+    error.value = null
+
+    const { data, error: fetchError } = await supabase
+      .from('classrooms')
+      .select('*')
+      .eq('id', classroomId)
+      .single()
+
+    loading.value = false
+
+    if (fetchError) {
+      error.value = fetchError.message
+      throw fetchError
+    }
+
+    return data
+  }
+
+  const fetchStudentExp = async (studentId: string, classroomId: string) => {
+    loading.value = true
+    error.value = null
+
+    const { data, error: fetchError } = await supabase
+      .from('student_exp')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('classroom_id', classroomId)
+      .maybeSingle()
+
+    loading.value = false
+
+    studentExp.value = data
+
+    if (fetchError) {
+      error.value = fetchError.message
+      throw fetchError
+    }
+
+    return data
+  }
+
+  const updateStudentExp = async (studentId: string, classroomId: string, exp: number) => {
+    loading.value = true
+    error.value = null
+
+    const { data, error: updateError } = await supabase
+      .from('student_exp')
+      .update({ exp })
+      .eq('student_id', studentId)
+      .eq('classroom_id', classroomId)
+      .select()
+      .single()
+
+    loading.value = false
+    console.log('data', data)
+    studentExp.value = data
+
+    if (updateError) {
+      console.log('error')
+      error.value = updateError.message
+      throw updateError
+    }
+
+    return data
   }
 
   // Check if user has access to a classroom
@@ -304,12 +400,28 @@ export const useClassroomStore = defineStore('classroom', () => {
     error.value = null
   }
 
+  // Navigate to a classroom
+  const selectClassroom = async (classroom: Classroom, userId?: string) => {
+    if (userId) await fetchStudentExp(userId, classroom.id)
+    router.push({
+      name: 'dashboard',
+      params: { classroomId: classroom.id },
+    })
+  }
+
+  // Navigate to classroom selection page
+  const clearSelection = () => {
+    router.push({ name: 'classrooms' })
+  }
+
   return {
     // State
-    classrooms,
-    enrolledClassrooms,
+    teacherClassrooms,
+    studentClassrooms,
     loading,
     error,
+    selectedClassroomId,
+    exp,
 
     // Actions
     fetchTeacherClassrooms,
@@ -320,7 +432,12 @@ export const useClassroomStore = defineStore('classroom', () => {
     joinClassroom,
     leaveClassroom,
     fetchClassroomMembers,
+    fetchClassroomSettings,
+    fetchStudentExp,
+    updateStudentExp,
     hasAccessToClassroom,
+    selectClassroom,
+    clearSelection,
     clearError,
   }
 })

@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { useProfileStore } from '@/stores/profile'
+import { useClassroomStore } from '@/stores/classrooms'
 
 // Level calculation formula: level = floor(sqrt(exp / 100)) + 1
 // Each level requires progressively more XP
@@ -20,9 +20,9 @@ const calculateExpForLevel = (level: number): number => {
  * Uses the profile store as the single source of truth for exp data
  */
 export const useLevel = () => {
-  const profileStore = useProfileStore()
+  const classroomStore = useClassroomStore()
 
-  const currentExp = computed(() => profileStore.exp)
+  const currentExp = computed(() => classroomStore.exp)
 
   const currentLevel = computed(() => calculateLevel(currentExp.value))
 
@@ -50,6 +50,6 @@ export const useLevel = () => {
     expInCurrentLevel,
 
     // Methods from profile store
-    addExp: profileStore.updateExp,
+    addExp: classroomStore.updateStudentExp,
   }
 }

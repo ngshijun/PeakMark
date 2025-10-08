@@ -27,7 +27,7 @@
           </div>
 
           <div
-            v-else-if="classroomStore.classrooms.length === 0"
+            v-else-if="classroomStore.teacherClassrooms.length === 0"
             class="flex items-center justify-center h-full text-center"
           >
             <div class="space-y-2">
@@ -38,7 +38,7 @@
 
           <div v-else class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 p-4">
             <div
-              v-for="classroom in classroomStore.classrooms"
+              v-for="classroom in classroomStore.teacherClassrooms"
               :key="classroom.id"
               class="group rounded-lg border bg-card hover:shadow-lg transition-shadow"
             >
@@ -152,19 +152,15 @@ import { Textarea } from '@/components/ui/textarea'
 import ClassroomSelectionLayout from '@/layouts/ClassroomSelectionLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore, type ClassroomWithMemberCount } from '@/stores/classrooms'
-import { useClassroomSelectionStore } from '@/stores/classroomSelection'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Plus, School, Users } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import * as z from 'zod'
 
 const classroomStore = useClassroomStore()
 const authStore = useAuthStore()
-const classroomSelectionStore = useClassroomSelectionStore()
-const router = useRouter()
 
 const isDialogOpen = ref(false)
 const hasAttemptSubmit = ref(false)
@@ -229,8 +225,7 @@ const closeDialog = () => {
 }
 
 const selectClassroom = (classroom: ClassroomWithMemberCount) => {
-  classroomSelectionStore.selectClassroom(classroom)
-  router.push({ name: 'dashboard' })
+  classroomStore.selectClassroom(classroom)
 }
 
 onMounted(async () => {

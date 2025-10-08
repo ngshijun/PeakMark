@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="space-y-2">
         <h1 class="text-3xl font-bold tracking-tight">Videos</h1>
-        <p class="text-muted-foreground">Upload and manage educational videos for students</p>
+        <p class="text-muted-foreground">Upload and manage video resources for your classroom</p>
       </div>
 
       <!-- Filters and Actions -->
@@ -346,7 +346,6 @@ import { Textarea } from '@/components/ui/textarea'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore } from '@/stores/classrooms'
-import { useClassroomSelectionStore } from '@/stores/classroomSelection'
 import { useVideoStore } from '@/stores/videos'
 import type { Tables } from '@/types/database.types'
 import { toTypedSchema } from '@vee-validate/zod'
@@ -356,11 +355,10 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import * as z from 'zod'
 
-const breadcrumbs = [{ label: 'Videos', href: '/videos' }]
+const breadcrumbs = [{ label: 'Videos' }]
 
 const videoStore = useVideoStore()
 const classroomStore = useClassroomStore()
-const classroomSelectionStore = useClassroomSelectionStore()
 const authStore = useAuthStore()
 
 const searchQuery = ref('')
@@ -432,7 +430,7 @@ watch(isUploadDialogOpen, (newVal) => {
 })
 
 const filteredVideos = computed(() => {
-  const selectedClassroomId = classroomSelectionStore.selectedClassroomId
+  const selectedClassroomId = classroomStore.selectedClassroomId
   if (!selectedClassroomId) return []
 
   return videoStore.videos.filter((video) => {
@@ -476,7 +474,7 @@ const extractYouTubeVideoId = (url: string): string | null => {
 
 const onSubmit = handleSubmit(async (formValues) => {
   try {
-    const selectedClassroomId = classroomSelectionStore.selectedClassroomId
+    const selectedClassroomId = classroomStore.selectedClassroomId
     if (!selectedClassroomId) {
       toast.error('No classroom selected')
       return

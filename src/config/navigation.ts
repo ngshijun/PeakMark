@@ -113,7 +113,7 @@ export const roleNavigation: RoleNavigation = {
       ],
     },
     {
-      title: 'Account',
+      title: 'Classroom',
       items: [
         {
           title: 'Settings',

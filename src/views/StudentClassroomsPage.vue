@@ -27,7 +27,7 @@
           </div>
 
           <div
-            v-else-if="classroomStore.enrolledClassrooms.length === 0"
+            v-else-if="classroomStore.studentClassrooms.length === 0"
             class="flex items-center justify-center h-full text-center"
           >
             <div class="space-y-2">
@@ -39,7 +39,7 @@
 
           <div v-else class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 p-4">
             <div
-              v-for="classroom in classroomStore.enrolledClassrooms"
+              v-for="classroom in classroomStore.studentClassrooms"
               :key="classroom.id"
               class="group rounded-lg border bg-card hover:shadow-lg transition-shadow"
             >
@@ -92,9 +92,9 @@
               <FormControl>
                 <Input
                   v-bind="componentField"
-                  placeholder="Enter 8-character code"
+                  placeholder="Enter the invitation code"
                   class="font-mono uppercase"
-                  maxlength="8"
+                  maxlength="36"
                   :disabled="isJoining"
                 />
               </FormControl>
@@ -140,19 +140,15 @@ import { Skeleton } from '@/components/ui/skeleton'
 import ClassroomSelectionLayout from '@/layouts/ClassroomSelectionLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore, type ClassroomWithMemberCount } from '@/stores/classrooms'
-import { useClassroomSelectionStore } from '@/stores/classroomSelection'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Plus, School, UserCircle } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import { onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import * as z from 'zod'
 
 const classroomStore = useClassroomStore()
 const authStore = useAuthStore()
-const classroomSelectionStore = useClassroomSelectionStore()
-const router = useRouter()
 
 const isJoinDialogOpen = ref(false)
 const hasAttemptSubmit = ref(false)
@@ -161,7 +157,7 @@ const isJoining = ref(false)
 // Form Schema
 const formSchema = toTypedSchema(
   z.object({
-    inviteCode: z.string().length(8, 'Invite code must be exactly 8 characters'),
+    inviteCode: z.string().length(36, 'Invalid invitation code'),
   }),
 )
 
@@ -205,8 +201,7 @@ const closeJoinDialog = () => {
 }
 
 const viewClassroom = (classroom: ClassroomWithMemberCount) => {
-  classroomSelectionStore.selectClassroom(classroom)
-  router.push({ name: 'dashboard' })
+  classroomStore.selectClassroom(classroom, authStore.user!.id)
 }
 
 onMounted(async () => {

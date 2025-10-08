@@ -161,8 +161,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useVideoStore } from '@/stores/videos'
-import { useClassroomSelectionStore } from '@/stores/classroomSelection'
 import { useAuthStore } from '@/stores/auth'
+import { useClassroomStore } from '@/stores/classrooms'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { Input } from '@/components/ui/input'
 import {
@@ -192,10 +192,10 @@ import { Search, Play, Video } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import type { Tables } from '@/types/database.types'
 
-const breadcrumbs = [{ label: 'Videos', href: '/videos' }]
+const breadcrumbs = [{ label: 'Videos' }]
 
 const videoStore = useVideoStore()
-const classroomSelectionStore = useClassroomSelectionStore()
+const classroomStore = useClassroomStore()
 const authStore = useAuthStore()
 
 const searchQuery = ref('')
@@ -216,7 +216,7 @@ const isWatchDialogOpen = ref(false)
 const watchingVideo = ref<Tables<'videos'> | null>(null)
 
 const filteredVideos = computed(() => {
-  const selectedClassroomId = classroomSelectionStore.selectedClassroomId
+  const selectedClassroomId = classroomStore.selectedClassroomId
   if (!selectedClassroomId) return []
 
   return videoStore.videos.filter((video) => {

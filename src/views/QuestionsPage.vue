@@ -1,6 +1,12 @@
 <template>
   <MainLayout :breadcrumbs="breadcrumbs">
     <div class="flex flex-col h-full space-y-4">
+      <!-- Header -->
+      <div class="space-y-2">
+        <h1 class="text-3xl font-bold tracking-tight">Questions</h1>
+        <p class="text-muted-foreground">Manage your question pool and create new questions</p>
+      </div>
+
       <!-- Search and Filters Bar -->
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex flex-1 flex-col gap-4 sm:flex-row sm:items-center">
@@ -14,32 +20,6 @@
               class="pl-8"
             />
           </div>
-
-          <!-- Year Filter -->
-          <Select v-model="selectedYear">
-            <SelectTrigger class="w-full sm:w-[180px]">
-              <SelectValue placeholder="All Years" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Years</SelectItem>
-              <span v-for="year in YEARS" :key="year">
-                <SelectItem :value="year">{{ year }}</SelectItem>
-              </span>
-            </SelectContent>
-          </Select>
-
-          <!-- Subject Filter -->
-          <Select v-model="selectedSubject">
-            <SelectTrigger class="w-full sm:w-[180px]">
-              <SelectValue placeholder="All Subjects" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Subjects</SelectItem>
-              <span v-for="subject in SUBJECTS" :key="subject">
-                <SelectItem :value="subject">{{ subject }}</SelectItem>
-              </span>
-            </SelectContent>
-          </Select>
 
           <!-- Difficulty Filter -->
           <Select v-model="selectedDifficulty">
@@ -70,8 +50,6 @@
           >
             <TableHeader class="sticky top-0 z-10 bg-card shadow-sm">
               <TableRow>
-                <TableHead class="w-[6rem]">Year</TableHead>
-                <TableHead class="w-[6rem]">Subject</TableHead>
                 <TableHead class="w-[6rem]">Difficulty</TableHead>
                 <TableHead class="min-w-[15rem]">Question</TableHead>
                 <TableHead class="min-w-[12rem]">Answer Options</TableHead>
@@ -84,8 +62,6 @@
               <!-- Loading State -->
               <template v-if="questionStore.loading">
                 <TableRow v-for="i in 8" :key="i">
-                  <TableCell><Skeleton class="h-5 w-16" /></TableCell>
-                  <TableCell><Skeleton class="h-5 w-16" /></TableCell>
                   <TableCell><Skeleton class="h-5 w-16" /></TableCell>
                   <TableCell><Skeleton class="h-5 w-full" /></TableCell>
                   <TableCell><Skeleton class="h-5 w-full" /></TableCell>
@@ -108,18 +84,6 @@
               <ContextMenu v-else v-for="question in paginatedQuestions" :key="question.id">
                 <ContextMenuTrigger as-child>
                   <TableRow class="cursor-pointer">
-                    <TableCell>
-                      <span class="text-xs font-medium text-muted-foreground">
-                        {{ question.year }}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        class="text-xs font-medium capitalize rounded-full bg-primary/10 px-2 py-1 text-primary"
-                      >
-                        {{ question.subject }}
-                      </span>
-                    </TableCell>
                     <TableCell>
                       <span
                         class="text-xs font-medium rounded-full bg-secondary/10 px-2 py-1 text-secondary-foreground"
@@ -246,83 +210,33 @@
 
         <form @submit="onSubmit" class="space-y-6">
           <!-- Year, Subject and Difficulty -->
-          <div class="grid grid-cols-3 gap-4 items-start">
-            <FormField
-              v-slot="{ componentField }"
-              name="year"
-              :validateOnBlur="hasAttemptSubmit"
-              :validateOnModelUpdate="hasAttemptSubmit"
-            >
-              <FormItem>
-                <FormLabel>Year</FormLabel>
-                <Select v-bind="componentField" :disabled="isSubmitting">
-                  <FormControl>
-                    <SelectTrigger class="w-full">
-                      <SelectValue placeholder="Select year" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem v-for="year in YEARS" :key="year" :value="year">
-                      {{ year }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-
-            <FormField
-              v-slot="{ componentField }"
-              name="subject"
-              :validateOnBlur="hasAttemptSubmit"
-              :validateOnModelUpdate="hasAttemptSubmit"
-            >
-              <FormItem>
-                <FormLabel>Subject</FormLabel>
-                <Select v-bind="componentField" :disabled="isSubmitting">
-                  <FormControl>
-                    <SelectTrigger class="w-full">
-                      <SelectValue placeholder="Select subject" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem v-for="subject in SUBJECTS" :key="subject" :value="subject">
-                      {{ subject }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-
-            <FormField
-              v-slot="{ componentField }"
-              name="difficulty"
-              :validateOnBlur="hasAttemptSubmit"
-              :validateOnModelUpdate="hasAttemptSubmit"
-            >
-              <FormItem>
-                <FormLabel>Difficulty Level</FormLabel>
-                <Select v-bind="componentField" :disabled="isSubmitting">
-                  <FormControl>
-                    <SelectTrigger class="w-full">
-                      <SelectValue placeholder="Select difficulty" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem
-                      v-for="difficulty in DIFFICULTY"
-                      :key="difficulty"
-                      :value="difficulty"
-                    >
-                      {{ difficulty }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-          </div>
+          <FormField
+            v-slot="{ componentField }"
+            name="difficulty"
+            :validateOnBlur="hasAttemptSubmit"
+            :validateOnModelUpdate="hasAttemptSubmit"
+          >
+            <FormItem>
+              <FormLabel>Difficulty Level</FormLabel>
+              <Select v-bind="componentField" :disabled="isSubmitting">
+                <FormControl>
+                  <SelectTrigger class="w-full">
+                    <SelectValue placeholder="Select difficulty" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem
+                    v-for="difficulty in DIFFICULTY"
+                    :key="difficulty"
+                    :value="difficulty"
+                  >
+                    {{ difficulty }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          </FormField>
 
           <!-- Question Content -->
           <FormField
@@ -526,19 +440,6 @@
         </DialogHeader>
 
         <div class="space-y-4 rounded-lg border bg-muted/30 p-6">
-          <!-- Question Header -->
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-medium capitalize text-muted-foreground">
-                {{ values.subject || 'Subject' }}
-              </span>
-              <span class="text-xs text-muted-foreground">•</span>
-              <span class="text-xs font-medium capitalize text-muted-foreground">
-                {{ values.difficulty || 'Difficulty' }}
-              </span>
-            </div>
-          </div>
-
           <!-- Question Content -->
           <div class="space-y-4">
             <p class="text-base font-medium">
@@ -647,29 +548,25 @@ import {
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
 import MainLayout from '@/layouts/MainLayout.vue'
-import { useQuestionStore } from '@/stores/questions'
 import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore } from '@/stores/classrooms'
-import { useClassroomSelectionStore } from '@/stores/classroomSelection'
+import { useQuestionStore } from '@/stores/questions'
+import { DIFFICULTY } from '@/types/constants'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Eye, Pencil, Plus, Search, Trash2, Upload, X } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import * as z from 'zod'
-import { SUBJECTS, DIFFICULTY, YEARS } from '@/types/constants'
 
 const breadcrumbs = [{ label: 'Questions' }]
 
 const questionStore = useQuestionStore()
 const authStore = useAuthStore()
 const classroomStore = useClassroomStore()
-const classroomSelectionStore = useClassroomSelectionStore()
 
 // Search and Filter State
 const searchQuery = ref('')
-const selectedYear = ref('all')
-const selectedSubject = ref('all')
 const selectedDifficulty = ref('all')
 
 // Pagination State
@@ -697,8 +594,6 @@ const imageInput = ref<HTMLInputElement | null>(null)
 // Form Schema
 const formSchema = toTypedSchema(
   z.object({
-    year: z.string().min(1, 'Please select a year'),
-    subject: z.string().min(1, 'Please select a subject'),
     difficulty: z.string().min(1, 'Please select a difficulty level'),
     question: z.string().min(1, 'Question content is required'),
     options: z.array(z.string().min(1, 'Option cannot be blank')),
@@ -712,8 +607,6 @@ const formSchema = toTypedSchema(
 const { handleSubmit, setFieldValue, values, resetForm } = useForm({
   validationSchema: formSchema,
   initialValues: {
-    year: '',
-    subject: '',
     difficulty: '',
     question: '',
     options: ['', '', '', ''],
@@ -729,8 +622,6 @@ const imageValue = computed(() => values.image || '')
 watch(isCreateDialogOpen, () => {
   resetForm({
     values: {
-      year: '',
-      subject: '',
       difficulty: '',
       question: '',
       options: ['', '', '', ''],
@@ -796,7 +687,7 @@ const openPreview = () => {
 
 // Computed property for filtered questions
 const filteredQuestions = computed(() => {
-  const selectedClassroomId = classroomSelectionStore.selectedClassroomId
+  const selectedClassroomId = classroomStore.selectedClassroomId
   if (!selectedClassroomId) return []
 
   let filtered = questionStore.questions
@@ -808,16 +699,6 @@ const filteredQuestions = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter((q) => q.question.toLowerCase().includes(query))
-  }
-
-  // Filter by year
-  if (selectedYear.value !== 'all') {
-    filtered = filtered.filter((q) => q.year === selectedYear.value)
-  }
-
-  // Filter by subject
-  if (selectedSubject.value !== 'all') {
-    filtered = filtered.filter((q) => q.subject === selectedSubject.value)
   }
 
   // Filter by difficulty
@@ -841,21 +722,21 @@ const paginatedQuestions = computed(() => {
 })
 
 // Reset to first page when filters change
-watch([searchQuery, selectedYear, selectedSubject, selectedDifficulty], () => {
+watch([searchQuery, selectedDifficulty], () => {
   currentPage.value = 1
 })
 
 // Fetch questions on mount
 onMounted(async () => {
   await Promise.all([
-    questionStore.fetchQuestions(),
+    questionStore.fetchQuestions(classroomStore.selectedClassroomId!),
     classroomStore.fetchTeacherClassrooms(authStore.user!.id),
   ])
 })
 
 const onSubmit = handleSubmit(async (formValues) => {
   try {
-    const selectedClassroomId = classroomSelectionStore.selectedClassroomId
+    const selectedClassroomId = classroomStore.selectedClassroomId
     if (!selectedClassroomId) {
       toast.error('No classroom selected')
       return

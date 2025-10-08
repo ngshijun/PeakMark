@@ -59,10 +59,10 @@ import {
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { useClassroomSelectionStore } from '@/stores/classroomSelection'
+import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore } from '@/stores/classrooms'
 import { ArrowLeftRight, School } from 'lucide-vue-next'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 interface Breadcrumb {
@@ -77,20 +77,44 @@ interface Props {
 
 defineProps<Props>()
 
-const classroomSelectionStore = useClassroomSelectionStore()
+const authStore = useAuthStore()
 const classroomStore = useClassroomStore()
 const router = useRouter()
 
 const currentClassroom = computed(() => {
-  const classroomId = classroomSelectionStore.selectedClassroomId
+  const classroomId = classroomStore.selectedClassroomId
   if (!classroomId) return null
   return (
-    classroomStore.classrooms.find((c) => c.id === classroomId) ||
-    classroomStore.enrolledClassrooms.find((c) => c.id === classroomId)
+    classroomStore.teacherClassrooms.find((c) => c.id === classroomId) ||
+    classroomStore.studentClassrooms.find((c) => c.id === classroomId)
   )
 })
 
 const switchClassroom = () => {
   router.push({ name: 'classrooms' })
 }
+
+// Fetch classroom data on mount
+onMounted(async () => {
+  const user = authStore.user
+  const classroomId = classroomStore.selectedClassroomId
+
+  if (!user || !classroomId) return
+
+  const role = user.user_metadata?.role
+
+  if (role === 'student') {
+    // Fetch student classrooms if empty
+    if (classroomStore.studentClassrooms.length === 0) {
+      await classroomStore.fetchStudentClassrooms(user.id)
+    }
+    // Always fetch student exp for the current classroom
+    await classroomStore.fetchStudentExp(user.id, classroomId)
+  } else if (role === 'teacher') {
+    // Fetch teacher classrooms if empty
+    if (classroomStore.teacherClassrooms.length === 0) {
+      await classroomStore.fetchTeacherClassrooms(user.id)
+    }
+  }
+})
 </script>

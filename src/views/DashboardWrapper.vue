@@ -10,8 +10,9 @@ const authStore = useAuthStore()
 
 const dashboardComponent = computed(() => {
   const role = authStore.user?.user_metadata?.role || 'student'
-  if (role === 'admin') return defineAsyncComponent(() => import('@/views/AdminDashboard.vue'))
-  if (role === 'teacher') return defineAsyncComponent(() => import('@/views/TeacherDashboard.vue'))
-  return defineAsyncComponent(() => import('@/views/StudentDashboard.vue'))
+  if (role === 'admin') return defineAsyncComponent(() => import('@/views/AdminDashboardPage.vue'))
+  if (role === 'teacher')
+    return defineAsyncComponent(() => import('@/views/TeacherDashboardPage.vue'))
+  return defineAsyncComponent(() => import('@/views/StudentDashboardPage.vue'))
 })
 </script>

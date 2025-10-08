@@ -13,13 +13,14 @@ export const useQuestionStore = defineStore('question', () => {
   const error = ref<string | null>(null)
 
   // Fetch all questions
-  const fetchQuestions = async () => {
+  const fetchQuestions = async (classroomId: string) => {
     loading.value = true
     error.value = null
 
     const { data, error: fetchError } = await supabase
       .from('questions')
       .select('*')
+      .eq('classroom_id', classroomId)
       .order('created_at', { ascending: false })
 
     loading.value = false

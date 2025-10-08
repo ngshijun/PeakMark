@@ -34,34 +34,9 @@ export const useProfileStore = defineStore('profile', () => {
     studyStreak: 0,
     setsCompleted: 0,
   })
-
-  // Teacher only
-  // TODO: Add teacher-specific state here
-
-  // Admin only
-  // TODO: Add admin-specific state here
-
-  // ===================================
-  // COMPUTED PROPERTIES
-  // ===================================
-
-  // Common (All roles)
   const fullName = computed(() => userProfile.value?.full_name || '')
   const dob = computed(() => userProfile.value?.dob || '')
   const role = computed(() => userProfile.value?.role || 'student')
-
-  // Student only
-  const exp = computed(() => userExp.value?.exp || 0)
-
-  // Teacher only
-  // TODO: Add teacher-specific computed properties here
-
-  // Admin only
-  // TODO: Add admin-specific computed properties here
-
-  // ===================================
-  // FETCH METHODS
-  // ===================================
 
   // Common: Fetch user profile from users table
   const fetchUserProfile = async (userId: string) => {
@@ -80,27 +55,6 @@ export const useProfileStore = defineStore('profile', () => {
       userProfile.value = data
     } catch (err) {
       console.error('Error fetching user profile:', err)
-      throw err
-    }
-  }
-
-  // Student only: Fetch exp data
-  const fetchUserExp = async (userId: string) => {
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('student_exp')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle()
-
-      if (fetchError) {
-        error.value = fetchError.message
-        throw fetchError
-      }
-
-      userExp.value = data
-    } catch (err) {
-      console.error('Error fetching user exp:', err)
       throw err
     }
   }
@@ -182,12 +136,6 @@ export const useProfileStore = defineStore('profile', () => {
     }
   }
 
-  // Teacher only: Fetch teacher-specific data
-  // TODO: Add fetchTeacherStats method here
-
-  // Admin only: Fetch admin-specific data
-  // TODO: Add fetchAdminStats method here
-
   // Common: Fetch all profile data based on role
   const fetchProfile = async () => {
     const userId = authStore.user?.id
@@ -206,7 +154,7 @@ export const useProfileStore = defineStore('profile', () => {
 
       // Fetch role-specific data
       if (userRole === 'student') {
-        await Promise.all([fetchUserExp(userId), fetchStudentStats(userId)])
+        await fetchStudentStats(userId)
       } else if (userRole === 'teacher') {
         // TODO: Fetch teacher-specific data
       } else if (userRole === 'admin') {
@@ -324,50 +272,19 @@ export const useProfileStore = defineStore('profile', () => {
   // ===================================
 
   return {
-    // ===================================
-    // STATE
-    // ===================================
-    // Common
     userProfile,
     loading,
     error,
-    // Student
     userExp,
     studentStats,
-    // Teacher
-    // TODO: Export teacher state
-    // Admin
-    // TODO: Export admin state
-
-    // ===================================
-    // COMPUTED
-    // ===================================
-    // Common
     fullName,
     dob,
     role,
-    // Student
-    exp,
-    // Teacher
-    // TODO: Export teacher computed
-    // Admin
-    // TODO: Export admin computed
-
-    // ===================================
-    // ACTIONS
-    // ===================================
-    // Common
     fetchProfile,
     fetchUserProfile,
     updateProfile,
     clearProfile,
-    // Student
-    fetchUserExp,
     fetchStudentStats,
     updateExp,
-    // Teacher
-    // TODO: Export teacher actions
-    // Admin
-    // TODO: Export admin actions
   }
 })
