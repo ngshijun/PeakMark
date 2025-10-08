@@ -22,7 +22,7 @@ const calculateExpForLevel = (level: number): number => {
 export const useLevel = () => {
   const classroomStore = useClassroomStore()
 
-  const currentExp = computed(() => classroomStore.exp)
+  const currentExp = computed(() => classroomStore.studentExp?.exp || 0)
 
   const currentLevel = computed(() => calculateLevel(currentExp.value))
 

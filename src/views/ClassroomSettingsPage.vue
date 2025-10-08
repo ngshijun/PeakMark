@@ -182,6 +182,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { useNavigation } from '@/composables/useNavigation'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useClassroomStore } from '@/stores/classrooms'
 import type { Tables } from '@/types/database.types'
@@ -189,15 +190,15 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { Copy } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import { computed, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
 import * as z from 'zod'
 
 type Classroom = Tables<'classrooms'>
 
 const route = useRoute()
-const router = useRouter()
 const classroomStore = useClassroomStore()
+const { goToClassroomSelection } = useNavigation()
 
 const classroom = ref<Classroom | null>(null)
 const isDeleteDialogOpen = ref(false)
@@ -281,13 +282,8 @@ const confirmDelete = async () => {
   try {
     await classroomStore.deleteClassroom(classroom.value.id)
 
-    // If this was the selected classroom, clear selection
-    if (classroomStore.selectedClassroomId === classroom.value.id) {
-      classroomStore.clearSelection()
-    }
-
     toast.success('Classroom deleted successfully')
-    router.push({ name: 'classrooms' })
+    goToClassroomSelection()
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to delete classroom'
     toast.error(errorMessage)

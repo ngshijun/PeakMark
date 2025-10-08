@@ -59,6 +59,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import { useNavigation } from '@/composables/useNavigation'
 import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore } from '@/stores/classrooms'
 import { ArrowLeftRight, School } from 'lucide-vue-next'
@@ -80,9 +81,10 @@ defineProps<Props>()
 const authStore = useAuthStore()
 const classroomStore = useClassroomStore()
 const router = useRouter()
+const { selectedClassroomId } = useNavigation()
 
 const currentClassroom = computed(() => {
-  const classroomId = classroomStore.selectedClassroomId
+  const classroomId = selectedClassroomId.value
   if (!classroomId) return null
   return (
     classroomStore.teacherClassrooms.find((c) => c.id === classroomId) ||
@@ -97,7 +99,7 @@ const switchClassroom = () => {
 // Fetch classroom data on mount
 onMounted(async () => {
   const user = authStore.user
-  const classroomId = classroomStore.selectedClassroomId
+  const classroomId = selectedClassroomId.value
 
   if (!user || !classroomId) return
 

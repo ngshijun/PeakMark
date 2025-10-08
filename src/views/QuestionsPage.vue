@@ -547,6 +547,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
+import { useNavigation } from '@/composables/useNavigation'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore } from '@/stores/classrooms'
@@ -564,6 +565,7 @@ const breadcrumbs = [{ label: 'Questions' }]
 const questionStore = useQuestionStore()
 const authStore = useAuthStore()
 const classroomStore = useClassroomStore()
+const { selectedClassroomId } = useNavigation()
 
 // Search and Filter State
 const searchQuery = ref('')
@@ -687,13 +689,12 @@ const openPreview = () => {
 
 // Computed property for filtered questions
 const filteredQuestions = computed(() => {
-  const selectedClassroomId = classroomStore.selectedClassroomId
-  if (!selectedClassroomId) return []
+  if (!selectedClassroomId.value) return []
 
   let filtered = questionStore.questions
 
   // Filter by selected classroom
-  filtered = filtered.filter((q) => q.classroom_id === selectedClassroomId)
+  filtered = filtered.filter((q) => q.classroom_id === selectedClassroomId.value)
 
   // Filter by search query
   if (searchQuery.value) {
@@ -729,15 +730,14 @@ watch([searchQuery, selectedDifficulty], () => {
 // Fetch questions on mount
 onMounted(async () => {
   await Promise.all([
-    questionStore.fetchQuestions(classroomStore.selectedClassroomId!),
+    questionStore.fetchQuestions(selectedClassroomId.value!),
     classroomStore.fetchTeacherClassrooms(authStore.user!.id),
   ])
 })
 
 const onSubmit = handleSubmit(async (formValues) => {
   try {
-    const selectedClassroomId = classroomStore.selectedClassroomId
-    if (!selectedClassroomId) {
+    if (!selectedClassroomId.value) {
       toast.error('No classroom selected')
       return
     }
@@ -747,7 +747,7 @@ const onSubmit = handleSubmit(async (formValues) => {
       ...rest,
       correct_answer: parseInt(correctAnswer),
       difficulty: parseInt(difficulty),
-      classroom_id: selectedClassroomId,
+      classroom_id: selectedClassroomId.value,
       created_by: authStore.user!.id,
     })
 

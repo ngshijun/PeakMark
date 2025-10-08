@@ -137,6 +137,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useNavigation } from '@/composables/useNavigation'
 import ClassroomSelectionLayout from '@/layouts/ClassroomSelectionLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore, type ClassroomWithMemberCount } from '@/stores/classrooms'
@@ -149,6 +150,7 @@ import * as z from 'zod'
 
 const classroomStore = useClassroomStore()
 const authStore = useAuthStore()
+const { goToClassroom } = useNavigation()
 
 const isJoinDialogOpen = ref(false)
 const hasAttemptSubmit = ref(false)
@@ -201,7 +203,7 @@ const closeJoinDialog = () => {
 }
 
 const viewClassroom = (classroom: ClassroomWithMemberCount) => {
-  classroomStore.selectClassroom(classroom, authStore.user!.id)
+  goToClassroom(classroom, authStore.user!.id)
 }
 
 onMounted(async () => {

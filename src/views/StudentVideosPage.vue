@@ -162,7 +162,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useVideoStore } from '@/stores/videos'
 import { useAuthStore } from '@/stores/auth'
-import { useClassroomStore } from '@/stores/classrooms'
+import { useNavigation } from '@/composables/useNavigation'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { Input } from '@/components/ui/input'
 import {
@@ -195,8 +195,8 @@ import type { Tables } from '@/types/database.types'
 const breadcrumbs = [{ label: 'Videos' }]
 
 const videoStore = useVideoStore()
-const classroomStore = useClassroomStore()
 const authStore = useAuthStore()
+const { selectedClassroomId } = useNavigation()
 
 const searchQuery = ref('')
 
@@ -216,14 +216,13 @@ const isWatchDialogOpen = ref(false)
 const watchingVideo = ref<Tables<'videos'> | null>(null)
 
 const filteredVideos = computed(() => {
-  const selectedClassroomId = classroomStore.selectedClassroomId
-  if (!selectedClassroomId) return []
+  if (!selectedClassroomId.value) return []
 
   return videoStore.videos.filter((video) => {
     const matchesSearch =
       video.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       (video.description?.toLowerCase().includes(searchQuery.value.toLowerCase()) ?? false)
-    const matchesClassroom = video.classroom_id === selectedClassroomId
+    const matchesClassroom = video.classroom_id === selectedClassroomId.value
     return matchesSearch && matchesClassroom
   })
 })

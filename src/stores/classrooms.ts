@@ -3,10 +3,8 @@ import { expService } from '@/services/api/exp.service'
 import type { ClassroomWithMemberCount } from '@/services/api/classroom.service'
 import type { Tables, TablesInsert, TablesUpdate } from '@/types/database.types'
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref } from 'vue'
 
-type Classroom = Tables<'classrooms'>
 type ClassroomInsert = TablesInsert<'classrooms'>
 type ClassroomUpdate = TablesUpdate<'classrooms'>
 type ExpRow = Tables<'student_exp'>
@@ -14,19 +12,12 @@ type ExpRow = Tables<'student_exp'>
 export type { ClassroomWithMemberCount }
 
 export const useClassroomStore = defineStore('classroom', () => {
-  const router = useRouter()
-  const route = useRoute()
-
   const teacherClassrooms = ref<ClassroomWithMemberCount[]>([])
   const studentClassrooms = ref<ClassroomWithMemberCount[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
   const studentExp = ref<ExpRow | null>(null)
-  const exp = computed(() => studentExp.value?.exp || 0)
-
-  // Get classroom ID from URL
-  const selectedClassroomId = computed(() => route.params.classroomId as string | undefined)
 
   // Fetch classrooms created by teacher
   const fetchTeacherClassrooms = async (teacherId: string) => {
@@ -239,28 +230,13 @@ export const useClassroomStore = defineStore('classroom', () => {
     error.value = null
   }
 
-  // Navigate to a classroom
-  const selectClassroom = async (classroom: Classroom, userId?: string) => {
-    if (userId) await fetchStudentExp(userId, classroom.id)
-    router.push({
-      name: 'dashboard',
-      params: { classroomId: classroom.id },
-    })
-  }
-
-  // Navigate to classroom selection page
-  const clearSelection = () => {
-    router.push({ name: 'classrooms' })
-  }
-
   return {
     // State
     teacherClassrooms,
     studentClassrooms,
     loading,
     error,
-    selectedClassroomId,
-    exp,
+    studentExp,
 
     // Actions
     fetchTeacherClassrooms,
@@ -274,8 +250,6 @@ export const useClassroomStore = defineStore('classroom', () => {
     fetchClassroomSettings,
     fetchStudentExp,
     updateStudentExp,
-    selectClassroom,
-    clearSelection,
     clearError,
   }
 })

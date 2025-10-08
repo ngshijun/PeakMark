@@ -343,6 +343,7 @@ import {
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
+import { useNavigation } from '@/composables/useNavigation'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore } from '@/stores/classrooms'
@@ -360,6 +361,7 @@ const breadcrumbs = [{ label: 'Videos' }]
 const videoStore = useVideoStore()
 const classroomStore = useClassroomStore()
 const authStore = useAuthStore()
+const { selectedClassroomId } = useNavigation()
 
 const searchQuery = ref('')
 
@@ -430,12 +432,11 @@ watch(isUploadDialogOpen, (newVal) => {
 })
 
 const filteredVideos = computed(() => {
-  const selectedClassroomId = classroomStore.selectedClassroomId
-  if (!selectedClassroomId) return []
+  if (!selectedClassroomId.value) return []
 
   return videoStore.videos.filter((video) => {
     const matchesSearch = video.title.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchesClassroom = video.classroom_id === selectedClassroomId
+    const matchesClassroom = video.classroom_id === selectedClassroomId.value
     return matchesSearch && matchesClassroom
   })
 })
@@ -474,8 +475,7 @@ const extractYouTubeVideoId = (url: string): string | null => {
 
 const onSubmit = handleSubmit(async (formValues) => {
   try {
-    const selectedClassroomId = classroomStore.selectedClassroomId
-    if (!selectedClassroomId) {
+    if (!selectedClassroomId.value) {
       toast.error('No classroom selected')
       return
     }
@@ -491,7 +491,7 @@ const onSubmit = handleSubmit(async (formValues) => {
       description: formValues.description || null,
       youtube_url: formValues.youtubeUrl,
       youtube_video_id: videoId,
-      classroom_id: selectedClassroomId,
+      classroom_id: selectedClassroomId.value,
       uploaded_by: authStore.user!.id,
     }
 

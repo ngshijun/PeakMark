@@ -84,9 +84,11 @@
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" class="w-56">
-              <DropdownMenuItem @click="router.push('/settings')">
-                <Settings class="mr-2 h-4 w-4" />
-                <span>Settings</span>
+              <DropdownMenuItem asChild>
+                <RouterLink to="/settings">
+                  <Settings class="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </RouterLink>
               </DropdownMenuItem>
               <DropdownMenuItem @click="handleSignOut">
                 <LogOut class="mr-2 h-4 w-4" />
@@ -104,12 +106,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useProfileStore } from '@/stores/profile'
-import { useClassroomStore } from '@/stores/classrooms'
 import { useLevel } from '@/composables/useLevel'
-import { roleNavigation } from '@/config/navigation'
+import { useNavigation } from '@/composables/useNavigation'
 import {
   Sidebar,
   SidebarContent,
@@ -132,12 +133,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { GraduationCap, School, Settings, LogOut, UserCog } from 'lucide-vue-next'
 
-const router = useRouter()
-const route = useRoute()
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
-const classroomStore = useClassroomStore()
 const { currentLevel, expToNextLevel, expProgress, expInCurrentLevel } = useLevel()
+const { navigationItems, dashboardUrl, isActive, logout } = useNavigation()
 
 const userRole = computed(() => {
   return profileStore.role || 'student'
@@ -162,43 +161,7 @@ const roleIcon = computed(() => {
   }
 })
 
-const dashboardUrl = computed(() => {
-  const classroomId = classroomStore.selectedClassroomId
-  return classroomId ? `/classroom/${classroomId}/dashboard` : '/classrooms'
-})
+const navigation = navigationItems
 
-const navigation = computed(() => {
-  const role = userRole.value as 'student' | 'teacher' | 'admin'
-  const baseNav = roleNavigation[role] || roleNavigation.student
-  const classroomId = classroomStore.selectedClassroomId
-
-  // If no classroom is selected, return navigation that points to /classrooms
-  if (!classroomId) {
-    return baseNav.map((group) => ({
-      ...group,
-      items: group.items.map((item) => ({
-        ...item,
-        url: item.url === '/settings' ? item.url : '/classrooms',
-      })),
-    }))
-  }
-
-  // Replace URLs with classroom-scoped versions
-  return baseNav.map((group) => ({
-    ...group,
-    items: group.items.map((item) => ({
-      ...item,
-      url: item.url.replace(/^\//, `/classroom/${classroomId}/`),
-    })),
-  }))
-})
-
-const isActive = (url: string) => {
-  return route.path === url
-}
-
-const handleSignOut = async () => {
-  await authStore.signOut()
-  router.push('/login')
-}
+const handleSignOut = logout
 </script>

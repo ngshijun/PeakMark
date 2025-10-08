@@ -1,6 +1,5 @@
-import { useAuthStore } from '@/stores/auth'
-import { permissionsService } from '@/services/permissions.service'
 import { createRouter, createWebHistory } from 'vue-router'
+import { authGuard, roleGuard, classroomAccessGuard, composeGuards } from './guards'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -68,78 +67,7 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach(async (to, from, next) => {
-  const authStore = useAuthStore()
-  const { user, loading } = authStore
-  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
-  const requiredRoles = to.meta.role as string[] | undefined
-  const classroomId = to.params.classroomId as string | undefined
-
-  // Wait for auth to initialize - don't proceed if still loading
-  if (loading) {
-    // Wait for auth to finish initializing
-    const unsubscribe = authStore.$subscribe((mutation, state) => {
-      if (!state.loading) {
-        unsubscribe()
-        // Retry navigation after auth loads
-        router.push(to.fullPath)
-      }
-    })
-    return next(false) // Cancel this navigation
-  }
-
-  // Public routes - allow access
-  if (!requiresAuth) {
-    next()
-    return
-  }
-
-  // Protected routes - check authentication
-  if (!user) {
-    if (to.name !== 'login-page') {
-      next({ name: 'login-page' })
-    } else {
-      next()
-    }
-    return
-  }
-
-  // Check role-based access
-  if (requiredRoles && Array.isArray(requiredRoles)) {
-    if (!user.user_metadata.role) {
-      // User has no role - redirect to login
-      if (to.name !== 'login-page') {
-        next({ name: 'login-page' })
-      } else {
-        next()
-      }
-      return
-    }
-
-    if (!requiredRoles.includes(user.user_metadata.role)) {
-      // User doesn't have required role - redirect to classrooms
-      next({ name: 'classrooms' })
-      return
-    }
-  }
-
-  // Check classroom access for routes with classroomId parameter
-  if (classroomId && user.user_metadata.role) {
-    const hasAccess = await permissionsService.canAccessClassroom(
-      user.id,
-      classroomId,
-      user.user_metadata.role,
-    )
-
-    if (!hasAccess) {
-      // User doesn't have access to this classroom - redirect to classrooms
-      next({ name: 'classrooms' })
-      return
-    }
-  }
-
-  // All checks passed - allow access
-  next()
-})
+// Apply guards in order: auth -> role -> classroom access
+router.beforeEach(composeGuards(authGuard, roleGuard, classroomAccessGuard))
 
 export default router

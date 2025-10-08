@@ -149,6 +149,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
+import { useNavigation } from '@/composables/useNavigation'
 import ClassroomSelectionLayout from '@/layouts/ClassroomSelectionLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore, type ClassroomWithMemberCount } from '@/stores/classrooms'
@@ -161,6 +162,7 @@ import * as z from 'zod'
 
 const classroomStore = useClassroomStore()
 const authStore = useAuthStore()
+const { goToClassroom } = useNavigation()
 
 const isDialogOpen = ref(false)
 const hasAttemptSubmit = ref(false)
@@ -225,7 +227,7 @@ const closeDialog = () => {
 }
 
 const selectClassroom = (classroom: ClassroomWithMemberCount) => {
-  classroomStore.selectClassroom(classroom)
+  goToClassroom(classroom)
 }
 
 onMounted(async () => {
