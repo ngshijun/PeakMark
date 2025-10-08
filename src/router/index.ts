@@ -1,5 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { authGuard, roleGuard, classroomAccessGuard, composeGuards } from './guards'
+import {
+  authGuard,
+  roleGuard,
+  classroomAccessGuard,
+  classroomDataGuard,
+  composeGuards,
+} from './guards'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -67,7 +73,7 @@ const router = createRouter({
   ],
 })
 
-// Apply guards in order: auth -> role -> classroom access
-router.beforeEach(composeGuards(authGuard, roleGuard, classroomAccessGuard))
+// Apply guards in order: auth -> role -> classroom access -> classroom data
+router.beforeEach(composeGuards(authGuard, roleGuard, classroomAccessGuard, classroomDataGuard))
 
 export default router

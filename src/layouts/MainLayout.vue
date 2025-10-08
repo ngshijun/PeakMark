@@ -60,10 +60,9 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { useNavigation } from '@/composables/useNavigation'
-import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore } from '@/stores/classrooms'
 import { ArrowLeftRight, School } from 'lucide-vue-next'
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 interface Breadcrumb {
@@ -78,7 +77,6 @@ interface Props {
 
 defineProps<Props>()
 
-const authStore = useAuthStore()
 const classroomStore = useClassroomStore()
 const router = useRouter()
 const { selectedClassroomId } = useNavigation()
@@ -95,28 +93,4 @@ const currentClassroom = computed(() => {
 const switchClassroom = () => {
   router.push({ name: 'classrooms' })
 }
-
-// Fetch classroom data on mount
-onMounted(async () => {
-  const user = authStore.user
-  const classroomId = selectedClassroomId.value
-
-  if (!user || !classroomId) return
-
-  const role = user.user_metadata?.role
-
-  if (role === 'student') {
-    // Fetch student classrooms if empty
-    if (classroomStore.studentClassrooms.length === 0) {
-      await classroomStore.fetchStudentClassrooms(user.id)
-    }
-    // Always fetch student exp for the current classroom
-    await classroomStore.fetchStudentExp(user.id, classroomId)
-  } else if (role === 'teacher') {
-    // Fetch teacher classrooms if empty
-    if (classroomStore.teacherClassrooms.length === 0) {
-      await classroomStore.fetchTeacherClassrooms(user.id)
-    }
-  }
-})
 </script>

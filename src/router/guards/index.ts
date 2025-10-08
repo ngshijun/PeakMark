@@ -7,6 +7,7 @@ import type { NavigationGuard } from 'vue-router'
 export { authGuard } from './auth.guard'
 export { roleGuard } from './role.guard'
 export { classroomAccessGuard } from './classroom-access.guard'
+export { classroomDataGuard } from './classroom-data.guard'
 
 /**
  * Compose multiple guards into a single guard function
