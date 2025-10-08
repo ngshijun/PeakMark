@@ -12,7 +12,8 @@
       "Bash(xargs -r kill)",
       "Bash(tree:*)",
       "Bash(npm run lint:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(npm run test:unit:*)"
     ],
     "deny": [],
     "ask": []
