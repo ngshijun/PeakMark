@@ -69,6 +69,7 @@ describe('handleSupabaseError', () => {
       code: '23505',
       details: '',
       hint: '',
+      name: 'PostgrestError',
     }
 
     expect(() => handleSupabaseError(supabaseError)).toThrow(AppError)
@@ -81,6 +82,7 @@ describe('handleSupabaseError', () => {
       code: '23503',
       details: '',
       hint: '',
+      name: 'PostgrestError',
     }
 
     expect(() => handleSupabaseError(supabaseError)).toThrow(
@@ -94,6 +96,7 @@ describe('handleSupabaseError', () => {
       code: '42501',
       details: '',
       hint: '',
+      name: 'PostgrestError',
     }
 
     expect(() => handleSupabaseError(supabaseError)).toThrow(
@@ -107,6 +110,7 @@ describe('handleSupabaseError', () => {
       code: 'PGRST116',
       details: '',
       hint: '',
+      name: 'PostgrestError',
     }
 
     expect(() => handleSupabaseError(supabaseError)).toThrow('No rows found.')
@@ -118,6 +122,7 @@ describe('handleSupabaseError', () => {
       code: '99999',
       details: '',
       hint: '',
+      name: 'PostgrestError',
     }
 
     expect(() => handleSupabaseError(supabaseError)).toThrow('Some unknown database error')
@@ -129,6 +134,7 @@ describe('handleSupabaseError', () => {
       code: 'PGRST116',
       details: '',
       hint: '',
+      name: 'PostgrestError',
     }
 
     try {
