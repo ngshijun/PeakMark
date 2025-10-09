@@ -44,7 +44,9 @@ export class ClassroomService extends BaseService {
     }
 
     return (data || []).map((classroom) => {
-      const rawData = classroom as unknown as Classroom & { classroom_members: { count: number } | null }
+      const rawData = classroom as unknown as Classroom & {
+        classroom_members: { count: number } | null
+      }
       return {
         ...rawData,
         member_count: rawData.classroom_members?.count || 0,
@@ -76,7 +78,9 @@ export class ClassroomService extends BaseService {
     }
 
     return (data || []).map((member) => {
-      const rawData = member as unknown as { classrooms: Classroom & { users?: { full_name?: string } } }
+      const rawData = member as unknown as {
+        classrooms: Classroom & { users?: { full_name?: string } }
+      }
       return {
         ...rawData.classrooms,
         teacher_name: rawData.classrooms?.users?.full_name || 'Unknown Teacher',
@@ -116,11 +120,7 @@ export class ClassroomService extends BaseService {
    * Create a new classroom
    */
   async createClassroom(classroom: ClassroomInsert): Promise<Classroom> {
-    const { data, error } = await this.client
-      .from('classrooms')
-      .insert(classroom)
-      .select()
-      .single()
+    const { data, error } = await this.client.from('classrooms').insert(classroom).select().single()
 
     if (error) {
       this.handleError(error)
@@ -253,7 +253,6 @@ export class ClassroomService extends BaseService {
 
     return !!data
   }
-
 }
 
 // Export a singleton instance

@@ -63,11 +63,7 @@ export const useQuestionStore = defineStore('question', () => {
   }
 
   // Upload question image
-  const uploadQuestionImage = async (
-    file: File,
-    classroomId: string,
-    questionId: string,
-  ) => {
+  const uploadQuestionImage = async (file: File, classroomId: string, questionId: string) => {
     loading.value = true
     error.value = null
 

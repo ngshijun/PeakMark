@@ -11,9 +11,7 @@ export class BaseService {
    * Execute a query and return data with type safety
    * @throws AppError if the query fails
    */
-  protected async query<T>(
-    queryBuilder: Promise<PostgrestSingleResponse<T>>,
-  ): Promise<T> {
+  protected async query<T>(queryBuilder: Promise<PostgrestSingleResponse<T>>): Promise<T> {
     const { data, error } = await queryBuilder
 
     if (error) {
@@ -31,9 +29,7 @@ export class BaseService {
    * Execute an insert operation
    * @throws AppError if the insert fails
    */
-  protected async insert<T>(
-    queryBuilder: Promise<PostgrestSingleResponse<T>>,
-  ): Promise<T> {
+  protected async insert<T>(queryBuilder: Promise<PostgrestSingleResponse<T>>): Promise<T> {
     return this.query(queryBuilder)
   }
 
@@ -41,9 +37,7 @@ export class BaseService {
    * Execute an update operation
    * @throws AppError if the update fails
    */
-  protected async update<T>(
-    queryBuilder: Promise<PostgrestSingleResponse<T>>,
-  ): Promise<T> {
+  protected async update<T>(queryBuilder: Promise<PostgrestSingleResponse<T>>): Promise<T> {
     return this.query(queryBuilder)
   }
 
@@ -51,9 +45,7 @@ export class BaseService {
    * Execute a delete operation
    * @throws AppError if the delete fails
    */
-  protected async delete(
-    queryBuilder: Promise<PostgrestSingleResponse<void>>,
-  ): Promise<void> {
+  protected async delete(queryBuilder: Promise<PostgrestSingleResponse<void>>): Promise<void> {
     const { error } = await queryBuilder
 
     if (error) {

@@ -61,8 +61,7 @@ export function handleAuthError(error: unknown): never {
       'Invalid login credentials': 'Invalid email or password. Please try again.',
       'Email not confirmed': 'Please verify your email address before logging in.',
       'User already registered': 'An account with this email already exists.',
-      'Password should be at least 6 characters':
-        'Password must be at least 6 characters long.',
+      'Password should be at least 6 characters': 'Password must be at least 6 characters long.',
     }
 
     const userMessage = authErrorMessages[message] || message

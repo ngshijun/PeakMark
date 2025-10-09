@@ -152,9 +152,7 @@ describe('handleAuthError', () => {
     const authError = { message: 'Invalid login credentials' }
 
     expect(() => handleAuthError(authError)).toThrow(AppError)
-    expect(() => handleAuthError(authError)).toThrow(
-      'Invalid email or password. Please try again.',
-    )
+    expect(() => handleAuthError(authError)).toThrow('Invalid email or password. Please try again.')
   })
 
   it('should throw AppError for unconfirmed email', () => {
@@ -168,17 +166,13 @@ describe('handleAuthError', () => {
   it('should throw AppError for existing user', () => {
     const authError = { message: 'User already registered' }
 
-    expect(() => handleAuthError(authError)).toThrow(
-      'An account with this email already exists.',
-    )
+    expect(() => handleAuthError(authError)).toThrow('An account with this email already exists.')
   })
 
   it('should throw AppError for weak password', () => {
     const authError = { message: 'Password should be at least 6 characters' }
 
-    expect(() => handleAuthError(authError)).toThrow(
-      'Password must be at least 6 characters long.',
-    )
+    expect(() => handleAuthError(authError)).toThrow('Password must be at least 6 characters long.')
   })
 
   it('should use original message for unknown auth errors', () => {

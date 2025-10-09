@@ -69,11 +69,7 @@ export class ExpService extends BaseService {
   /**
    * Add experience points to a student's total
    */
-  async addExpToStudent(
-    studentId: string,
-    classroomId: string,
-    expToAdd: number,
-  ): Promise<ExpRow> {
+  async addExpToStudent(studentId: string, classroomId: string, expToAdd: number): Promise<ExpRow> {
     // First get current exp
     const currentExp = await this.getStudentExp(studentId, classroomId)
 

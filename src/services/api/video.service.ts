@@ -30,11 +30,7 @@ export class VideoService extends BaseService {
    * Get a single video by ID
    */
   async getVideoById(id: string): Promise<Video | null> {
-    const { data, error } = await this.client
-      .from('videos')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle()
+    const { data, error } = await this.client.from('videos').select('*').eq('id', id).maybeSingle()
 
     if (error) {
       this.handleError(error)
@@ -99,11 +95,7 @@ export class VideoService extends BaseService {
    * Create a new video
    */
   async createVideo(video: VideoInsert): Promise<Video> {
-    const { data, error } = await this.client
-      .from('videos')
-      .insert(video)
-      .select()
-      .single()
+    const { data, error } = await this.client.from('videos').insert(video).select().single()
 
     if (error) {
       this.handleError(error)

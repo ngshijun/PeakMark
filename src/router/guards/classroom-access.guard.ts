@@ -61,11 +61,7 @@ export async function classroomAccessGuard(
   }
 
   // Fallback: If not found in store, check via DB (covers edge cases)
-  const hasAccess = await permissionsService.canAccessClassroom(
-    user.id,
-    classroomId,
-    userRole,
-  )
+  const hasAccess = await permissionsService.canAccessClassroom(user.id, classroomId, userRole)
 
   if (!hasAccess) {
     // User doesn't have access to this classroom - redirect to classrooms

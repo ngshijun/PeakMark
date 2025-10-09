@@ -5,9 +5,7 @@ import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
  * Authentication guard
  * Ensures user is authenticated before accessing protected routes
  */
-export async function authGuard(
-  to: RouteLocationNormalized,
-): Promise<boolean | RouteLocationRaw> {
+export async function authGuard(to: RouteLocationNormalized): Promise<boolean | RouteLocationRaw> {
   const authStore = useAuthStore()
   const { user, loading } = authStore
 

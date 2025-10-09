@@ -6,9 +6,7 @@ import type { RouteLocationNormalized } from 'vue-router'
  * Classroom data prefetch guard
  * Ensures classroom data is loaded before entering classroom routes
  */
-export async function classroomDataGuard(
-  to: RouteLocationNormalized,
-): Promise<boolean> {
+export async function classroomDataGuard(to: RouteLocationNormalized): Promise<boolean> {
   const authStore = useAuthStore()
   const classroomStore = useClassroomStore()
   const classroomId = to.params.classroomId as string | undefined

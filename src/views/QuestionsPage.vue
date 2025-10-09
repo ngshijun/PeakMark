@@ -198,13 +198,17 @@
       </div>
     </div>
 
-    <!-- Create Question Dialog -->
+    <!-- Create/Edit Question Dialog -->
     <Dialog v-model:open="isCreateDialogOpen">
       <DialogContent class="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Question</DialogTitle>
+          <DialogTitle>{{ isEditMode ? 'Edit Question' : 'Create New Question' }}</DialogTitle>
           <DialogDescription>
-            Add a new question to your question pool. Fill in all the required fields.
+            {{
+              isEditMode
+                ? 'Update the question details below.'
+                : 'Add a new question to your question pool. Fill in all the required fields.'
+            }}
           </DialogDescription>
         </DialogHeader>
 
@@ -261,7 +265,9 @@
 
           <!-- Image Upload -->
           <div class="space-y-2">
-            <label class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            <label
+              class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
               Image (Optional)
             </label>
             <div class="space-y-2">
@@ -274,7 +280,9 @@
                   :disabled="isSubmitting"
                 >
                   <Upload class="mr-2 h-4 w-4" />
-                  {{ imageFile ? 'Change Image' : 'Upload Image' }}
+                  {{
+                    imageFile ? 'Change Image' : imagePreviewUrl ? 'Replace Image' : 'Upload Image'
+                  }}
                 </Button>
                 <input
                   ref="imageInput"
@@ -285,7 +293,7 @@
                   :disabled="isSubmitting"
                 />
                 <Button
-                  v-if="imageFile"
+                  v-if="imageFile || imagePreviewUrl"
                   type="button"
                   variant="ghost"
                   size="icon"
@@ -301,6 +309,10 @@
                   alt="Question image preview"
                   class="max-h-32 rounded-md border"
                 />
+                <p v-if="!imageFile && existingImageUrl" class="text-xs text-muted-foreground mt-1">
+                  Current image
+                </p>
+                <p v-else-if="imageFile" class="text-xs text-muted-foreground mt-1">New image</p>
               </div>
             </div>
           </div>
@@ -421,7 +433,15 @@
                 class="flex-1 sm:flex-none"
                 :disabled="isSubmitting"
               >
-                {{ isSubmitting ? 'Creating...' : 'Create Question' }}
+                {{
+                  isSubmitting
+                    ? isEditMode
+                      ? 'Updating...'
+                      : 'Creating...'
+                    : isEditMode
+                      ? 'Update Question'
+                      : 'Create Question'
+                }}
               </Button>
             </div>
           </DialogFooter>
@@ -446,7 +466,11 @@
 
             <!-- Image Preview -->
             <div v-if="imagePreviewUrl" class="my-4">
-              <img :src="imagePreviewUrl" alt="Question image" class="max-w-full rounded-md border" />
+              <img
+                :src="imagePreviewUrl"
+                alt="Question image"
+                class="max-w-full rounded-md border"
+              />
             </div>
 
             <!-- Answer Options Preview -->
@@ -491,7 +515,7 @@
             Are you sure you want to delete this question? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter class="gap-2 sm:gap-0">
+        <DialogFooter>
           <Button variant="outline" @click="cancelDelete">Cancel</Button>
           <Button variant="destructive" @click="confirmDelete">Delete</Button>
         </DialogFooter>
@@ -588,6 +612,11 @@ const hasAttemptSubmit = ref(false)
 const isDeleteDialogOpen = ref(false)
 const questionToDelete = ref<string | null>(null)
 
+// Edit Mode State
+const isEditMode = ref(false)
+const questionToEdit = ref<(typeof questionStore.questions)[0] | null>(null)
+const existingImageUrl = ref<string>('')
+
 // Image Upload Ref
 const imageInput = ref<HTMLInputElement | null>(null)
 const imageFile = ref<File | null>(null)
@@ -617,20 +646,37 @@ const { handleSubmit, setFieldValue, values, resetForm } = useForm({
 })
 
 // Reset form when dialog's state changes
-watch(isCreateDialogOpen, () => {
-  resetForm({
-    values: {
-      difficulty: '',
-      question: '',
-      options: ['', '', '', ''],
-      correctAnswer: '0',
-      explanation: '',
-    },
-  })
-  imageFile.value = null
-  imagePreviewUrl.value = ''
-  if (imageInput.value) {
-    imageInput.value.value = ''
+watch(isCreateDialogOpen, (newValue) => {
+  if (!newValue) {
+    // Dialog is closing - reset everything
+    resetForm({
+      values: {
+        difficulty: '',
+        question: '',
+        options: ['', '', '', ''],
+        correctAnswer: '0',
+        explanation: '',
+      },
+    })
+
+    // Reset edit mode state
+    isEditMode.value = false
+    questionToEdit.value = null
+    existingImageUrl.value = ''
+
+    // Reset image state
+    imageFile.value = null
+    if (imagePreviewUrl.value && !existingImageUrl.value) {
+      // Only revoke if it's a local object URL
+      URL.revokeObjectURL(imagePreviewUrl.value)
+    }
+    imagePreviewUrl.value = ''
+    if (imageInput.value) {
+      imageInput.value.value = ''
+    }
+
+    // Reset form validation state
+    hasAttemptSubmit.value = false
   }
 })
 
@@ -743,44 +789,107 @@ const onSubmit = handleSubmit(async (formValues) => {
 
     const { correctAnswer, difficulty, ...rest } = formValues
 
-    // Create question first (without image)
-    const createdQuestion = await questionStore.createQuestion({
-      ...rest,
-      correct_answer: parseInt(correctAnswer),
-      difficulty: parseInt(difficulty),
-      classroom_id: selectedClassroomId.value,
-      created_by: authStore.user!.id,
-      image: null, // Will be updated after upload
-    })
-
-    // Upload image if one was selected
-    if (imageFile.value && createdQuestion) {
-      try {
-        const imageUrl = await questionStore.uploadQuestionImage(
-          imageFile.value,
-          selectedClassroomId.value,
-          createdQuestion.id,
-        )
-
-        // Update question with image URL
-        await questionStore.updateQuestion(createdQuestion.id, {
-          image: imageUrl,
-        })
-      } catch (imageError) {
-        console.error('Error uploading image:', imageError)
-        toast.error('Question created but image upload failed')
+    // Edit Mode: Update existing question
+    if (isEditMode.value && questionToEdit.value) {
+      const updates: {
+        question: string
+        options: string[]
+        correct_answer: number
+        difficulty: number
+        explanation?: string
+        image?: string | null
+      } = {
+        ...rest,
+        correct_answer: parseInt(correctAnswer),
+        difficulty: parseInt(difficulty),
       }
-    }
 
-    // Show success toast
-    toast.success('Question created successfully')
+      // Handle image updates
+      const hasNewImage = imageFile.value !== null
+      const hadOldImage = existingImageUrl.value !== ''
+      const imageRemoved = hadOldImage && !imagePreviewUrl.value
+
+      // Case 1: User uploaded a new image
+      if (hasNewImage) {
+        // Delete old image if it exists
+        if (hadOldImage) {
+          try {
+            await questionStore.uploadQuestionImage(
+              imageFile.value!,
+              selectedClassroomId.value,
+              questionToEdit.value.id,
+            )
+          } catch (error) {
+            console.error('Error deleting old image:', error)
+          }
+        }
+
+        // Upload new image
+        try {
+          const imageUrl = await questionStore.uploadQuestionImage(
+            imageFile.value!,
+            selectedClassroomId.value,
+            questionToEdit.value.id,
+          )
+          updates.image = imageUrl
+        } catch (imageError) {
+          console.error('Error uploading new image:', imageError)
+          toast.error('Question updated but image upload failed')
+        }
+      }
+      // Case 2: User removed the existing image
+      else if (imageRemoved) {
+        updates.image = null
+      }
+      // Case 3: No change to image (keep existing)
+      else if (hadOldImage) {
+        updates.image = existingImageUrl.value
+      }
+
+      // Update the question
+      await questionStore.updateQuestion(questionToEdit.value.id, updates)
+      toast.success('Question updated successfully')
+    }
+    // Create Mode: Create new question
+    else {
+      // Create question first (without image)
+      const createdQuestion = await questionStore.createQuestion({
+        ...rest,
+        correct_answer: parseInt(correctAnswer),
+        difficulty: parseInt(difficulty),
+        classroom_id: selectedClassroomId.value,
+        created_by: authStore.user!.id,
+        image: null, // Will be updated after upload
+      })
+
+      // Upload image if one was selected
+      if (imageFile.value && createdQuestion) {
+        try {
+          const imageUrl = await questionStore.uploadQuestionImage(
+            imageFile.value,
+            selectedClassroomId.value,
+            createdQuestion.id,
+          )
+
+          // Update question with image URL
+          await questionStore.updateQuestion(createdQuestion.id, {
+            image: imageUrl,
+          })
+        } catch (imageError) {
+          console.error('Error uploading image:', imageError)
+          toast.error('Question created but image upload failed')
+        }
+      }
+
+      toast.success('Question created successfully')
+    }
 
     // Close dialog and reset form
     isCreateDialogOpen.value = false
     hasAttemptSubmit.value = false
   } catch (error) {
-    console.error('Error creating question:', error)
-    toast.error('Failed to create question')
+    console.error('Error saving question:', error)
+    toast.error(isEditMode.value ? 'Failed to update question' : 'Failed to create question')
   }
 })
 
@@ -788,8 +897,37 @@ const isSubmitting = computed(() => questionStore.loading)
 
 // Edit question function
 const editQuestion = (question: (typeof questionStore.questions)[0]) => {
-  // TODO: Implement edit functionality
-  toast.info('Edit functionality coming soon')
+  // Set edit mode
+  isEditMode.value = true
+  questionToEdit.value = question
+
+  // Store existing image URL if present
+  existingImageUrl.value = question.image || ''
+
+  // Populate form with question data
+  resetForm({
+    values: {
+      difficulty: String(question.difficulty),
+      question: question.question,
+      options: question.options,
+      correctAnswer: String(question.correct_answer),
+      explanation: question.explanation || '',
+    },
+  })
+
+  // If question has an existing image, show it as preview
+  if (question.image) {
+    imagePreviewUrl.value = question.image
+  }
+
+  // Clear any file input
+  imageFile.value = null
+  if (imageInput.value) {
+    imageInput.value.value = ''
+  }
+
+  // Open dialog
+  isCreateDialogOpen.value = true
 }
 
 // Delete question function

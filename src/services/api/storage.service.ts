@@ -15,11 +15,7 @@ export class StorageService extends BaseService {
    * @param questionId - The question ID for unique naming
    * @returns The public URL of the uploaded image
    */
-  async uploadQuestionImage(
-    file: File,
-    classroomId: string,
-    questionId: string,
-  ): Promise<string> {
+  async uploadQuestionImage(file: File, classroomId: string, questionId: string): Promise<string> {
     // Validate file type
     if (!file.type.startsWith('image/')) {
       throw new AppError('File must be an image', 'INVALID_FILE_TYPE', 400)
@@ -45,11 +41,7 @@ export class StorageService extends BaseService {
       })
 
     if (error) {
-      throw new AppError(
-        `Failed to upload image: ${error.message}`,
-        'STORAGE_UPLOAD_ERROR',
-        500,
-      )
+      throw new AppError(`Failed to upload image: ${error.message}`, 'STORAGE_UPLOAD_ERROR', 500)
     }
 
     // Get public URL
@@ -79,16 +71,10 @@ export class StorageService extends BaseService {
     const filePath = pathParts.slice(bucketIndex + 1).join('/')
 
     // Delete from storage
-    const { error } = await this.client.storage
-      .from(this.QUESTION_IMAGES_BUCKET)
-      .remove([filePath])
+    const { error } = await this.client.storage.from(this.QUESTION_IMAGES_BUCKET).remove([filePath])
 
     if (error) {
-      throw new AppError(
-        `Failed to delete image: ${error.message}`,
-        'STORAGE_DELETE_ERROR',
-        500,
-      )
+      throw new AppError(`Failed to delete image: ${error.message}`, 'STORAGE_DELETE_ERROR', 500)
     }
   }
 
@@ -98,9 +84,7 @@ export class StorageService extends BaseService {
    * @returns The public URL
    */
   getQuestionImageUrl(filePath: string): string {
-    const { data } = this.client.storage
-      .from(this.QUESTION_IMAGES_BUCKET)
-      .getPublicUrl(filePath)
+    const { data } = this.client.storage.from(this.QUESTION_IMAGES_BUCKET).getPublicUrl(filePath)
 
     return data.publicUrl
   }

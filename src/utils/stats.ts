@@ -44,9 +44,9 @@ export function calculateStudentStats(attempts: QuestionAttempt[]): StudentStats
  * Calculate consecutive study streak in days
  */
 function calculateStudyStreak(attempts: QuestionAttempt[]): number {
-  const uniqueDates = [
-    ...new Set(attempts.map((a) => new Date(a.created_at).toDateString())),
-  ].sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+  const uniqueDates = [...new Set(attempts.map((a) => new Date(a.created_at).toDateString()))].sort(
+    (a, b) => new Date(b).getTime() - new Date(a).getTime(),
+  )
 
   if (uniqueDates.length === 0) return 0
 

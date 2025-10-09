@@ -17,11 +17,7 @@ export class ProfileService extends BaseService {
    * Get user profile by ID
    */
   async getUserProfile(userId: string): Promise<UserRow> {
-    const { data, error } = await this.client
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single()
+    const { data, error } = await this.client.from('users').select('*').eq('id', userId).single()
 
     if (error) {
       this.handleError(error)

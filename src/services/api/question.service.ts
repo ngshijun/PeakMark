@@ -51,11 +51,7 @@ export class QuestionService extends BaseService {
    * Create a new question
    */
   async createQuestion(question: QuestionInsert): Promise<Question> {
-    const { data, error } = await this.client
-      .from('questions')
-      .insert(question)
-      .select()
-      .single()
+    const { data, error } = await this.client.from('questions').insert(question).select().single()
 
     if (error) {
       this.handleError(error)
@@ -114,11 +110,7 @@ export class QuestionService extends BaseService {
    * @param questionId - The question ID
    * @returns The public URL of the uploaded image
    */
-  async uploadQuestionImage(
-    file: File,
-    classroomId: string,
-    questionId: string,
-  ): Promise<string> {
+  async uploadQuestionImage(file: File, classroomId: string, questionId: string): Promise<string> {
     return await storageService.uploadQuestionImage(file, classroomId, questionId)
   }
 

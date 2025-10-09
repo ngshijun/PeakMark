@@ -172,9 +172,7 @@ describe('calculateStudentStats', () => {
   })
 
   it('should always return setsCompleted as 0 (not yet implemented)', () => {
-    const attempts: QuestionAttempt[] = [
-      { is_correct: true, created_at: '2025-01-01T10:00:00Z' },
-    ]
+    const attempts: QuestionAttempt[] = [{ is_correct: true, created_at: '2025-01-01T10:00:00Z' }]
 
     const result = calculateStudentStats(attempts)
 
