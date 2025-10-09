@@ -67,8 +67,8 @@ const router = createRouter({
     {
       path: '/classroom/:classroomId/settings',
       name: 'classroom-settings',
-      component: () => import('@/views/ClassroomSettingsPage.vue'),
-      meta: { requiresAuth: true, role: ['teacher'] },
+      component: () => import('@/views/ClassroomSettingsWrapper.vue'),
+      meta: { requiresAuth: true, role: ['teacher', 'student'] },
     },
   ],
 })
