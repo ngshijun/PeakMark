@@ -1,6 +1,6 @@
 import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore } from '@/stores/classrooms'
-import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
+import type { RouteLocationNormalized } from 'vue-router'
 
 /**
  * Classroom data prefetch guard
@@ -8,17 +8,14 @@ import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
  */
 export async function classroomDataGuard(
   to: RouteLocationNormalized,
-  from: RouteLocationNormalized,
-  next: NavigationGuardNext,
-): Promise<void> {
+): Promise<boolean> {
   const authStore = useAuthStore()
   const classroomStore = useClassroomStore()
   const classroomId = to.params.classroomId as string | undefined
 
   // Only fetch data if navigating to a classroom route
   if (!classroomId || !authStore.user) {
-    next()
-    return
+    return true
   }
 
   const role = authStore.user.user_metadata?.role
@@ -37,11 +34,10 @@ export async function classroomDataGuard(
         await classroomStore.fetchTeacherClassrooms(authStore.user.id)
       }
     }
-
-    next()
   } catch (error) {
     // Log error but continue navigation
     console.error('Error loading classroom data:', error)
-    next()
   }
+
+  return true
 }

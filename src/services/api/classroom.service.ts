@@ -87,10 +87,17 @@ export class ClassroomService extends BaseService {
   /**
    * Get a single classroom by ID
    */
-  async getClassroomById(id: string): Promise<Classroom> {
+  async getClassroomById(id: string): Promise<ClassroomWithMemberCount> {
     const { data, error } = await this.client
       .from('classrooms')
-      .select('*')
+      .select(
+        `
+        *,
+        users!classrooms_teacher_id_fkey(
+          full_name
+        )
+      `,
+      )
       .eq('id', id)
       .single()
 
@@ -98,7 +105,11 @@ export class ClassroomService extends BaseService {
       this.handleError(error)
     }
 
-    return data
+    const rawData = data as unknown as Classroom & { users?: { full_name?: string } }
+    return {
+      ...rawData,
+      teacher_name: rawData.users?.full_name || 'Unknown Teacher',
+    }
   }
 
   /**

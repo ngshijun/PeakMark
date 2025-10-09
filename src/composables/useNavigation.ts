@@ -1,7 +1,6 @@
 import { roleNavigation } from '@/config/navigation'
 import type { NavGroup } from '@/config/navigation'
 import { useAuthStore } from '@/stores/auth'
-import { useClassroomStore } from '@/stores/classrooms'
 import type { Tables } from '@/types/database.types'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -15,17 +14,14 @@ type Classroom = Tables<'classrooms'>
 export function useNavigation() {
   const router = useRouter()
   const route = useRoute()
-  const classroomStore = useClassroomStore()
   const authStore = useAuthStore()
 
   // Get classroom ID from URL
   const selectedClassroomId = computed(() => route.params.classroomId as string | undefined)
 
   // Navigate to classroom dashboard
-  const goToClassroom = async (classroom: Classroom, userId?: string) => {
-    if (userId) {
-      await classroomStore.fetchStudentExp(userId, classroom.id)
-    }
+  // Note: fetchStudentExp is handled by classroom-data.guard
+  const goToClassroom = (classroom: Classroom) => {
     router.push({
       name: 'dashboard',
       params: { classroomId: classroom.id },

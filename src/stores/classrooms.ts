@@ -230,6 +230,16 @@ export const useClassroomStore = defineStore('classroom', () => {
     error.value = null
   }
 
+  // Check if student is member of classroom (from cached store data)
+  const isStudentMemberFromStore = (studentId: string, classroomId: string): boolean => {
+    return studentClassrooms.value.some((c) => c.id === classroomId)
+  }
+
+  // Check if teacher owns classroom (from cached store data)
+  const isTeacherOwnerFromStore = (teacherId: string, classroomId: string): boolean => {
+    return teacherClassrooms.value.some((c) => c.id === classroomId)
+  }
+
   return {
     // State
     teacherClassrooms,
@@ -251,5 +261,7 @@ export const useClassroomStore = defineStore('classroom', () => {
     fetchStudentExp,
     updateStudentExp,
     clearError,
+    isStudentMemberFromStore,
+    isTeacherOwnerFromStore,
   }
 })

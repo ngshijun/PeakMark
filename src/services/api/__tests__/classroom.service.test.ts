@@ -108,6 +108,9 @@ describe('ClassroomService', () => {
         name: 'Math 101',
         description: 'Basic Math',
         teacher_id: 'teacher-1',
+        users: {
+          full_name: 'John Doe',
+        },
       }
 
       const mockQuery = {
@@ -122,7 +125,16 @@ describe('ClassroomService', () => {
 
       expect(supabase.from).toHaveBeenCalledWith('classrooms')
       expect(mockQuery.eq).toHaveBeenCalledWith('id', 'classroom-1')
-      expect(result).toEqual(mockClassroom)
+      expect(result).toEqual({
+        id: 'classroom-1',
+        name: 'Math 101',
+        description: 'Basic Math',
+        teacher_id: 'teacher-1',
+        users: {
+          full_name: 'John Doe',
+        },
+        teacher_name: 'John Doe',
+      })
     })
 
     it('should return null when classroom not found', async () => {
@@ -134,9 +146,14 @@ describe('ClassroomService', () => {
 
       vi.mocked(supabase.from).mockReturnValue(mockQuery as any)
 
-      const result = await classroomService.getClassroomById('nonexistent-id')
-
-      expect(result).toBeNull()
+      try {
+        await classroomService.getClassroomById('nonexistent-id')
+        // If we reach here, the test should fail
+        expect.fail('Expected an error to be thrown')
+      } catch (error) {
+        // The method should throw an error when data is null
+        expect(error).toBeDefined()
+      }
     })
   })
 

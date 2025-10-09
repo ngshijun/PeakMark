@@ -177,22 +177,10 @@ const confirmLeave = async () => {
 
 onMounted(async () => {
   try {
-    const data = await classroomStore.fetchClassroomSettings(route.params.classroomId as string)
-
-    // Fetch student classrooms to get teacher name
-    if (authStore.user) {
-      await classroomStore.fetchStudentClassrooms(authStore.user.id)
-      const studentClassroom = classroomStore.studentClassrooms.find(
-        (c) => c.id === route.params.classroomId,
-      )
-      if (studentClassroom) {
-        classroom.value = studentClassroom
-      } else {
-        classroom.value = data as ClassroomWithMemberCount
-      }
-    } else {
-      classroom.value = data as ClassroomWithMemberCount
-    }
+    // fetchClassroomSettings now returns teacher name via join
+    classroom.value = await classroomStore.fetchClassroomSettings(
+      route.params.classroomId as string,
+    )
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to load classroom settings'

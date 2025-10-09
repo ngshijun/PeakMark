@@ -7,7 +7,6 @@ import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
  */
 export async function authGuard(
   to: RouteLocationNormalized,
-  from: RouteLocationNormalized,
 ): Promise<boolean | RouteLocationRaw> {
   const authStore = useAuthStore()
   const { user, loading } = authStore

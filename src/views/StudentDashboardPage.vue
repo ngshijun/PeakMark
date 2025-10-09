@@ -77,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -95,7 +95,6 @@ const userName = computed(() => {
 
 const stats = computed(() => profileStore.studentStats)
 
-onMounted(async () => {
-  await profileStore.fetchProfile()
-})
+// Profile is already fetched in main.ts on app initialization
+// No need to fetch again here
 </script>

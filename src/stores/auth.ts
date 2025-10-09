@@ -28,13 +28,20 @@ export const useAuthStore = defineStore('auth', () => {
       session.value = newSession
 
       // CRITICAL: Don't await in onAuthStateChange - causes Supabase client to hang
-      // Only handle auth state synchronously; profile fetching happens in main.ts
+      // Handle profile updates asynchronously in separate microtask
       if (event === 'SIGNED_OUT') {
-        // Clear profile data on sign out (synchronous operation)
+        // Clear profile data on sign out
         Promise.resolve().then(async () => {
           const { useProfileStore } = await import('./profile')
           const profileStore = useProfileStore()
           profileStore.clearProfile()
+        })
+      } else if (event === 'SIGNED_IN' && newSession?.user) {
+        // Fetch profile data on sign in
+        Promise.resolve().then(async () => {
+          const { useProfileStore } = await import('./profile')
+          const profileStore = useProfileStore()
+          await profileStore.fetchProfile()
         })
       }
     })
