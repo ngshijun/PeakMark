@@ -166,6 +166,7 @@ const formSchema = toTypedSchema(
 // Form
 const { handleSubmit, resetForm } = useForm({
   validationSchema: formSchema,
+  keepValuesOnUnmount: true,
   initialValues: {
     inviteCode: '',
   },
@@ -203,7 +204,7 @@ const closeJoinDialog = () => {
 }
 
 const viewClassroom = (classroom: ClassroomWithMemberCount) => {
-  goToClassroom(classroom, authStore.user!.id)
+  goToClassroom(classroom)
 }
 
 onMounted(async () => {

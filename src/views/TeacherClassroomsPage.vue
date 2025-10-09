@@ -178,6 +178,7 @@ const formSchema = toTypedSchema(
 // Form
 const { handleSubmit, resetForm } = useForm({
   validationSchema: formSchema,
+  keepValuesOnUnmount: true,
   initialValues: {
     name: '',
     description: '',

@@ -349,7 +349,6 @@
                     }}</span>
                     <Input
                       :model-value="(values.options || ['', '', '', ''])[index]"
-                      @update:model-value="(val) => updateOption(index, val)"
                       :placeholder="`Option ${String.fromCharCode(65 + index)}`"
                       class="flex-1"
                       :disabled="isSubmitting"
@@ -636,6 +635,7 @@ const formSchema = toTypedSchema(
 // Form
 const { handleSubmit, setFieldValue, values, resetForm } = useForm({
   validationSchema: formSchema,
+  keepValuesOnUnmount: true,
   initialValues: {
     difficulty: '',
     question: '',
@@ -646,7 +646,7 @@ const { handleSubmit, setFieldValue, values, resetForm } = useForm({
 })
 
 // Reset form when dialog's state changes
-watch(isCreateDialogOpen, (newValue) => {
+watch(isCreateDialogOpen, async (newValue) => {
   if (!newValue) {
     // Dialog is closing - reset everything
     resetForm({
@@ -666,8 +666,8 @@ watch(isCreateDialogOpen, (newValue) => {
 
     // Reset image state
     imageFile.value = null
-    if (imagePreviewUrl.value && !existingImageUrl.value) {
-      // Only revoke if it's a local object URL
+    // Only revoke if it's a local object URL (starts with blob:)
+    if (imagePreviewUrl.value && imagePreviewUrl.value.startsWith('blob:')) {
       URL.revokeObjectURL(imagePreviewUrl.value)
     }
     imagePreviewUrl.value = ''
@@ -679,12 +679,6 @@ watch(isCreateDialogOpen, (newValue) => {
     hasAttemptSubmit.value = false
   }
 })
-
-const updateOption = (index: number, value: string | number) => {
-  const currentOptions = [...(values.options || [])]
-  currentOptions[index] = String(value)
-  setFieldValue('options', currentOptions, hasAttemptSubmit.value)
-}
 
 const addOption = () => {
   const currentOptions = [...(values.options || [])]
