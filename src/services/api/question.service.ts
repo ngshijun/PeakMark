@@ -1,5 +1,6 @@
 import type { Tables, TablesInsert, TablesUpdate } from '@/types/database.types'
 import { BaseService } from './base.service'
+import { storageService } from './storage.service'
 
 type Question = Tables<'questions'>
 type QuestionInsert = TablesInsert<'questions'>
@@ -85,11 +86,40 @@ export class QuestionService extends BaseService {
    * Delete a question
    */
   async deleteQuestion(id: string): Promise<void> {
+    // First, get the question to check if it has an image
+    const question = await this.getQuestionById(id)
+
+    // Delete from database
     const { error } = await this.client.from('questions').delete().eq('id', id)
 
     if (error) {
       this.handleError(error)
     }
+
+    // Delete associated image from storage if it exists
+    if (question && question.image) {
+      try {
+        await storageService.deleteQuestionImage(question.image)
+      } catch (error) {
+        // Log error but don't fail the deletion
+        console.error('Failed to delete question image from storage:', error)
+      }
+    }
+  }
+
+  /**
+   * Upload question image to storage
+   * @param file - The image file to upload
+   * @param classroomId - The classroom ID
+   * @param questionId - The question ID
+   * @returns The public URL of the uploaded image
+   */
+  async uploadQuestionImage(
+    file: File,
+    classroomId: string,
+    questionId: string,
+  ): Promise<string> {
+    return await storageService.uploadQuestionImage(file, classroomId, questionId)
   }
 
   /**

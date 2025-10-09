@@ -62,6 +62,26 @@ export const useQuestionStore = defineStore('question', () => {
     }
   }
 
+  // Upload question image
+  const uploadQuestionImage = async (
+    file: File,
+    classroomId: string,
+    questionId: string,
+  ) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const imageUrl = await questionService.uploadQuestionImage(file, classroomId, questionId)
+      return imageUrl
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   // Update an existing question
   const updateQuestion = async (id: string, updates: QuestionUpdate) => {
     loading.value = true
@@ -113,6 +133,7 @@ export const useQuestionStore = defineStore('question', () => {
     fetchQuestions,
     fetchQuestionById,
     createQuestion,
+    uploadQuestionImage,
     updateQuestion,
     deleteQuestion,
     clearError,

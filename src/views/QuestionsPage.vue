@@ -260,52 +260,50 @@
           </FormField>
 
           <!-- Image Upload -->
-          <FormField name="image">
-            <FormItem>
-              <FormLabel>Image (Optional)</FormLabel>
-              <FormControl>
-                <div class="space-y-2">
-                  <div class="flex items-center gap-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      @click="() => imageInput?.click()"
-                      class="w-full"
-                      :disabled="isSubmitting"
-                    >
-                      <Upload class="mr-2 h-4 w-4" />
-                      {{ imageValue ? 'Change Image' : 'Upload Image' }}
-                    </Button>
-                    <input
-                      ref="imageInput"
-                      type="file"
-                      accept="image/*"
-                      class="hidden"
-                      @change="handleImageUpload"
-                      :disabled="isSubmitting"
-                    />
-                    <Button
-                      v-if="imageValue"
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      @click="removeImage"
-                      :disabled="isSubmitting"
-                    >
-                      <X class="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div v-if="imageValue" class="mt-2">
-                    <img
-                      :src="imageValue"
-                      alt="Question image"
-                      class="max-h-32 rounded-md border"
-                    />
-                  </div>
-                </div>
-              </FormControl>
-            </FormItem>
-          </FormField>
+          <div class="space-y-2">
+            <label class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Image (Optional)
+            </label>
+            <div class="space-y-2">
+              <div class="flex items-center gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  @click="() => imageInput?.click()"
+                  class="w-full"
+                  :disabled="isSubmitting"
+                >
+                  <Upload class="mr-2 h-4 w-4" />
+                  {{ imageFile ? 'Change Image' : 'Upload Image' }}
+                </Button>
+                <input
+                  ref="imageInput"
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  @change="handleImageUpload"
+                  :disabled="isSubmitting"
+                />
+                <Button
+                  v-if="imageFile"
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  @click="removeImage"
+                  :disabled="isSubmitting"
+                >
+                  <X class="h-4 w-4" />
+                </Button>
+              </div>
+              <div v-if="imagePreviewUrl" class="mt-2">
+                <img
+                  :src="imagePreviewUrl"
+                  alt="Question image preview"
+                  class="max-h-32 rounded-md border"
+                />
+              </div>
+            </div>
+          </div>
 
           <!-- Answer Options -->
           <FormField
@@ -447,8 +445,8 @@
             </p>
 
             <!-- Image Preview -->
-            <div v-if="values.image" class="my-4">
-              <img :src="values.image" alt="Question image" class="max-w-full rounded-md border" />
+            <div v-if="imagePreviewUrl" class="my-4">
+              <img :src="imagePreviewUrl" alt="Question image" class="max-w-full rounded-md border" />
             </div>
 
             <!-- Answer Options Preview -->
@@ -592,6 +590,8 @@ const questionToDelete = ref<string | null>(null)
 
 // Image Upload Ref
 const imageInput = ref<HTMLInputElement | null>(null)
+const imageFile = ref<File | null>(null)
+const imagePreviewUrl = ref<string>('')
 
 // Form Schema
 const formSchema = toTypedSchema(
@@ -601,7 +601,6 @@ const formSchema = toTypedSchema(
     options: z.array(z.string().min(1, 'Option cannot be blank')),
     correctAnswer: z.string(),
     explanation: z.string().optional(),
-    image: z.string().optional(),
   }),
 )
 
@@ -614,11 +613,8 @@ const { handleSubmit, setFieldValue, values, resetForm } = useForm({
     options: ['', '', '', ''],
     correctAnswer: '0',
     explanation: '',
-    image: '',
   },
 })
-
-const imageValue = computed(() => values.image || '')
 
 // Reset form when dialog's state changes
 watch(isCreateDialogOpen, () => {
@@ -629,9 +625,10 @@ watch(isCreateDialogOpen, () => {
       options: ['', '', '', ''],
       correctAnswer: '0',
       explanation: '',
-      image: '',
     },
   })
+  imageFile.value = null
+  imagePreviewUrl.value = ''
   if (imageInput.value) {
     imageInput.value.value = ''
   }
@@ -668,16 +665,18 @@ const handleImageUpload = (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
   if (file) {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      setFieldValue('image', e.target?.result as string)
-    }
-    reader.readAsDataURL(file)
+    imageFile.value = file
+    // Create preview URL
+    imagePreviewUrl.value = URL.createObjectURL(file)
   }
 }
 
 const removeImage = () => {
-  setFieldValue('image', '')
+  imageFile.value = null
+  if (imagePreviewUrl.value) {
+    URL.revokeObjectURL(imagePreviewUrl.value)
+    imagePreviewUrl.value = ''
+  }
   if (imageInput.value) {
     imageInput.value.value = ''
   }
@@ -743,15 +742,37 @@ const onSubmit = handleSubmit(async (formValues) => {
     }
 
     const { correctAnswer, difficulty, ...rest } = formValues
-    await questionStore.createQuestion({
+
+    // Create question first (without image)
+    const createdQuestion = await questionStore.createQuestion({
       ...rest,
       correct_answer: parseInt(correctAnswer),
       difficulty: parseInt(difficulty),
       classroom_id: selectedClassroomId.value,
       created_by: authStore.user!.id,
+      image: null, // Will be updated after upload
     })
 
-    // Show success toast first
+    // Upload image if one was selected
+    if (imageFile.value && createdQuestion) {
+      try {
+        const imageUrl = await questionStore.uploadQuestionImage(
+          imageFile.value,
+          selectedClassroomId.value,
+          createdQuestion.id,
+        )
+
+        // Update question with image URL
+        await questionStore.updateQuestion(createdQuestion.id, {
+          image: imageUrl,
+        })
+      } catch (imageError) {
+        console.error('Error uploading image:', imageError)
+        toast.error('Question created but image upload failed')
+      }
+    }
+
+    // Show success toast
     toast.success('Question created successfully')
 
     // Close dialog and reset form
