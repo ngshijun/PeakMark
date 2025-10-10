@@ -7,7 +7,7 @@ type VideoUpdate = TablesUpdate<'videos'>
 
 /**
  * Video service
- * Handles video CRUD and retrieval operations
+ * Handles video CRUD and retrieval operations with folder structure support
  */
 export class VideoService extends BaseService {
   /**
@@ -24,6 +24,84 @@ export class VideoService extends BaseService {
     }
 
     return data || []
+  }
+
+  /**
+   * Get videos and folders by classroom and parent folder
+   */
+  async getVideosByFolder(
+    classroomId: string,
+    parentId: string | null = null,
+  ): Promise<Video[]> {
+    let query = this.client
+      .from('videos')
+      .select('*')
+      .eq('classroom_id', classroomId)
+      .order('type', { ascending: false }) // folders first
+      .order('title', { ascending: true })
+
+    if (parentId === null) {
+      query = query.is('parent_id', null)
+    } else {
+      query = query.eq('parent_id', parentId)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      this.handleError(error)
+    }
+
+    return data || []
+  }
+
+  /**
+   * Get folder path (breadcrumb trail) for a given folder
+   */
+  async getFolderPath(folderId: string): Promise<Video[]> {
+    const path: Video[] = []
+    let currentId: string | null = folderId
+
+    while (currentId) {
+      const folder = await this.getVideoById(currentId)
+      if (!folder) break
+
+      path.unshift(folder)
+      currentId = folder.parent_id
+    }
+
+    return path
+  }
+
+  /**
+   * Create a new folder
+   */
+  async createFolder(
+    title: string,
+    classroomId: string,
+    createdBy: string,
+    parentId: string | null = null,
+  ): Promise<Video> {
+    const { data, error } = await this.client
+      .from('videos')
+      .insert({
+        title,
+        classroom_id: classroomId,
+        created_by: createdBy,
+        parent_id: parentId,
+        type: 'folder',
+        description: null,
+        youtube_url: null,
+        youtube_video_id: null,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      this.handleError(error)
+    }
+
+    return data
   }
 
   /**

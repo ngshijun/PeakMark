@@ -49,10 +49,15 @@
               v-for="video in paginatedVideos"
               :key="video.id"
               class="group rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col"
-              @click="openVideo(video)"
+              @click="handleVideoClick(video)"
             >
+              <!-- Folder Icon -->
+              <div v-if="video.type === 'folder'" class="aspect-video bg-muted flex items-center justify-center">
+                <Folder class="h-16 w-16 text-blue-500" />
+              </div>
+
               <!-- Video Thumbnail -->
-              <div class="relative aspect-video bg-muted">
+              <div v-else class="relative aspect-video bg-muted">
                 <img
                   :src="`https://img.youtube.com/vi/${video.youtube_video_id}/hqdefault.jpg`"
                   :alt="video.title"
@@ -67,12 +72,12 @@
                 </div>
               </div>
 
-              <!-- Video Info -->
+              <!-- Video/Folder Info -->
               <div class="p-4 flex flex-col flex-1">
                 <div class="flex-1 space-y-3">
                   <div>
                     <h3 class="font-semibold line-clamp-2 mb-1">{{ video.title }}</h3>
-                    <p class="text-sm text-muted-foreground line-clamp-2">
+                    <p v-if="video.type === 'video'" class="text-sm text-muted-foreground line-clamp-2">
                       {{ video.description || 'No description' }}
                     </p>
                   </div>
@@ -161,7 +166,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useVideoStore } from '@/stores/videos'
-import { useAuthStore } from '@/stores/auth'
 import { useNavigation } from '@/composables/useNavigation'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { Input } from '@/components/ui/input'
@@ -188,15 +192,25 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
-import { Search, Play, Video } from 'lucide-vue-next'
+import { Search, Play, Video, Folder } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import type { Tables } from '@/types/database.types'
 
-const breadcrumbs = [{ label: 'Videos' }]
-
 const videoStore = useVideoStore()
-const authStore = useAuthStore()
 const { selectedClassroomId } = useNavigation()
+
+const breadcrumbs = computed(() => {
+  const crumbs = [{ label: 'Videos', onClick: () => navigateToFolder(null) }]
+
+  videoStore.folderPath.forEach((folder) => {
+    crumbs.push({
+      label: folder.title,
+      onClick: () => navigateToFolder(folder.id),
+    })
+  })
+
+  return crumbs
+})
 
 const searchQuery = ref('')
 
@@ -216,15 +230,14 @@ const isWatchDialogOpen = ref(false)
 const watchingVideo = ref<Tables<'videos'> | null>(null)
 
 const filteredVideos = computed(() => {
-  if (!selectedClassroomId.value) return []
+  if (!searchQuery.value) {
+    return videoStore.videos
+  }
 
-  return videoStore.videos.filter((video) => {
-    const matchesSearch =
-      video.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      (video.description?.toLowerCase().includes(searchQuery.value.toLowerCase()) ?? false)
-    const matchesClassroom = video.classroom_id === selectedClassroomId.value
-    return matchesSearch && matchesClassroom
-  })
+  return videoStore.videos.filter((video) =>
+    video.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    (video.description?.toLowerCase().includes(searchQuery.value.toLowerCase()) ?? false)
+  )
 })
 
 // Computed property for total pages
@@ -249,9 +262,30 @@ const openVideo = (video: Tables<'videos'>) => {
   isWatchDialogOpen.value = true
 }
 
-onMounted(async () => {
+const handleVideoClick = (video: Tables<'videos'>) => {
+  if (video.type === 'folder') {
+    navigateToFolder(video.id)
+  } else {
+    openVideo(video)
+  }
+}
+
+const navigateToFolder = async (folderId: string | null) => {
+  if (!selectedClassroomId.value) return
+
   try {
-    await videoStore.fetchStudentVideos(authStore.user!.id)
+    await videoStore.navigateToFolder(selectedClassroomId.value, folderId)
+    currentPage.value = 1
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : 'Failed to navigate to folder')
+  }
+}
+
+onMounted(async () => {
+  if (!selectedClassroomId.value) return
+
+  try {
+    await videoStore.navigateToFolder(selectedClassroomId.value, null)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to load data'
     toast.error(errorMessage)

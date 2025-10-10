@@ -7,7 +7,7 @@
         <p class="text-muted-foreground">Upload and manage video resources for your classroom</p>
       </div>
 
-      <!-- Filters and Actions -->
+      <!-- Actions Bar -->
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <!-- Search Input -->
         <div class="relative flex-1 sm:max-w-md">
@@ -15,11 +15,17 @@
           <Input v-model="searchQuery" type="search" placeholder="Search videos..." class="pl-8" />
         </div>
 
-        <!-- Upload Video Button -->
-        <Button @click="isUploadDialogOpen = true">
-          <Plus class="mr-2 h-4 w-4" />
-          Upload Video
-        </Button>
+        <!-- Action Buttons -->
+        <div class="flex gap-2">
+          <Button variant="outline" @click="isCreateFolderDialogOpen = true">
+            <FolderPlus class="mr-2 h-4 w-4" />
+            New Folder
+          </Button>
+          <Button @click="isUploadDialogOpen = true">
+            <Plus class="mr-2 h-4 w-4" />
+            Upload Video
+          </Button>
+        </div>
       </div>
 
       <!-- Videos Grid -->
@@ -55,9 +61,15 @@
               <ContextMenuTrigger as-child>
                 <div
                   class="group rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-shadow flex flex-col cursor-pointer"
+                  @click="handleVideoClick(video)"
                 >
+                  <!-- Folder Icon -->
+                  <div v-if="video.type === 'folder'" class="aspect-video bg-muted flex items-center justify-center">
+                    <Folder class="h-16 w-16 text-blue-500" />
+                  </div>
+
                   <!-- Video Thumbnail -->
-                  <div class="relative aspect-video bg-muted">
+                  <div v-else class="relative aspect-video bg-muted">
                     <img
                       :src="`https://img.youtube.com/vi/${video.youtube_video_id}/hqdefault.jpg`"
                       :alt="video.title"
@@ -66,19 +78,19 @@
                     <div
                       class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                     >
-                      <Button variant="secondary" size="sm" @click="openVideo(video)">
+                      <Button variant="secondary" size="sm" @click.stop="openVideo(video)">
                         <Play class="mr-2 h-4 w-4" />
                         Watch
                       </Button>
                     </div>
                   </div>
 
-                  <!-- Video Info -->
+                  <!-- Video/Folder Info -->
                   <div class="p-4 flex flex-col flex-1">
                     <div class="flex-1 space-y-3">
                       <div>
                         <h3 class="font-semibold line-clamp-2 mb-1">{{ video.title }}</h3>
-                        <p class="text-sm text-muted-foreground line-clamp-2">
+                        <p v-if="video.type === 'video'" class="text-sm text-muted-foreground line-clamp-2">
                           {{ video.description || 'No description' }}
                         </p>
                       </div>
@@ -87,19 +99,19 @@
                 </div>
               </ContextMenuTrigger>
               <ContextMenuContent class="w-48">
-                <ContextMenuItem @click="openVideo(video)">
+                <ContextMenuItem v-if="video.type === 'video'" @click="openVideo(video)">
                   <Play class="mr-2 h-4 w-4" />
                   Watch Video
                 </ContextMenuItem>
-                <ContextMenuSeparator />
+                <ContextMenuSeparator v-if="video.type === 'video'" />
                 <ContextMenuItem @click="editVideo(video)">
                   <Pencil class="mr-2 h-4 w-4" />
-                  Edit Video
+                  Edit {{ video.type === 'folder' ? 'Folder' : 'Video' }}
                 </ContextMenuItem>
                 <ContextMenuSeparator />
                 <ContextMenuItem @click="openDeleteDialog(video)" class="text-destructive">
                   <Trash2 class="mr-2 h-4 w-4" />
-                  Delete Video
+                  Delete {{ video.type === 'folder' ? 'Folder' : 'Video' }}
                 </ContextMenuItem>
               </ContextMenuContent>
             </ContextMenu>
@@ -300,6 +312,43 @@
         </div>
       </DialogContent>
     </Dialog>
+
+    <!-- Create Folder Dialog -->
+    <Dialog :open="isCreateFolderDialogOpen" @update:open="closeCreateFolderDialog">
+      <DialogContent class="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Create New Folder</DialogTitle>
+          <DialogDescription>Enter a name for the new folder</DialogDescription>
+        </DialogHeader>
+
+        <form @submit.prevent="handleCreateFolder" class="space-y-4">
+          <div class="space-y-2">
+            <Label for="folderName">Folder Name</Label>
+            <Input
+              id="folderName"
+              v-model="newFolderName"
+              placeholder="Enter folder name"
+              :disabled="isCreatingFolder"
+              @keydown.enter.prevent="handleCreateFolder"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              @click="closeCreateFolderDialog"
+              :disabled="isCreatingFolder"
+            >
+              Cancel
+            </Button>
+            <Button type="submit" :disabled="!newFolderName || isCreatingFolder">
+              {{ isCreatingFolder ? 'Creating...' : 'Create' }}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   </MainLayout>
 </template>
 
@@ -352,19 +401,31 @@ import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore } from '@/stores/classrooms'
 import { useVideoStore } from '@/stores/videos'
 import type { Tables } from '@/types/database.types'
+import { Label } from '@/components/ui/label'
 import { toTypedSchema } from '@vee-validate/zod'
-import { Pencil, Play, Plus, Search, Trash2, Video } from 'lucide-vue-next'
+import { Folder, FolderPlus, Pencil, Play, Plus, Search, Trash2, Video } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import * as z from 'zod'
 
-const breadcrumbs = [{ label: 'Videos' }]
-
 const videoStore = useVideoStore()
 const classroomStore = useClassroomStore()
 const authStore = useAuthStore()
 const { selectedClassroomId } = useNavigation()
+
+const breadcrumbs = computed(() => {
+  const crumbs = [{ label: 'Videos', onClick: () => navigateToFolder(null) }]
+
+  videoStore.folderPath.forEach((folder) => {
+    crumbs.push({
+      label: folder.title,
+      onClick: () => navigateToFolder(folder.id),
+    })
+  })
+
+  return crumbs
+})
 
 const searchQuery = ref('')
 
@@ -383,11 +444,14 @@ const itemsPerPageString = computed({
 const isUploadDialogOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
 const isWatchDialogOpen = ref(false)
+const isCreateFolderDialogOpen = ref(false)
 const editingVideo = ref<Tables<'videos'> | null>(null)
 const videoToDelete = ref<Tables<'videos'> | null>(null)
 const watchingVideo = ref<Tables<'videos'> | null>(null)
 const isDeletingId = ref<string | null>(null)
 const hasAttemptSubmit = ref(false)
+const newFolderName = ref('')
+const isCreatingFolder = ref(false)
 
 // Form Schema
 const formSchema = toTypedSchema(
@@ -436,13 +500,13 @@ watch(isUploadDialogOpen, (newVal) => {
 })
 
 const filteredVideos = computed(() => {
-  if (!selectedClassroomId.value) return []
+  if (!searchQuery.value) {
+    return videoStore.videos
+  }
 
-  return videoStore.videos.filter((video) => {
-    const matchesSearch = video.title.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchesClassroom = video.classroom_id === selectedClassroomId.value
-    return matchesSearch && matchesClassroom
-  })
+  return videoStore.videos.filter((video) =>
+    video.title.toLowerCase().includes(searchQuery.value.toLowerCase()),
+  )
 })
 
 // Computed property for total pages
@@ -492,11 +556,13 @@ const onSubmit = handleSubmit(async (formValues) => {
 
     const videoData = {
       title: formValues.title,
-      description: formValues.description || null,
+      description: formValues.description,
       youtube_url: formValues.youtubeUrl,
       youtube_video_id: videoId,
       classroom_id: selectedClassroomId.value,
-      uploaded_by: authStore.user!.id,
+      created_by: authStore.user!.id,
+      parent_id: videoStore.currentFolderId ?? undefined,
+      type: 'video' as const,
     }
 
     if (editingVideo.value) {
@@ -520,9 +586,9 @@ const editVideo = (video: Tables<'videos'>) => {
   editingVideo.value = video
   resetForm({
     values: {
-      youtubeUrl: video.youtube_url,
+      youtubeUrl: video.youtube_url ?? '',
       title: video.title,
-      description: video.description || '',
+      description: video.description ?? '',
     },
   })
   isUploadDialogOpen.value = true
@@ -561,10 +627,56 @@ const openVideo = (video: Tables<'videos'>) => {
   isWatchDialogOpen.value = true
 }
 
+const handleVideoClick = (video: Tables<'videos'>) => {
+  if (video.type === 'folder') {
+    navigateToFolder(video.id)
+  }
+}
+
+const navigateToFolder = async (folderId: string | null) => {
+  if (!selectedClassroomId.value) return
+
+  try {
+    await videoStore.navigateToFolder(selectedClassroomId.value, folderId)
+    currentPage.value = 1
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : 'Failed to navigate to folder')
+  }
+}
+
+const handleCreateFolder = async () => {
+  if (!newFolderName.value.trim() || !selectedClassroomId.value) return
+
+  isCreatingFolder.value = true
+
+  try {
+    await videoStore.createFolder(
+      newFolderName.value.trim(),
+      selectedClassroomId.value,
+      authStore.user!.id,
+      videoStore.currentFolderId ?? undefined,
+    )
+    toast.success('Folder created successfully')
+    isCreatingFolder.value = false
+    closeCreateFolderDialog()
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : 'Failed to create folder')
+    isCreatingFolder.value = false
+  }
+}
+
+const closeCreateFolderDialog = () => {
+  if (isCreatingFolder.value) return
+  isCreateFolderDialogOpen.value = false
+  newFolderName.value = ''
+}
+
 onMounted(async () => {
+  if (!selectedClassroomId.value) return
+
   try {
     await Promise.all([
-      videoStore.fetchVideos(),
+      videoStore.navigateToFolder(selectedClassroomId.value, null),
       classroomStore.fetchTeacherClassrooms(authStore.user!.id),
     ])
   } catch (error) {

@@ -438,35 +438,41 @@ export type Database = {
         Row: {
           classroom_id: string | null
           created_at: string
+          created_by: string
           description: string | null
           id: string
+          parent_id: string | null
           title: string
+          type: string
           updated_at: string
-          uploaded_by: string
-          youtube_url: string
-          youtube_video_id: string
+          youtube_url: string | null
+          youtube_video_id: string | null
         }
         Insert: {
           classroom_id?: string | null
           created_at?: string
+          created_by: string
           description?: string | null
           id?: string
+          parent_id?: string | null
           title: string
+          type: string
           updated_at?: string
-          uploaded_by: string
-          youtube_url: string
-          youtube_video_id: string
+          youtube_url?: string | null
+          youtube_video_id?: string | null
         }
         Update: {
           classroom_id?: string | null
           created_at?: string
+          created_by?: string
           description?: string | null
           id?: string
+          parent_id?: string | null
           title?: string
+          type?: string
           updated_at?: string
-          uploaded_by?: string
-          youtube_url?: string
-          youtube_video_id?: string
+          youtube_url?: string | null
+          youtube_video_id?: string | null
         }
         Relationships: [
           {
@@ -477,8 +483,15 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "videos_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "videos_uploaded_by_fkey"
-            columns: ["uploaded_by"]
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]

@@ -9,6 +9,8 @@ type VideoUpdate = TablesUpdate<'videos'>
 
 export const useVideoStore = defineStore('video', () => {
   const videos = ref<Video[]>([])
+  const folderPath = ref<Video[]>([])
+  const currentFolderId = ref<string | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -20,6 +22,69 @@ export const useVideoStore = defineStore('video', () => {
     try {
       const data = await videoService.getVideos()
       videos.value = data
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Fetch videos by folder
+  const fetchVideosByFolder = async (classroomId: string, parentId: string | null = null) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const data = await videoService.getVideosByFolder(classroomId, parentId)
+      videos.value = data
+      currentFolderId.value = parentId
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Navigate to a folder
+  const navigateToFolder = async (classroomId: string, folderId: string | null) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      // Fetch folder path for breadcrumbs
+      if (folderId) {
+        folderPath.value = await videoService.getFolderPath(folderId)
+      } else {
+        folderPath.value = []
+      }
+
+      // Fetch videos in this folder
+      await fetchVideosByFolder(classroomId, folderId)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Create a folder
+  const createFolder = async (
+    title: string,
+    classroomId: string,
+    createdBy: string,
+    parentId: string | null = null,
+  ) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const data = await videoService.createFolder(title, classroomId, createdBy, parentId)
+      videos.value.unshift(data)
       return data
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'An error occurred'
@@ -139,11 +204,16 @@ export const useVideoStore = defineStore('video', () => {
   return {
     // State
     videos,
+    folderPath,
+    currentFolderId,
     loading,
     error,
 
     // Actions
     fetchVideos,
+    fetchVideosByFolder,
+    navigateToFolder,
+    createFolder,
     fetchStudentVideos,
     fetchVideosBySubjectYear,
     fetchVideoById,
