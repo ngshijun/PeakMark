@@ -45,11 +45,11 @@ export class ClassroomService extends BaseService {
 
     return (data || []).map((classroom) => {
       const rawData = classroom as unknown as Classroom & {
-        classroom_members: { count: number } | null
+        classroom_members: { count: number }[] | null
       }
       return {
         ...rawData,
-        member_count: rawData.classroom_members?.count || 0,
+        member_count: rawData.classroom_members?.[0]?.count || 0,
       }
     })
   }
