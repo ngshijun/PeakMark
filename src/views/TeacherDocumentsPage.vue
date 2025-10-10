@@ -292,6 +292,13 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Document Preview Dialog -->
+    <DocumentPreviewDialog
+      :open="isPreviewDialogOpen"
+      :document="documentToPreview"
+      @update:open="(val) => (isPreviewDialogOpen = val)"
+    />
   </MainLayout>
 </template>
 
@@ -351,6 +358,7 @@ import {
 } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
+import DocumentPreviewDialog from '@/components/DocumentPreviewDialog.vue'
 
 type Document = Tables<'documents'>
 
@@ -393,6 +401,8 @@ const documentToDelete = ref<Document | null>(null)
 const isDeletingId = ref<string | null>(null)
 const isCreatingFolder = ref(false)
 const isUploading = ref(false)
+const isPreviewDialogOpen = ref(false)
+const documentToPreview = ref<Document | null>(null)
 
 const filteredDocuments = computed(() => {
   if (!searchQuery.value) {
@@ -444,6 +454,9 @@ const getFileIcon = (mimeType: string | null) => {
 const handleDocumentClick = (document: Document) => {
   if (document.type === 'folder') {
     navigateToFolder(document.id)
+  } else {
+    documentToPreview.value = document
+    isPreviewDialogOpen.value = true
   }
 }
 

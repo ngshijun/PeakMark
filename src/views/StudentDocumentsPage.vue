@@ -141,6 +141,13 @@
         </p>
       </div>
     </div>
+
+    <!-- Document Preview Dialog -->
+    <DocumentPreviewDialog
+      :open="isPreviewOpen"
+      :document="documentToPreview"
+      @update:open="(val) => (isPreviewOpen = val)"
+    />
   </MainLayout>
 </template>
 
@@ -168,6 +175,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import DocumentPreviewDialog from '@/components/DocumentPreviewDialog.vue'
 import { useNavigation } from '@/composables/useNavigation'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useDocumentStore } from '@/stores/documents'
@@ -253,9 +261,15 @@ const getFileIcon = (mimeType: string | null) => {
   return File
 }
 
+const isPreviewOpen = ref(false)
+const documentToPreview = ref<Document | null>(null)
+
 const handleDocumentClick = (document: Document) => {
   if (document.type === 'folder') {
     navigateToFolder(document.id)
+  } else {
+    documentToPreview.value = document
+    isPreviewOpen.value = true
   }
 }
 
