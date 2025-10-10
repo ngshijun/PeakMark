@@ -94,6 +94,26 @@ export const useVideoStore = defineStore('video', () => {
     }
   }
 
+  // Update a folder
+  const updateFolder = async (id: string, updates: VideoUpdate) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const data = await videoService.updateFolder(id, updates)
+      const index = videos.value.findIndex((v) => v.id === id)
+      if (index !== -1) {
+        videos.value[index] = data
+      }
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   // Fetch videos for student (from enrolled classrooms)
   const fetchStudentVideos = async (studentId: string) => {
     loading.value = true
@@ -214,6 +234,7 @@ export const useVideoStore = defineStore('video', () => {
     fetchVideosByFolder,
     navigateToFolder,
     createFolder,
+    updateFolder,
     fetchStudentVideos,
     fetchVideosBySubjectYear,
     fetchVideoById,

@@ -102,6 +102,24 @@ export class VideoService extends BaseService {
   }
 
   /**
+   * Update a folder
+   */
+  async updateFolder(id: string, updates: VideoUpdate): Promise<Video> {
+    const { data, error } = await this.client
+      .from('videos')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      this.handleError(error)
+    }
+
+    return data
+  }
+
+  /**
    * Get a single video by ID
    */
   async getVideoById(id: string): Promise<Video | null> {

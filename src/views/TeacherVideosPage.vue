@@ -105,12 +105,9 @@
                 </div>
               </ContextMenuTrigger>
               <ContextMenuContent class="w-48">
-                <ContextMenuItem v-if="video.type === 'video'" @click="openVideo(video)">
-                  <Play class="mr-2 h-4 w-4" />
-                  Watch Video
-                </ContextMenuItem>
-                <ContextMenuSeparator v-if="video.type === 'video'" />
-                <ContextMenuItem @click="editVideo(video)">
+                <ContextMenuItem
+                  @click="video.type === 'folder' ? editFolder(video) : editVideo(video)"
+                >
                   <Pencil class="mr-2 h-4 w-4" />
                   Edit {{ video.type === 'folder' ? 'Folder' : 'Video' }}
                 </ContextMenuItem>
@@ -319,23 +316,25 @@
       </DialogContent>
     </Dialog>
 
-    <!-- Create Folder Dialog -->
+    <!-- Create/Edit Folder Dialog -->
     <Dialog :open="isCreateFolderDialogOpen" @update:open="closeCreateFolderDialog">
       <DialogContent class="sm:max-w-[27rem]">
         <DialogHeader>
-          <DialogTitle>Create New Folder</DialogTitle>
-          <DialogDescription>Enter a name for the new folder</DialogDescription>
+          <DialogTitle>{{ editingFolder ? 'Edit Folder' : 'Create New Folder' }}</DialogTitle>
+          <DialogDescription>{{
+            editingFolder ? 'Update folder details' : 'Enter a name for the new folder'
+          }}</DialogDescription>
         </DialogHeader>
 
-        <form @submit.prevent="handleCreateFolder" class="space-y-4">
+        <form @submit.prevent="handleFolderAction" class="space-y-4">
           <div class="space-y-2">
             <Label for="folderName">Folder Name</Label>
             <Input
               id="folderName"
               v-model="newFolderName"
               placeholder="Enter folder name"
-              :disabled="isCreatingFolder"
-              @keydown.enter.prevent="handleCreateFolder"
+              :disabled="isSubmitting"
+              @keydown.enter.prevent="handleFolderAction"
             />
           </div>
 
@@ -344,12 +343,20 @@
               type="button"
               variant="outline"
               @click="closeCreateFolderDialog"
-              :disabled="isCreatingFolder"
+              :disabled="isSubmitting"
             >
               Cancel
             </Button>
-            <Button type="submit" :disabled="!newFolderName || isCreatingFolder">
-              {{ isCreatingFolder ? 'Creating...' : 'Create' }}
+            <Button type="submit" :disabled="!newFolderName || isSubmitting">
+              {{
+                isSubmitting
+                  ? editingFolder
+                    ? 'Updating...'
+                    : 'Creating...'
+                  : editingFolder
+                    ? 'Update'
+                    : 'Create'
+              }}
             </Button>
           </DialogFooter>
         </form>
@@ -384,6 +391,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Pagination,
   PaginationContent,
@@ -407,7 +415,6 @@ import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore } from '@/stores/classrooms'
 import { useVideoStore } from '@/stores/videos'
 import type { Tables } from '@/types/database.types'
-import { Label } from '@/components/ui/label'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Folder, FolderPlus, Pencil, Play, Plus, Search, Trash2, Video } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
@@ -451,13 +458,13 @@ const isUploadDialogOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
 const isWatchDialogOpen = ref(false)
 const isCreateFolderDialogOpen = ref(false)
+const editingFolder = ref<Tables<'videos'> | null>(null)
 const editingVideo = ref<Tables<'videos'> | null>(null)
 const videoToDelete = ref<Tables<'videos'> | null>(null)
 const watchingVideo = ref<Tables<'videos'> | null>(null)
 const isDeletingId = ref<string | null>(null)
 const hasAttemptSubmit = ref(false)
 const newFolderName = ref('')
-const isCreatingFolder = ref(false)
 
 // Form Schema
 const formSchema = toTypedSchema(
@@ -600,6 +607,12 @@ const editVideo = (video: Tables<'videos'>) => {
   isUploadDialogOpen.value = true
 }
 
+const editFolder = (folder: Tables<'videos'>) => {
+  editingFolder.value = folder
+  newFolderName.value = folder.title
+  isCreateFolderDialogOpen.value = true
+}
+
 const closeUploadDialog = () => {
   if (isSubmitting.value) return
   isUploadDialogOpen.value = false
@@ -650,11 +663,18 @@ const navigateToFolder = async (folderId: string | null) => {
   }
 }
 
+const handleFolderAction = () => {
+  if (editingFolder.value) {
+    handleUpdateFolder()
+  } else {
+    handleCreateFolder()
+  }
+}
+
 const handleCreateFolder = async () => {
+  console.log('here1')
   if (!newFolderName.value.trim() || !selectedClassroomId.value) return
-
-  isCreatingFolder.value = true
-
+  console.log('here2')
   try {
     await videoStore.createFolder(
       newFolderName.value.trim(),
@@ -663,17 +683,31 @@ const handleCreateFolder = async () => {
       videoStore.currentFolderId ?? undefined,
     )
     toast.success('Folder created successfully')
-    isCreatingFolder.value = false
     closeCreateFolderDialog()
   } catch (error) {
     toast.error(error instanceof Error ? error.message : 'Failed to create folder')
-    isCreatingFolder.value = false
+  }
+}
+
+const handleUpdateFolder = async () => {
+  console.log('here3')
+  if (!editingFolder.value || !newFolderName.value.trim()) return
+  console.log('here4')
+
+  try {
+    await videoStore.updateFolder(editingFolder.value!.id, {
+      title: newFolderName.value.trim(),
+    })
+    toast.success('Folder updated successfully')
+    closeCreateFolderDialog()
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : 'Failed to update folder')
   }
 }
 
 const closeCreateFolderDialog = () => {
-  if (isCreatingFolder.value) return
   isCreateFolderDialogOpen.value = false
+  editingFolder.value = null
   newFolderName.value = ''
 }
 
