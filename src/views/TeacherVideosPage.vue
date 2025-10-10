@@ -695,6 +695,7 @@ const handleUpdateFolder = async () => {
 }
 
 const closeFolderDialog = () => {
+  if (isSubmitting.value) return
   isFolderDialogOpen.value = false
   editingFolder.value = null
   newFolderName.value = ''

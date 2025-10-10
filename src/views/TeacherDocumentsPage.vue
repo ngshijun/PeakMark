@@ -528,6 +528,7 @@ const handleUpdateFolder = async () => {
 }
 
 const closeFolderDialog = () => {
+  if (isSubmitting.value) return
   isFolderDialogOpen.value = false
   newFolderName.value = ''
   editingFolder.value = null
@@ -570,6 +571,7 @@ const handleUploadFile = async () => {
 }
 
 const closeUploadDialog = () => {
+  if (isSubmitting.value) return
   isUploadDialogOpen.value = false
   selectedFile.value = null
   if (fileInputRef.value) {

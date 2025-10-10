@@ -95,7 +95,7 @@
                   placeholder="Enter the invitation code"
                   class="font-mono uppercase"
                   maxlength="36"
-                  :disabled="isJoining"
+                  :disabled="isSubmitting"
                 />
               </FormControl>
               <FormDescription>The code is case-insensitive</FormDescription>
@@ -104,11 +104,11 @@
           </FormField>
 
           <DialogFooter>
-            <Button type="button" variant="outline" @click="closeJoinDialog" :disabled="isJoining">
+            <Button type="button" variant="outline" @click="closeJoinDialog" :disabled="isSubmitting">
               Cancel
             </Button>
-            <Button type="submit" :disabled="isJoining" @click="hasAttemptSubmit = true">
-              {{ isJoining ? 'Joining...' : 'Join' }}
+            <Button type="submit" :disabled="isSubmitting" @click="hasAttemptSubmit = true">
+              {{ isSubmitting ? 'Joining...' : 'Join' }}
             </Button>
           </DialogFooter>
         </form>
@@ -144,7 +144,7 @@ import { useClassroomStore, type ClassroomWithMemberCount } from '@/stores/class
 import { toTypedSchema } from '@vee-validate/zod'
 import { Plus, School, UserCircle } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import * as z from 'zod'
 
@@ -154,7 +154,7 @@ const { goToClassroom } = useNavigation()
 
 const isJoinDialogOpen = ref(false)
 const hasAttemptSubmit = ref(false)
-const isJoining = ref(false)
+const isSubmitting = computed(() => classroomStore.loading)
 
 // Form Schema
 const formSchema = toTypedSchema(
@@ -187,7 +187,6 @@ watch(isJoinDialogOpen, (newVal) => {
 const onJoinSubmit = handleSubmit(async (formValues) => {
   if (!authStore.user) return
 
-  isJoining.value = true
   try {
     await classroomStore.joinClassroom(authStore.user.id, formValues.inviteCode)
     toast.success('Successfully joined classroom')
@@ -195,13 +194,11 @@ const onJoinSubmit = handleSubmit(async (formValues) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to join classroom'
     toast.error(errorMessage)
-  } finally {
-    isJoining.value = false
   }
 })
 
 const closeJoinDialog = () => {
-  if (isJoining.value) return
+  if (isSubmitting.value) return
   isJoinDialogOpen.value = false
 }
 

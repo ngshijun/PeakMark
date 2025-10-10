@@ -7,7 +7,7 @@
           <h1 class="text-3xl font-bold tracking-tight">Classrooms</h1>
           <p class="text-muted-foreground">Create and manage your classrooms</p>
         </div>
-        <Button @click="openCreateDialog">
+        <Button @click="openDialog">
           <Plus class="mr-2 h-4 w-4" />
           Create Classroom
         </Button>
@@ -220,7 +220,7 @@ const onSubmit = handleSubmit(async (formValues) => {
 
 const isSubmitting = computed(() => classroomStore.loading)
 
-const openCreateDialog = () => {
+const openDialog = () => {
   isDialogOpen.value = true
 }
 

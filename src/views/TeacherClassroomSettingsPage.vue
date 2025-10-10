@@ -154,11 +154,11 @@
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" @click="closeDeleteDialog" :disabled="isDeleting">
+            <Button variant="outline" @click="closeDeleteDialog" :disabled="isSubmitting">
               Cancel
             </Button>
-            <Button variant="destructive" @click="confirmDelete" :disabled="isDeleting">
-              {{ isDeleting ? 'Deleting...' : 'Delete' }}
+            <Button variant="destructive" @click="confirmDelete" :disabled="isSubmitting">
+              {{ isSubmitting ? 'Deleting...' : 'Delete' }}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -202,7 +202,6 @@ const { goToClassroomSelection } = useNavigation()
 
 const classroom = ref<Classroom | null>(null)
 const isDeleteDialogOpen = ref(false)
-const isDeleting = ref(false)
 const hasAttemptSubmit = ref(false)
 
 // Breadcrumbs
@@ -270,14 +269,12 @@ const openDeleteDialog = () => {
 }
 
 const closeDeleteDialog = () => {
-  if (isDeleting.value) return
+  if (isSubmitting.value) return
   isDeleteDialogOpen.value = false
 }
 
 const confirmDelete = async () => {
   if (!classroom.value) return
-
-  isDeleting.value = true
 
   try {
     await classroomStore.deleteClassroom(classroom.value.id)
@@ -287,8 +284,6 @@ const confirmDelete = async () => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to delete classroom'
     toast.error(errorMessage)
-  } finally {
-    isDeleting.value = false
   }
 }
 

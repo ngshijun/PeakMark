@@ -89,11 +89,11 @@
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" @click="closeLeaveDialog" :disabled="isLeaving">
+            <Button variant="outline" @click="closeLeaveDialog" :disabled="isSubmitting">
               Cancel
             </Button>
-            <Button variant="destructive" @click="confirmLeave" :disabled="isLeaving">
-              {{ isLeaving ? 'Leaving...' : 'Leave Classroom' }}
+            <Button variant="destructive" @click="confirmLeave" :disabled="isSubmitting">
+              {{ isSubmitting ? 'Leaving...' : 'Leave Classroom' }}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -130,7 +130,8 @@ const { goToClassroomSelection } = useNavigation()
 
 const classroom = ref<ClassroomWithMemberCount | null>(null)
 const isLeaveDialogOpen = ref(false)
-const isLeaving = ref(false)
+
+const isSubmitting = computed(() => classroomStore.loading)
 
 // Breadcrumbs
 const breadcrumbs = computed(() => [{ label: 'Settings' }])
@@ -153,14 +154,12 @@ const openLeaveDialog = () => {
 }
 
 const closeLeaveDialog = () => {
-  if (isLeaving.value) return
+  if (isSubmitting.value) return
   isLeaveDialogOpen.value = false
 }
 
 const confirmLeave = async () => {
   if (!classroom.value || !authStore.user) return
-
-  isLeaving.value = true
 
   try {
     await classroomStore.leaveClassroom(authStore.user.id, classroom.value.id)
@@ -170,8 +169,6 @@ const confirmLeave = async () => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to leave classroom'
     toast.error(errorMessage)
-  } finally {
-    isLeaving.value = false
   }
 }
 
