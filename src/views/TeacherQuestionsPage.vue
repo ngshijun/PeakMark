@@ -271,44 +271,43 @@
               Image (Optional)
             </label>
             <div class="space-y-2">
-              <div class="flex items-center gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  @click="() => imageInput?.click()"
-                  class="w-full"
-                  :disabled="isSubmitting"
-                >
-                  <Upload class="mr-2 h-4 w-4" />
-                  {{
-                    imageFile ? 'Change Image' : imagePreviewUrl ? 'Replace Image' : 'Upload Image'
-                  }}
-                </Button>
-                <input
-                  ref="imageInput"
-                  type="file"
-                  accept="image/*"
-                  class="hidden"
-                  @change="handleImageUpload"
-                  :disabled="isSubmitting"
-                />
-                <Button
-                  v-if="imageFile || imagePreviewUrl"
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  @click="removeImage"
-                  :disabled="isSubmitting"
-                >
-                  <X class="h-4 w-4" />
-                </Button>
-              </div>
-              <div v-if="imagePreviewUrl" class="mt-2">
+              <Button
+                type="button"
+                variant="outline"
+                @click="() => imageInput?.click()"
+                class="w-full"
+                :disabled="isSubmitting"
+              >
+                <Upload class="mr-2 h-4 w-4" />
+                {{
+                  imageFile ? 'Change Image' : imagePreviewUrl ? 'Replace Image' : 'Upload Image'
+                }}
+              </Button>
+              <input
+                ref="imageInput"
+                type="file"
+                accept="image/*"
+                class="hidden"
+                @change="handleImageUpload"
+                :disabled="isSubmitting"
+              />
+              <div v-if="imagePreviewUrl" class="relative mt-2 inline-block">
                 <img
                   :src="imagePreviewUrl"
                   alt="Question image preview"
                   class="max-h-32 rounded-md border"
                 />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  @click="removeImage"
+                  :disabled="isSubmitting"
+                  title="Remove image"
+                  class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-background/80 hover:bg-destructive/10 border shadow-sm"
+                >
+                  <X class="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                </Button>
                 <p v-if="!imageFile && existingImageUrl" class="text-xs text-muted-foreground mt-1">
                   Current image
                 </p>
@@ -620,6 +619,7 @@ const existingImageUrl = ref<string>('')
 const imageInput = ref<HTMLInputElement | null>(null)
 const imageFile = ref<File | null>(null)
 const imagePreviewUrl = ref<string>('')
+const imageRemovedByUser = ref(false)
 
 // Form Schema
 const formSchema = toTypedSchema(
@@ -666,6 +666,7 @@ watch(isCreateDialogOpen, async (newValue) => {
 
     // Reset image state
     imageFile.value = null
+    imageRemovedByUser.value = false
     // Only revoke if it's a local object URL (starts with blob:)
     if (imagePreviewUrl.value && imagePreviewUrl.value.startsWith('blob:')) {
       URL.revokeObjectURL(imagePreviewUrl.value)
@@ -714,11 +715,18 @@ const handleImageUpload = (event: Event) => {
 const removeImage = () => {
   imageFile.value = null
   if (imagePreviewUrl.value) {
-    URL.revokeObjectURL(imagePreviewUrl.value)
+    // Only revoke if it's a blob URL
+    if (imagePreviewUrl.value.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreviewUrl.value)
+    }
     imagePreviewUrl.value = ''
   }
   if (imageInput.value) {
     imageInput.value.value = ''
+  }
+  // Mark that user explicitly removed the image
+  if (isEditMode.value && existingImageUrl.value) {
+    imageRemovedByUser.value = true
   }
 }
 
@@ -801,20 +809,16 @@ const onSubmit = handleSubmit(async (formValues) => {
       // Handle image updates
       const hasNewImage = imageFile.value !== null
       const hadOldImage = existingImageUrl.value !== ''
-      const imageRemoved = hadOldImage && !imagePreviewUrl.value
 
       // Case 1: User uploaded a new image
       if (hasNewImage) {
-        // Delete old image if it exists
+        // Delete old image from storage first if it exists
         if (hadOldImage) {
           try {
-            await questionStore.uploadQuestionImage(
-              imageFile.value!,
-              selectedClassroomId.value,
-              questionToEdit.value.id,
-            )
-          } catch (error) {
-            console.error('Error deleting old image:', error)
+            await questionStore.deleteQuestionImage(existingImageUrl.value)
+          } catch (deleteError) {
+            console.error('Error deleting old image:', deleteError)
+            // Continue with upload even if deletion fails
           }
         }
 
@@ -831,8 +835,17 @@ const onSubmit = handleSubmit(async (formValues) => {
           toast.error('Question updated but image upload failed')
         }
       }
-      // Case 2: User removed the existing image
-      else if (imageRemoved) {
+      // Case 2: User explicitly removed the existing image
+      else if (imageRemovedByUser.value) {
+        // Delete image from storage
+        if (hadOldImage) {
+          try {
+            await questionStore.deleteQuestionImage(existingImageUrl.value)
+          } catch (deleteError) {
+            console.error('Error deleting image:', deleteError)
+            // Continue with update even if deletion fails
+          }
+        }
         updates.image = null
       }
       // Case 3: No change to image (keep existing)
@@ -914,8 +927,9 @@ const editQuestion = (question: (typeof questionStore.questions)[0]) => {
     imagePreviewUrl.value = question.image
   }
 
-  // Clear any file input
+  // Clear any file input and reset removal flag
   imageFile.value = null
+  imageRemovedByUser.value = false
   if (imageInput.value) {
     imageInput.value.value = ''
   }

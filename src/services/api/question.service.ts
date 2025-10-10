@@ -115,6 +115,14 @@ export class QuestionService extends BaseService {
   }
 
   /**
+   * Delete question image from storage
+   * @param imageUrl - The public URL of the image to delete
+   */
+  async deleteQuestionImage(imageUrl: string): Promise<void> {
+    return await storageService.deleteQuestionImage(imageUrl)
+  }
+
+  /**
    * Get questions by difficulty level
    */
   async getQuestionsByDifficulty(classroomId: string, difficulty: number): Promise<Question[]> {

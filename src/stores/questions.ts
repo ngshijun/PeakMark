@@ -78,6 +78,16 @@ export const useQuestionStore = defineStore('question', () => {
     }
   }
 
+  // Delete question image from storage
+  const deleteQuestionImage = async (imageUrl: string) => {
+    try {
+      await questionService.deleteQuestionImage(imageUrl)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    }
+  }
+
   // Update an existing question
   const updateQuestion = async (id: string, updates: QuestionUpdate) => {
     loading.value = true
@@ -130,6 +140,7 @@ export const useQuestionStore = defineStore('question', () => {
     fetchQuestionById,
     createQuestion,
     uploadQuestionImage,
+    deleteQuestionImage,
     updateQuestion,
     deleteQuestion,
     clearError,

@@ -37,7 +37,7 @@ const router = createRouter({
     {
       path: '/classroom/:classroomId/questions',
       name: 'questions',
-      component: () => import('@/views/QuestionsPage.vue'),
+      component: () => import('@/views/TeacherQuestionsPage.vue'),
       meta: { requiresAuth: true, role: ['teacher'] },
     },
     // {
