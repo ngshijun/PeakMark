@@ -7,30 +7,6 @@
         <p class="text-muted-foreground">Upload and organize documents for your classroom</p>
       </div>
 
-      <!-- Folder Navigation -->
-      <div
-        v-if="documentStore.folderPath.length > 0"
-        class="flex items-center gap-2 text-sm text-muted-foreground"
-      >
-        <Button variant="ghost" size="sm" @click="navigateToRoot">
-          <Home class="h-4 w-4" />
-        </Button>
-        <ChevronRight class="h-4 w-4" />
-        <template v-for="(folder, index) in documentStore.folderPath" :key="folder.id">
-          <Button
-            variant="ghost"
-            size="sm"
-            @click="navigateToFolder(folder.id)"
-            :class="{
-              'text-foreground font-medium': index === documentStore.folderPath.length - 1,
-            }"
-          >
-            {{ folder.name }}
-          </Button>
-          <ChevronRight v-if="index < documentStore.folderPath.length - 1" class="h-4 w-4" />
-        </template>
-      </div>
-
       <!-- Actions Bar -->
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <!-- Search Input -->
@@ -351,7 +327,6 @@ import { useDocumentStore } from '@/stores/documents'
 import { MAX_FILE_SIZE } from '@/types/constants'
 import type { Tables } from '@/types/database.types'
 import {
-  ChevronRight,
   Download,
   File,
   FileCode,
@@ -359,7 +334,6 @@ import {
   FileText,
   Folder,
   FolderPlus,
-  Home,
   Search,
   Trash2,
   Upload,
@@ -370,11 +344,22 @@ import { toast } from 'vue-sonner'
 
 type Document = Tables<'documents'>
 
-const breadcrumbs = [{ label: 'Documents' }]
-
 const documentStore = useDocumentStore()
 const authStore = useAuthStore()
 const { selectedClassroomId } = useNavigation()
+
+const breadcrumbs = computed(() => {
+  const crumbs = [{ label: 'Documents', onClick: () => navigateToFolder(null) }]
+
+  documentStore.folderPath.forEach((folder) => {
+    crumbs.push({
+      label: folder.name,
+      onClick: () => navigateToFolder(folder.id),
+    })
+  })
+
+  return crumbs
+})
 
 const searchQuery = ref('')
 const currentPage = ref(1)
@@ -461,10 +446,6 @@ const navigateToFolder = async (folderId: string | null) => {
   } catch (error) {
     toast.error(error instanceof Error ? error.message : 'Failed to navigate to folder')
   }
-}
-
-const navigateToRoot = () => {
-  navigateToFolder(null)
 }
 
 const handleCreateFolder = async () => {

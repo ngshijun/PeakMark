@@ -12,7 +12,12 @@
             <BreadcrumbList>
               <template v-for="(crumb, index) in breadcrumbs" :key="index">
                 <BreadcrumbItem>
-                  <BreadcrumbLink v-if="crumb.href || crumb.to" :href="crumb.href || crumb.to">
+                  <BreadcrumbLink
+                    v-if="crumb.href || crumb.to || crumb.onClick"
+                    :href="crumb.href || crumb.to || '#'"
+                    @click="(e: Event) => { if (crumb.onClick) { e.preventDefault(); crumb.onClick() } }"
+                    :class="crumb.onClick ? 'cursor-pointer' : ''"
+                  >
                     {{ crumb.label }}
                   </BreadcrumbLink>
                   <BreadcrumbPage v-else>
@@ -69,6 +74,7 @@ interface Breadcrumb {
   label: string
   href?: string
   to?: string
+  onClick?: () => void
 }
 
 interface Props {

@@ -7,30 +7,6 @@
         <p class="text-muted-foreground">Browse and download classroom documents</p>
       </div>
 
-      <!-- Folder Navigation -->
-      <div
-        v-if="documentStore.folderPath.length > 0"
-        class="flex items-center gap-2 text-sm text-muted-foreground"
-      >
-        <Button variant="ghost" size="sm" @click="navigateToRoot">
-          <Home class="h-4 w-4" />
-        </Button>
-        <ChevronRight class="h-4 w-4" />
-        <template v-for="(folder, index) in documentStore.folderPath" :key="folder.id">
-          <Button
-            variant="ghost"
-            size="sm"
-            @click="navigateToFolder(folder.id)"
-            :class="{
-              'text-foreground font-medium': index === documentStore.folderPath.length - 1,
-            }"
-          >
-            {{ folder.name }}
-          </Button>
-          <ChevronRight v-if="index < documentStore.folderPath.length - 1" class="h-4 w-4" />
-        </template>
-      </div>
-
       <!-- Search Bar -->
       <div class="relative max-w-md">
         <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -164,7 +140,6 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from '@/components/ui/button'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -193,14 +168,12 @@ import MainLayout from '@/layouts/MainLayout.vue'
 import { useDocumentStore } from '@/stores/documents'
 import type { Tables } from '@/types/database.types'
 import {
-  ChevronRight,
   Download,
   File,
   FileCode,
   FileImage,
   FileText,
   Folder,
-  Home,
   Search,
 } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
@@ -208,10 +181,21 @@ import { toast } from 'vue-sonner'
 
 type Document = Tables<'documents'>
 
-const breadcrumbs = [{ label: 'Documents' }]
-
 const documentStore = useDocumentStore()
 const { selectedClassroomId } = useNavigation()
+
+const breadcrumbs = computed(() => {
+  const crumbs = [{ label: 'Documents', onClick: () => navigateToFolder(null) }]
+
+  documentStore.folderPath.forEach((folder) => {
+    crumbs.push({
+      label: folder.name,
+      onClick: () => navigateToFolder(folder.id),
+    })
+  })
+
+  return crumbs
+})
 
 const searchQuery = ref('')
 const currentPage = ref(1)
@@ -287,10 +271,6 @@ const navigateToFolder = async (folderId: string | null) => {
   } catch (error) {
     toast.error(error instanceof Error ? error.message : 'Failed to navigate to folder')
   }
-}
-
-const navigateToRoot = () => {
-  navigateToFolder(null)
 }
 
 const downloadFile = (document: Document) => {
