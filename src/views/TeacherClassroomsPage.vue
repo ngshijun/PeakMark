@@ -199,11 +199,13 @@ watch(isDialogOpen, (newVal) => {
 })
 
 const onSubmit = handleSubmit(async (formValues) => {
+  if (!authStore.user) return
+
   try {
     const classroomData = {
       name: formValues.name,
       description: formValues.description || null,
-      teacher_id: authStore.user!.id,
+      teacher_id: authStore.user.id,
     }
 
     await classroomStore.createClassroom(classroomData)
@@ -232,8 +234,10 @@ const selectClassroom = (classroom: ClassroomWithMemberCount) => {
 }
 
 onMounted(async () => {
+  if (!authStore.user) return
+
   try {
-    await classroomStore.fetchTeacherClassrooms(authStore.user!.id)
+    await classroomStore.fetchTeacherClassrooms(authStore.user.id)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to load classrooms'
     toast.error(errorMessage)

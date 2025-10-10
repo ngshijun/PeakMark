@@ -185,9 +185,11 @@ watch(isJoinDialogOpen, (newVal) => {
 })
 
 const onJoinSubmit = handleSubmit(async (formValues) => {
+  if (!authStore.user) return
+
   isJoining.value = true
   try {
-    await classroomStore.joinClassroom(authStore.user!.id, formValues.inviteCode)
+    await classroomStore.joinClassroom(authStore.user.id, formValues.inviteCode)
     toast.success('Successfully joined classroom')
     isJoinDialogOpen.value = false
   } catch (error) {
@@ -208,8 +210,10 @@ const viewClassroom = (classroom: ClassroomWithMemberCount) => {
 }
 
 onMounted(async () => {
+  if (!authStore.user) return
+
   try {
-    await classroomStore.fetchStudentClassrooms(authStore.user!.id)
+    await classroomStore.fetchStudentClassrooms(authStore.user.id)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to load classrooms'
     toast.error(errorMessage)

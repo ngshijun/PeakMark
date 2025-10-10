@@ -36,7 +36,11 @@
 
         <!-- PDF Preview -->
         <div v-else-if="isPdf" class="h-full">
-          <iframe :src="document?.file_url || undefined" class="w-full h-full border-0" title="PDF Preview" />
+          <iframe
+            :src="document?.file_url || undefined"
+            class="w-full h-full border-0"
+            title="PDF Preview"
+          />
         </div>
 
         <!-- Image Preview -->
@@ -74,11 +78,7 @@
       </div>
 
       <div class="px-6 py-4 border-t bg-background flex justify-end">
-        <Button
-          v-if="document?.file_url"
-          variant="outline"
-          @click="downloadFile"
-        >
+        <Button v-if="document?.file_url" variant="outline" @click="downloadFile">
           <Download class="mr-2 h-4 w-4" />
           Download
         </Button>
