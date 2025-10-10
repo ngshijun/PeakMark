@@ -147,7 +147,7 @@
 
     <!-- Watch Video Dialog -->
     <Dialog :open="isWatchDialogOpen" @update:open="(val) => (isWatchDialogOpen = val)">
-      <DialogContent class="sm:max-w-[900px]">
+      <DialogContent class="min-w-[90rem]">
         <DialogHeader>
           <DialogTitle>{{ watchingVideo?.title }}</DialogTitle>
           <DialogDescription v-if="watchingVideo?.description">
