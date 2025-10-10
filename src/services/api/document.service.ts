@@ -103,6 +103,24 @@ export class DocumentService extends BaseService {
   }
 
   /**
+   * Update a folder
+   */
+  async updateFolder(id: string, updates: DocumentUpdate): Promise<Document> {
+    const { data, error } = await this.client
+      .from('documents')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      this.handleError(error)
+    }
+
+    return data
+  }
+
+  /**
    * Create a new document (file)
    */
   async createDocument(documentData: DocumentInsert): Promise<Document> {

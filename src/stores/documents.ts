@@ -1,11 +1,12 @@
 import { documentService } from '@/services/api/document.service'
 import { storageService } from '@/services/api/storage.service'
-import type { Tables, TablesInsert } from '@/types/database.types'
+import type { Tables, TablesInsert, TablesUpdate } from '@/types/database.types'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
 type Document = Tables<'documents'>
 type DocumentInsert = TablesInsert<'documents'>
+type DocumentUpdate = TablesUpdate<'documents'>
 
 export const useDocumentStore = defineStore('document', () => {
   const documents = ref<Document[]>([])
@@ -76,6 +77,27 @@ export const useDocumentStore = defineStore('document', () => {
       return newFolder
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to create folder'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Update a folder
+   */
+  const updateFolder = async (id: string, updates: DocumentUpdate) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const updatedFolder = await documentService.updateFolder(id, updates)
+      documents.value = documents.value.map((doc) =>
+        doc.id === id ? { ...doc, ...updatedFolder } : doc,
+      )
+      return updatedFolder
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to update folder'
       throw err
     } finally {
       loading.value = false
@@ -244,6 +266,7 @@ export const useDocumentStore = defineStore('document', () => {
     // Actions
     fetchDocuments,
     createFolder,
+    updateFolder,
     uploadDocument,
     deleteDocument,
     navigateToFolder,

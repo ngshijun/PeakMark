@@ -17,7 +17,7 @@
 
         <!-- Action Buttons -->
         <div class="flex gap-2">
-          <Button variant="outline" @click="isCreateFolderDialogOpen = true">
+          <Button variant="outline" @click="isFolderDialogOpen = true">
             <FolderPlus class="mr-2 h-4 w-4" />
             New Folder
           </Button>
@@ -173,7 +173,7 @@
       </div>
     </div>
 
-    <!-- Upload/Edit Video Dialog -->
+    <!-- Upload/Update Video Dialog -->
     <Dialog :open="isUploadDialogOpen" @update:open="closeUploadDialog">
       <DialogContent class="sm:max-w-[37.5rem]">
         <DialogHeader>
@@ -280,15 +280,11 @@
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button
-            variant="outline"
-            @click="isDeleteDialogOpen = false"
-            :disabled="isDeletingId !== null"
-          >
+          <Button variant="outline" @click="isDeleteDialogOpen = false" :disabled="isSubmitting">
             Cancel
           </Button>
-          <Button variant="destructive" @click="confirmDelete" :disabled="isDeletingId !== null">
-            {{ isDeletingId !== null ? 'Deleting...' : 'Delete' }}
+          <Button variant="destructive" @click="confirmDelete" :disabled="isSubmitting">
+            {{ isSubmitting ? 'Deleting...' : 'Delete' }}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -316,8 +312,8 @@
       </DialogContent>
     </Dialog>
 
-    <!-- Create/Edit Folder Dialog -->
-    <Dialog :open="isCreateFolderDialogOpen" @update:open="closeCreateFolderDialog">
+    <!-- Create/Update Folder Dialog -->
+    <Dialog :open="isFolderDialogOpen" @update:open="closeFolderDialog">
       <DialogContent class="sm:max-w-[27rem]">
         <DialogHeader>
           <DialogTitle>{{ editingFolder ? 'Edit Folder' : 'Create New Folder' }}</DialogTitle>
@@ -342,7 +338,7 @@
             <Button
               type="button"
               variant="outline"
-              @click="closeCreateFolderDialog"
+              @click="closeFolderDialog"
               :disabled="isSubmitting"
             >
               Cancel
@@ -457,12 +453,11 @@ const itemsPerPageString = computed({
 const isUploadDialogOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
 const isWatchDialogOpen = ref(false)
-const isCreateFolderDialogOpen = ref(false)
+const isFolderDialogOpen = ref(false)
 const editingFolder = ref<Tables<'videos'> | null>(null)
 const editingVideo = ref<Tables<'videos'> | null>(null)
 const videoToDelete = ref<Tables<'videos'> | null>(null)
 const watchingVideo = ref<Tables<'videos'> | null>(null)
-const isDeletingId = ref<string | null>(null)
 const hasAttemptSubmit = ref(false)
 const newFolderName = ref('')
 
@@ -610,7 +605,7 @@ const editVideo = (video: Tables<'videos'>) => {
 const editFolder = (folder: Tables<'videos'>) => {
   editingFolder.value = folder
   newFolderName.value = folder.title
-  isCreateFolderDialogOpen.value = true
+  isFolderDialogOpen.value = true
 }
 
 const closeUploadDialog = () => {
@@ -624,9 +619,7 @@ const openDeleteDialog = (video: Tables<'videos'>) => {
 }
 
 const confirmDelete = async () => {
-  if (!videoToDelete.value || isDeletingId.value) return
-
-  isDeletingId.value = videoToDelete.value.id
+  if (!videoToDelete.value || isSubmitting.value) return
 
   try {
     await videoStore.deleteVideo(videoToDelete.value.id)
@@ -636,8 +629,6 @@ const confirmDelete = async () => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to delete video'
     toast.error(errorMessage)
-  } finally {
-    isDeletingId.value = null
   }
 }
 
@@ -683,30 +674,28 @@ const handleCreateFolder = async () => {
       videoStore.currentFolderId ?? undefined,
     )
     toast.success('Folder created successfully')
-    closeCreateFolderDialog()
+    closeFolderDialog()
   } catch (error) {
     toast.error(error instanceof Error ? error.message : 'Failed to create folder')
   }
 }
 
 const handleUpdateFolder = async () => {
-  console.log('here3')
   if (!editingFolder.value || !newFolderName.value.trim()) return
-  console.log('here4')
 
   try {
     await videoStore.updateFolder(editingFolder.value!.id, {
       title: newFolderName.value.trim(),
     })
     toast.success('Folder updated successfully')
-    closeCreateFolderDialog()
+    closeFolderDialog()
   } catch (error) {
     toast.error(error instanceof Error ? error.message : 'Failed to update folder')
   }
 }
 
-const closeCreateFolderDialog = () => {
-  isCreateFolderDialogOpen.value = false
+const closeFolderDialog = () => {
+  isFolderDialogOpen.value = false
   editingFolder.value = null
   newFolderName.value = ''
 }

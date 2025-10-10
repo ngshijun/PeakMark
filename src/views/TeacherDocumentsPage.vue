@@ -22,7 +22,7 @@
 
         <!-- Action Buttons -->
         <div class="flex gap-2">
-          <Button variant="outline" @click="isCreateFolderDialogOpen = true">
+          <Button variant="outline" @click="isFolderDialogOpen = true">
             <FolderPlus class="mr-2 h-4 w-4" />
             New Folder
           </Button>
@@ -104,11 +104,14 @@
                 </div>
               </ContextMenuTrigger>
               <ContextMenuContent class="w-48">
-                <ContextMenuItem v-if="document.type === 'file'" @click="downloadFile(document)">
-                  <Download class="mr-2 h-4 w-4" />
-                  Download
+                <ContextMenuItem
+                  @click="document.type === 'file' ? downloadFile(document) : editFolder(document)"
+                >
+                  <Download v-if="document.type === 'file'" class="mr-2 h-4 w-4" />
+                  <Pencil v-else class="mr-2 h-4 w-4" />
+                  {{ document.type === 'folder' ? 'Edit' : 'Download' }}
                 </ContextMenuItem>
-                <ContextMenuSeparator v-if="document.type === 'file'" />
+                <ContextMenuSeparator />
                 <ContextMenuItem @click="openDeleteDialog(document)" class="text-destructive">
                   <Trash2 class="mr-2 h-4 w-4" />
                   Delete {{ document.type === 'folder' ? 'Folder' : 'File' }}
@@ -169,23 +172,25 @@
       </div>
     </div>
 
-    <!-- Create Folder Dialog -->
-    <Dialog :open="isCreateFolderDialogOpen" @update:open="closeCreateFolderDialog">
+    <!-- Create/Update Folder Dialog -->
+    <Dialog :open="isFolderDialogOpen" @update:open="closeFolderDialog">
       <DialogContent class="sm:max-w-[27rem]">
         <DialogHeader>
-          <DialogTitle>Create New Folder</DialogTitle>
-          <DialogDescription>Enter a name for the new folder</DialogDescription>
+          <DialogTitle>{{ editingFolder ? 'Edit Folder' : 'Create New Folder' }}</DialogTitle>
+          <DialogDescription>{{
+            editingFolder ? 'Update folder name' : 'Enter a name for the new folder'
+          }}</DialogDescription>
         </DialogHeader>
 
-        <form @submit.prevent="handleCreateFolder" class="space-y-4">
+        <form @submit.prevent="handleFolderAction" class="space-y-4">
           <div class="space-y-2">
             <Label for="folderName">Folder Name</Label>
             <Input
               id="folderName"
               v-model="newFolderName"
               placeholder="Enter folder name"
-              :disabled="isCreatingFolder"
-              @keydown.enter.prevent="handleCreateFolder"
+              :disabled="isSubmitting"
+              @keydown.enter.prevent="handleFolderAction"
             />
           </div>
 
@@ -193,13 +198,21 @@
             <Button
               type="button"
               variant="outline"
-              @click="closeCreateFolderDialog"
-              :disabled="isCreatingFolder"
+              @click="closeFolderDialog"
+              :disabled="isSubmitting"
             >
               Cancel
             </Button>
-            <Button type="submit" :disabled="!newFolderName || isCreatingFolder">
-              {{ isCreatingFolder ? 'Creating...' : 'Create' }}
+            <Button type="submit" :disabled="!newFolderName || isSubmitting">
+              {{
+                isSubmitting
+                  ? editingFolder
+                    ? 'Updating...'
+                    : 'Creating...'
+                  : editingFolder
+                    ? 'Update'
+                    : 'Create'
+              }}
             </Button>
           </DialogFooter>
         </form>
@@ -231,7 +244,7 @@
               type="file"
               class="hidden"
               @change="handleFileSelect"
-              :disabled="isUploading"
+              :disabled="isSubmitting"
             />
           </div>
 
@@ -241,7 +254,7 @@
               <p class="font-medium text-sm truncate">{{ selectedFile.name }}</p>
               <p class="text-xs text-muted-foreground">{{ formatFileSize(selectedFile.size) }}</p>
             </div>
-            <Button variant="ghost" size="sm" @click="selectedFile = null" :disabled="isUploading">
+            <Button variant="ghost" size="sm" @click="selectedFile = null" :disabled="isSubmitting">
               <X class="h-4 w-4" />
             </Button>
           </div>
@@ -251,12 +264,12 @@
               type="button"
               variant="outline"
               @click="closeUploadDialog"
-              :disabled="isUploading"
+              :disabled="isSubmitting"
             >
               Cancel
             </Button>
-            <Button @click="handleUploadFile" :disabled="!selectedFile || isUploading">
-              {{ isUploading ? 'Uploading...' : 'Upload' }}
+            <Button @click="handleUploadFile" :disabled="!selectedFile || isSubmitting">
+              {{ isSubmitting ? 'Uploading...' : 'Upload' }}
             </Button>
           </DialogFooter>
         </div>
@@ -279,15 +292,11 @@
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button
-            variant="outline"
-            @click="isDeleteDialogOpen = false"
-            :disabled="isDeletingId !== null"
-          >
+          <Button variant="outline" @click="isDeleteDialogOpen = false" :disabled="isSubmitting">
             Cancel
           </Button>
-          <Button variant="destructive" @click="confirmDelete" :disabled="isDeletingId !== null">
-            {{ isDeletingId !== null ? 'Deleting...' : 'Delete' }}
+          <Button variant="destructive" @click="confirmDelete" :disabled="isSubmitting">
+            {{ isSubmitting ? 'Deleting...' : 'Delete' }}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -303,6 +312,7 @@
 </template>
 
 <script setup lang="ts">
+import DocumentPreviewDialog from '@/components/DocumentPreviewDialog.vue'
 import { Button } from '@/components/ui/button'
 import {
   ContextMenu,
@@ -351,6 +361,7 @@ import {
   FileText,
   Folder,
   FolderPlus,
+  Pencil,
   Search,
   Trash2,
   Upload,
@@ -358,7 +369,6 @@ import {
 } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import DocumentPreviewDialog from '@/components/DocumentPreviewDialog.vue'
 
 type Document = Tables<'documents'>
 
@@ -391,18 +401,19 @@ const itemsPerPageString = computed({
   },
 })
 
-const isCreateFolderDialogOpen = ref(false)
+const isFolderDialogOpen = ref(false)
 const isUploadDialogOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
 const newFolderName = ref('')
 const selectedFile = ref<File | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const editingFolder = ref<Document | null>(null)
 const documentToDelete = ref<Document | null>(null)
 const isDeletingId = ref<string | null>(null)
-const isCreatingFolder = ref(false)
-const isUploading = ref(false)
 const isPreviewDialogOpen = ref(false)
 const documentToPreview = ref<Document | null>(null)
+
+const isSubmitting = computed(() => documentStore.loading)
 
 const filteredDocuments = computed(() => {
   if (!searchQuery.value) {
@@ -471,10 +482,22 @@ const navigateToFolder = async (folderId: string | null) => {
   }
 }
 
+const handleFolderAction = () => {
+  if (editingFolder.value) {
+    handleUpdateFolder()
+  } else {
+    handleCreateFolder()
+  }
+}
+
+const editFolder = (folder: Document) => {
+  editingFolder.value = folder
+  newFolderName.value = folder.name
+  isFolderDialogOpen.value = true
+}
+
 const handleCreateFolder = async () => {
   if (!newFolderName.value.trim() || !selectedClassroomId.value) return
-
-  isCreatingFolder.value = true
 
   try {
     await documentStore.createFolder(
@@ -484,18 +507,30 @@ const handleCreateFolder = async () => {
       documentStore.currentFolderId,
     )
     toast.success('Folder created successfully')
-    isCreatingFolder.value = false
-    closeCreateFolderDialog()
+    closeFolderDialog()
   } catch (error) {
     toast.error(error instanceof Error ? error.message : 'Failed to create folder')
-    isCreatingFolder.value = false
   }
 }
 
-const closeCreateFolderDialog = () => {
-  if (isCreatingFolder.value) return
-  isCreateFolderDialogOpen.value = false
+const handleUpdateFolder = async () => {
+  if (!editingFolder.value || !newFolderName.value.trim()) return
+
+  try {
+    await documentStore.updateFolder(editingFolder.value!.id, {
+      name: newFolderName.value.trim(),
+    })
+    toast.success('Folder updated successfully')
+    closeFolderDialog()
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : 'Failed to update folder')
+  }
+}
+
+const closeFolderDialog = () => {
+  isFolderDialogOpen.value = false
   newFolderName.value = ''
+  editingFolder.value = null
 }
 
 const triggerFileInput = () => {
@@ -520,8 +555,6 @@ const handleFileDrop = (event: DragEvent) => {
 const handleUploadFile = async () => {
   if (!selectedFile.value || !selectedClassroomId.value) return
 
-  isUploading.value = true
-
   try {
     await documentStore.uploadDocument(
       selectedFile.value,
@@ -530,16 +563,13 @@ const handleUploadFile = async () => {
       documentStore.currentFolderId,
     )
     toast.success('File uploaded successfully')
-    isUploading.value = false
     closeUploadDialog()
   } catch (error) {
     toast.error(error instanceof Error ? error.message : 'Failed to upload file')
-    isUploading.value = false
   }
 }
 
 const closeUploadDialog = () => {
-  if (isUploading.value) return
   isUploadDialogOpen.value = false
   selectedFile.value = null
   if (fileInputRef.value) {
@@ -561,8 +591,6 @@ const openDeleteDialog = (document: Document) => {
 const confirmDelete = async () => {
   if (!documentToDelete.value || isDeletingId.value) return
 
-  isDeletingId.value = documentToDelete.value.id
-
   try {
     await documentStore.deleteDocument(documentToDelete.value.id)
     toast.success(
@@ -572,8 +600,6 @@ const confirmDelete = async () => {
     documentToDelete.value = null
   } catch (error) {
     toast.error(error instanceof Error ? error.message : 'Failed to delete')
-  } finally {
-    isDeletingId.value = null
   }
 }
 
