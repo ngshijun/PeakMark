@@ -52,7 +52,10 @@
               @click="handleVideoClick(video)"
             >
               <!-- Folder Icon -->
-              <div v-if="video.type === 'folder'" class="aspect-video bg-muted flex items-center justify-center">
+              <div
+                v-if="video.type === 'folder'"
+                class="aspect-video bg-muted flex items-center justify-center"
+              >
                 <Folder class="h-16 w-16 text-blue-500" />
               </div>
 
@@ -77,7 +80,10 @@
                 <div class="flex-1 space-y-3">
                   <div>
                     <h3 class="font-semibold line-clamp-2 mb-1">{{ video.title }}</h3>
-                    <p v-if="video.type === 'video'" class="text-sm text-muted-foreground line-clamp-2">
+                    <p
+                      v-if="video.type === 'video'"
+                      class="text-sm text-muted-foreground line-clamp-2"
+                    >
                       {{ video.description || 'No description' }}
                     </p>
                   </div>
@@ -234,9 +240,10 @@ const filteredVideos = computed(() => {
     return videoStore.videos
   }
 
-  return videoStore.videos.filter((video) =>
-    video.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    (video.description?.toLowerCase().includes(searchQuery.value.toLowerCase()) ?? false)
+  return videoStore.videos.filter(
+    (video) =>
+      video.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      (video.description?.toLowerCase().includes(searchQuery.value.toLowerCase()) ?? false),
   )
 })
 

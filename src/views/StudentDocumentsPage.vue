@@ -10,12 +10,7 @@
       <!-- Search Bar -->
       <div class="relative max-w-md">
         <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          v-model="searchQuery"
-          type="search"
-          placeholder="Search documents..."
-          class="pl-8"
-        />
+        <Input v-model="searchQuery" type="search" placeholder="Search documents..." class="pl-8" />
       </div>
 
       <!-- Documents Grid -->
@@ -44,40 +39,50 @@
             </div>
           </div>
 
-          <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 p-4">
+          <div v-else class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 p-4">
             <ContextMenu v-for="document in paginatedDocuments" :key="document.id">
               <ContextMenuTrigger as-child>
                 <div
-                  class="group rounded-lg border bg-card p-4 hover:shadow-lg transition-shadow cursor-pointer"
+                  class="group rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col"
                   @click="handleDocumentClick(document)"
                 >
-                  <!-- Icon -->
-                  <div class="mb-3">
-                    <Folder v-if="document.type === 'folder'" class="h-12 w-12 text-blue-500" />
+                  <!-- Folder Icon -->
+                  <div
+                    v-if="document.type === 'folder'"
+                    class="aspect-video bg-muted flex items-center justify-center"
+                  >
+                    <Folder class="h-16 w-16 text-blue-500" />
+                  </div>
+
+                  <!-- File Icon -->
+                  <div v-else class="aspect-video bg-muted flex items-center justify-center">
                     <component
-                      v-else
                       :is="getFileIcon(document.mime_type)"
-                      class="h-12 w-12 text-gray-500"
+                      class="h-16 w-16 text-gray-500"
                     />
                   </div>
 
-                  <!-- Name -->
-                  <h3 class="font-semibold line-clamp-2 mb-2 text-sm">{{ document.name }}</h3>
-
-                  <!-- Metadata -->
-                  <div class="text-xs text-muted-foreground space-y-1">
-                    <p v-if="document.type === 'file' && document.file_size">
-                      {{ formatFileSize(document.file_size) }}
-                    </p>
-                    <p>{{ formatDate(document.created_at) }}</p>
+                  <!-- Document Info -->
+                  <div class="p-4 flex flex-col flex-1">
+                    <div class="flex-1 space-y-3">
+                      <div>
+                        <h3 class="font-semibold line-clamp-2 mb-1">{{ document.name }}</h3>
+                        <div
+                          v-if="document.type === 'file'"
+                          class="text-sm text-muted-foreground space-y-1"
+                        >
+                          <p v-if="document.file_size">
+                            {{ formatFileSize(document.file_size) }}
+                          </p>
+                          <p>{{ formatDate(document.created_at) }}</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </ContextMenuTrigger>
               <ContextMenuContent class="w-48">
-                <ContextMenuItem
-                  v-if="document.type === 'file'"
-                  @click="downloadFile(document)"
-                >
+                <ContextMenuItem v-if="document.type === 'file'" @click="downloadFile(document)">
                   <Download class="mr-2 h-4 w-4" />
                   Download
                 </ContextMenuItem>
@@ -167,15 +172,7 @@ import { useNavigation } from '@/composables/useNavigation'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useDocumentStore } from '@/stores/documents'
 import type { Tables } from '@/types/database.types'
-import {
-  Download,
-  File,
-  FileCode,
-  FileImage,
-  FileText,
-  Folder,
-  Search,
-} from 'lucide-vue-next'
+import { Download, File, FileCode, FileImage, FileText, Folder, Search } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 

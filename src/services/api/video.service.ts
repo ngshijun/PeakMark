@@ -29,10 +29,7 @@ export class VideoService extends BaseService {
   /**
    * Get videos and folders by classroom and parent folder
    */
-  async getVideosByFolder(
-    classroomId: string,
-    parentId: string | null = null,
-  ): Promise<Video[]> {
+  async getVideosByFolder(classroomId: string, parentId: string | null = null): Promise<Video[]> {
     let query = this.client
       .from('videos')
       .select('*')

@@ -15,7 +15,14 @@
                   <BreadcrumbLink
                     v-if="crumb.href || crumb.to || crumb.onClick"
                     :href="crumb.href || crumb.to || '#'"
-                    @click="(e: Event) => { if (crumb.onClick) { e.preventDefault(); crumb.onClick() } }"
+                    @click="
+                      (e: Event) => {
+                        if (crumb.onClick) {
+                          e.preventDefault()
+                          crumb.onClick()
+                        }
+                      }
+                    "
                     :class="crumb.onClick ? 'cursor-pointer' : ''"
                   >
                     {{ crumb.label }}
