@@ -11,6 +11,7 @@ import {
   FolderOpen,
   Medal,
   Video,
+  Files,
 } from 'lucide-vue-next'
 
 export interface NavItem {
@@ -47,6 +48,11 @@ export const roleNavigation: RoleNavigation = {
           title: 'Videos',
           url: '/videos',
           icon: Video,
+        },
+        {
+          title: 'Documents',
+          url: '/student-documents',
+          icon: Files,
         },
         {
           title: 'Assignments',
@@ -94,6 +100,11 @@ export const roleNavigation: RoleNavigation = {
           title: 'Videos',
           url: '/videos',
           icon: Video,
+        },
+        {
+          title: 'Documents',
+          url: '/documents',
+          icon: Files,
         },
         {
           title: 'Question Sets',

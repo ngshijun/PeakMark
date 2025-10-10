@@ -51,62 +51,58 @@
           </div>
 
           <div v-else class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 p-4">
-            <div
-              v-for="video in paginatedVideos"
-              :key="video.id"
-              class="group rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
-            >
-              <!-- Video Thumbnail -->
-              <div class="relative aspect-video bg-muted">
-                <img
-                  :src="`https://img.youtube.com/vi/${video.youtube_video_id}/hqdefault.jpg`"
-                  :alt="video.title"
-                  class="w-full h-full object-cover"
-                />
+            <ContextMenu v-for="video in paginatedVideos" :key="video.id">
+              <ContextMenuTrigger as-child>
                 <div
-                  class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                  class="group rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-shadow flex flex-col cursor-pointer"
                 >
-                  <Button variant="secondary" size="sm" @click="openVideo(video)">
-                    <Play class="mr-2 h-4 w-4" />
-                    Watch
-                  </Button>
-                </div>
-              </div>
+                  <!-- Video Thumbnail -->
+                  <div class="relative aspect-video bg-muted">
+                    <img
+                      :src="`https://img.youtube.com/vi/${video.youtube_video_id}/hqdefault.jpg`"
+                      :alt="video.title"
+                      class="w-full h-full object-cover"
+                    />
+                    <div
+                      class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                    >
+                      <Button variant="secondary" size="sm" @click="openVideo(video)">
+                        <Play class="mr-2 h-4 w-4" />
+                        Watch
+                      </Button>
+                    </div>
+                  </div>
 
-              <!-- Video Info -->
-              <div class="p-4 flex flex-col flex-1">
-                <div class="flex-1 space-y-3">
-                  <div>
-                    <h3 class="font-semibold line-clamp-2 mb-1">{{ video.title }}</h3>
-                    <p class="text-sm text-muted-foreground line-clamp-2">
-                      {{ video.description || 'No description' }}
-                    </p>
+                  <!-- Video Info -->
+                  <div class="p-4 flex flex-col flex-1">
+                    <div class="flex-1 space-y-3">
+                      <div>
+                        <h3 class="font-semibold line-clamp-2 mb-1">{{ video.title }}</h3>
+                        <p class="text-sm text-muted-foreground line-clamp-2">
+                          {{ video.description || 'No description' }}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <!-- Actions -->
-                <div class="flex gap-2 mt-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    class="flex-1"
-                    @click="editVideo(video)"
-                    :disabled="isDeletingId === video.id"
-                  >
-                    <Pencil class="mr-2 h-3 w-3" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    @click="() => openDeleteDialog(video)"
-                    :disabled="isDeletingId === video.id"
-                  >
-                    <Trash2 class="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-            </div>
+              </ContextMenuTrigger>
+              <ContextMenuContent class="w-48">
+                <ContextMenuItem @click="openVideo(video)">
+                  <Play class="mr-2 h-4 w-4" />
+                  Watch Video
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+                <ContextMenuItem @click="editVideo(video)">
+                  <Pencil class="mr-2 h-4 w-4" />
+                  Edit Video
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+                <ContextMenuItem @click="openDeleteDialog(video)" class="text-destructive">
+                  <Trash2 class="mr-2 h-4 w-4" />
+                  Delete Video
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenu>
           </div>
         </div>
       </div>
@@ -309,6 +305,13 @@
 
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
 import {
   Dialog,
   DialogContent,

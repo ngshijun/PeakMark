@@ -59,6 +59,18 @@ const router = createRouter({
       meta: { requiresAuth: true, role: ['teacher', 'student'] },
     },
     {
+      path: '/classroom/:classroomId/documents',
+      name: 'documents',
+      component: () => import('@/views/TeacherDocumentsPage.vue'),
+      meta: { requiresAuth: true, role: ['teacher'] },
+    },
+    {
+      path: '/classroom/:classroomId/student-documents',
+      name: 'student-documents',
+      component: () => import('@/views/StudentDocumentsPage.vue'),
+      meta: { requiresAuth: true, role: ['student'] },
+    },
+    {
       path: '/classrooms',
       name: 'classrooms',
       component: () => import('@/views/ClassroomsWrapper.vue'),

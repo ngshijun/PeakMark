@@ -1,3 +1,4 @@
+import { MAX_FILE_SIZE, MAX_IMAGE_SIZE } from '@/types/constants'
 import { BaseService } from './base.service'
 import { AppError } from '@/utils/errors'
 
@@ -7,6 +8,7 @@ import { AppError } from '@/utils/errors'
  */
 export class StorageService extends BaseService {
   private readonly QUESTION_IMAGES_BUCKET = 'question-images'
+  private readonly DOCUMENTS_BUCKET = 'documents'
 
   /**
    * Upload a question image to storage
@@ -21,8 +23,8 @@ export class StorageService extends BaseService {
       throw new AppError('File must be an image', 'INVALID_FILE_TYPE', 400)
     }
 
-    // Validate file size (max 5MB)
-    const MAX_SIZE = 5 * 1024 * 1024
+    // Validate file size
+    const MAX_SIZE = MAX_IMAGE_SIZE * 1024 * 1024
     if (file.size > MAX_SIZE) {
       throw new AppError('File size must be less than 5MB', 'FILE_TOO_LARGE', 400)
     }
@@ -85,6 +87,82 @@ export class StorageService extends BaseService {
    */
   getQuestionImageUrl(filePath: string): string {
     const { data } = this.client.storage.from(this.QUESTION_IMAGES_BUCKET).getPublicUrl(filePath)
+
+    return data.publicUrl
+  }
+
+  /**
+   * Upload a document to storage
+   * @param file - The document file to upload
+   * @param classroomId - The classroom ID for organizing files
+   * @param documentId - The document ID for unique naming
+   * @returns The public URL of the uploaded document
+   */
+  async uploadDocument(file: File, classroomId: string, documentId: string): Promise<string> {
+    // Validate file size
+    const MAX_SIZE = MAX_FILE_SIZE * 1024 * 1024
+    if (file.size > MAX_SIZE) {
+      throw new AppError('File size must be less than 10MB', 'FILE_TOO_LARGE', 400)
+    }
+
+    // Generate unique file path
+    const fileExt = file.name.split('.').pop()
+    const timestamp = Date.now()
+    const filePath = `${classroomId}/${documentId}-${timestamp}.${fileExt}`
+
+    // Upload to storage
+    const { data, error } = await this.client.storage
+      .from(this.DOCUMENTS_BUCKET)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      })
+
+    if (error) {
+      throw new AppError(`Failed to upload document: ${error.message}`, 'STORAGE_UPLOAD_ERROR', 500)
+    }
+
+    // Get public URL
+    const { data: urlData } = this.client.storage
+      .from(this.DOCUMENTS_BUCKET)
+      .getPublicUrl(data.path)
+
+    return urlData.publicUrl
+  }
+
+  /**
+   * Delete a document from storage
+   * @param fileUrl - The public URL of the document to delete
+   */
+  async deleteDocument(fileUrl: string): Promise<void> {
+    if (!fileUrl) return
+
+    // Extract file path from URL
+    const url = new URL(fileUrl)
+    const pathParts = url.pathname.split('/')
+    const bucketIndex = pathParts.indexOf(this.DOCUMENTS_BUCKET)
+
+    if (bucketIndex === -1) {
+      throw new AppError('Invalid document URL', 'INVALID_URL', 400)
+    }
+
+    const filePath = pathParts.slice(bucketIndex + 1).join('/')
+
+    // Delete from storage
+    const { error } = await this.client.storage.from(this.DOCUMENTS_BUCKET).remove([filePath])
+
+    if (error) {
+      throw new AppError(`Failed to delete document: ${error.message}`, 'STORAGE_DELETE_ERROR', 500)
+    }
+  }
+
+  /**
+   * Get public URL for a document
+   * @param filePath - The storage file path
+   * @returns The public URL
+   */
+  getDocumentUrl(filePath: string): string {
+    const { data } = this.client.storage.from(this.DOCUMENTS_BUCKET).getPublicUrl(filePath)
 
     return data.publicUrl
   }
