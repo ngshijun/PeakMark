@@ -245,6 +245,7 @@ export class ClassroomService extends BaseService {
       .from('classrooms')
       .select('id')
       .eq('id', classroomId)
+      .eq('allow_new_students', true)
       .maybeSingle()
 
     if (error) {
