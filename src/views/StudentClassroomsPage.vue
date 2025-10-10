@@ -74,7 +74,7 @@
 
     <!-- Join Classroom Dialog -->
     <Dialog :open="isJoinDialogOpen" @update:open="closeJoinDialog">
-      <DialogContent class="sm:max-w-[400px]">
+      <DialogContent class="sm:max-w-[25rem]">
         <DialogHeader>
           <DialogTitle>Join Classroom</DialogTitle>
           <DialogDescription> Enter the invite code provided by your teacher </DialogDescription>

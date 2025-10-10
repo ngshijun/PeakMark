@@ -23,7 +23,7 @@
 
           <!-- Difficulty Filter -->
           <Select v-model="selectedDifficulty">
-            <SelectTrigger class="w-full sm:w-[180px]">
+            <SelectTrigger class="w-full sm:w-[11.25rem]">
               <SelectValue placeholder="All Difficulties" />
             </SelectTrigger>
             <SelectContent>
@@ -152,7 +152,7 @@
         <div class="flex items-center gap-2">
           <span class="text-sm text-muted-foreground whitespace-nowrap">Rows per page:</span>
           <Select v-model="itemsPerPageString">
-            <SelectTrigger class="w-[80px] h-9">
+            <SelectTrigger class="w-[5rem] h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -255,7 +255,7 @@
                 <Textarea
                   v-bind="componentField"
                   placeholder="Enter your question here..."
-                  class="min-h-[100px] resize-none"
+                  class="min-h-[6.25rem] resize-none"
                   :disabled="isSubmitting"
                 />
               </FormControl>
@@ -343,7 +343,7 @@
                     <Label :for="`option-${index}`" class="sr-only"
                       >Option {{ String.fromCharCode(65 + index) }}</Label
                     >
-                    <span class="text-sm font-medium min-w-[20px]">{{
+                    <span class="text-sm font-medium min-w-[1.25rem]">{{
                       String.fromCharCode(65 + index)
                     }}</span>
                     <Input
@@ -398,7 +398,7 @@
                 <Textarea
                   v-bind="componentField"
                   placeholder="Provide an explanation for the correct answer..."
-                  class="min-h-[100px] resize-none"
+                  class="min-h-[6.25rem] resize-none"
                   :disabled="isSubmitting"
                 />
               </FormControl>

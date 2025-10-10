@@ -75,7 +75,7 @@
 
     <!-- Create Classroom Dialog -->
     <Dialog :open="isDialogOpen" @update:open="closeDialog">
-      <DialogContent class="sm:max-w-[500px]">
+      <DialogContent class="sm:max-w-[31.25rem]">
         <DialogHeader>
           <DialogTitle>Create Classroom</DialogTitle>
           <DialogDescription>Create a new classroom for your students</DialogDescription>

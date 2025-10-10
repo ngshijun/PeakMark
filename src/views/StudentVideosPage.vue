@@ -99,7 +99,7 @@
         <div class="flex items-center gap-2">
           <span class="text-sm text-muted-foreground whitespace-nowrap">Rows per page:</span>
           <Select v-model="itemsPerPageString">
-            <SelectTrigger class="w-[80px] h-9">
+            <SelectTrigger class="w-[5rem] h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
