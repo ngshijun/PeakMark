@@ -149,13 +149,6 @@
       @save="handleSavePuzzle"
     />
 
-    <!-- Crossword Viewer Dialog -->
-    <CrosswordViewerDialog
-      :open="isViewerDialogOpen"
-      :puzzle="selectedPuzzle"
-      @update:open="(val) => (isViewerDialogOpen = val)"
-    />
-
     <!-- Delete Confirmation Dialog -->
     <Dialog :open="isDeleteDialogOpen" @update:open="(val) => (isDeleteDialogOpen = val)">
       <DialogContent>
@@ -182,7 +175,6 @@
 <script setup lang="ts">
 import CrosswordGeneratorDialog from '@/components/CrosswordGeneratorDialog.vue'
 import CrosswordThumbnail from '@/components/CrosswordThumbnail.vue'
-import CrosswordViewerDialog from '@/components/CrosswordViewerDialog.vue'
 import { Button } from '@/components/ui/button'
 import {
   ContextMenu,
@@ -247,9 +239,7 @@ const itemsPerPageString = computed({
 })
 
 const isGeneratorDialogOpen = ref(false)
-const isViewerDialogOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
-const selectedPuzzle = ref<Puzzle | null>(null)
 const puzzleToDelete = ref<Puzzle | null>(null)
 
 const isSubmitting = computed(() => puzzleStore.loading)
@@ -287,8 +277,8 @@ const formatDate = (dateString: string | null): string => {
 }
 
 const handlePuzzleClick = (puzzle: Puzzle) => {
-  selectedPuzzle.value = puzzle
-  isViewerDialogOpen.value = true
+  // TODO: Navigate to puzzle view/play page
+  console.log('View puzzle:', puzzle)
 }
 
 const editPuzzle = (puzzle: Puzzle) => {

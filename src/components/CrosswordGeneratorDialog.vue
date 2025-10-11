@@ -39,9 +39,7 @@
             <div class="mb-6">
               <div class="space-y-4 mb-4">
                 <div>
-                  <Label class="mb-2">
-                    Answer
-                  </Label>
+                  <Label class="mb-2"> Answer </Label>
                   <Input
                     ref="answerInput"
                     v-model="currentAnswer"
@@ -54,9 +52,7 @@
                   />
                 </div>
                 <div>
-                  <Label class="mb-2">
-                    Clue
-                  </Label>
+                  <Label class="mb-2"> Clue </Label>
                   <Input
                     v-model="currentClue"
                     type="text"
