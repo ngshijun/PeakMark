@@ -43,7 +43,7 @@
             class="flex items-center justify-center h-full text-center"
           >
             <div class="space-y-2">
-              <Grid3x3 class="mx-auto h-12 w-12 text-muted-foreground" />
+              <Puzzle class="mx-auto h-12 w-12 text-muted-foreground" />
               <p class="text-muted-foreground">
                 {{ searchQuery ? 'No puzzles found' : 'No puzzles yet. Create your first puzzle!' }}
               </p>
@@ -69,12 +69,6 @@
                     <div class="flex-1 space-y-2">
                       <div>
                         <h3 class="font-semibold line-clamp-2 mb-1">{{ puzzle.title }}</h3>
-                        <p
-                          v-if="puzzle.description"
-                          class="text-sm text-muted-foreground line-clamp-2"
-                        >
-                          {{ puzzle.description }}
-                        </p>
                       </div>
                       <div class="text-sm text-muted-foreground space-y-1">
                         <p class="capitalize">{{ puzzle.puzzle_type }}</p>
@@ -220,8 +214,8 @@ import MainLayout from '@/layouts/MainLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 import { usePuzzleStore } from '@/stores/puzzles'
 import type { Tables } from '@/types/database.types'
-import type { WordEntry, PlacedWord } from '@/utils/crossword-generator'
-import { Grid3x3, Pencil, Search, Trash2 } from 'lucide-vue-next'
+import type { PlacedWord } from '@/utils/crossword-generator'
+import { Grid3x3, Pencil, Search, Trash2, Puzzle } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 
@@ -295,22 +289,20 @@ const editPuzzle = (puzzle: Puzzle) => {
 }
 
 const handleSavePuzzle = async (data: {
-  words: WordEntry[]
+  title: string
   grid: string[][]
   placedWords: PlacedWord[]
-  gridSize: number
 }) => {
   if (!selectedClassroomId.value || !authStore.user) return
 
   try {
     await puzzleStore.createPuzzle({
-      title: `Crossword ${new Date().toLocaleDateString()}`,
+      title: data.title,
       puzzle_type: 'crossword',
       grid: [JSON.stringify(data.grid)],
       placed_words: [JSON.stringify(data.placedWords)],
       classroom_id: selectedClassroomId.value,
       created_by: authStore.user.id,
-      description: `${data.words.length} words`,
     })
 
     toast.success('Puzzle created successfully')

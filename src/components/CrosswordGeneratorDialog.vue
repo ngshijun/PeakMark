@@ -1,135 +1,205 @@
 <template>
   <Dialog :open="open" @update:open="handleOpenChange">
-    <DialogContent class="max-w-6xl max-h-[90vh] min-w-[80rem] flex flex-col p-0">
-      <DialogHeader class="px-6 pt-6 pb-4 border-b">
-        <DialogTitle class="text-xl flex items-center gap-3">
-          <Grid3x3 class="text-indigo-600" />
-          Crossword Puzzle Generator
-        </DialogTitle>
-        <DialogDescription> Add words and clues to generate a crossword puzzle </DialogDescription>
+    <DialogContent class="max-w-7xl max-h-[90vh] flex flex-col p-0 min-w-[80rem] min-h-[50rem]">
+      <DialogHeader class="px-6 pt-6">
+        <DialogTitle class="text-xl flex items-center gap-3"> Create Crossword Puzzle </DialogTitle>
+        <DialogDescription> Add words and clues to see a live preview </DialogDescription>
       </DialogHeader>
 
-      <div class="flex-1 overflow-auto px-6 py-4">
-        <!-- Word Input Section -->
-        <div class="mb-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <Label class="mb-2">Answer</Label>
-              <Input
-                v-model="currentAnswer"
-                type="text"
-                placeholder="Enter answer word"
-                @keypress.enter="addWord"
-              />
-            </div>
-            <div>
-              <Label class="mb-2">Clue</Label>
-              <Input
-                v-model="currentClue"
-                type="text"
-                placeholder="Enter clue"
-                @keypress.enter="addWord"
-              />
-            </div>
-          </div>
-          <Button @click="addWord" variant="outline">
-            <Plus class="mr-2 h-4 w-4" />
-            Add Word
-          </Button>
-        </div>
-
-        <!-- Words List -->
-        <div v-if="words.length > 0" class="mb-6">
-          <h3 class="text-lg font-semibold mb-3">Words ({{ words.length }})</h3>
-          <div class="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-4">
-            <div
-              v-for="word in words"
-              :key="word.id"
-              class="flex items-center justify-between bg-muted p-3 rounded-lg"
+      <form @submit="onSubmit" class="flex-1 overflow-hidden flex">
+        <!-- Left Panel: Word Input and List -->
+        <div class="w-1/2 flex flex-col px-6 py-4 border-r">
+          <!-- Fixed Top Section -->
+          <div class="flex-shrink-0">
+            <!-- Title Input -->
+            <FormField
+              v-slot="{ componentField }"
+              name="puzzleTitle"
+              :validateOnBlur="hasAttemptSubmit"
+              :validateOnModelUpdate="hasAttemptSubmit"
             >
-              <div class="flex-1">
-                <span class="font-semibold text-primary">{{ word.answer }}</span>
-                <span class="text-muted-foreground ml-3">{{ word.clue }}</span>
+              <FormItem class="mb-6">
+                <FormLabel>
+                  Puzzle Title
+                  <span class="text-destructive ml-0.5">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    type="text"
+                    placeholder="Enter crossword puzzle title"
+                    :disabled="isSaving"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <!-- Word Input Section -->
+            <div class="mb-6">
+              <div class="space-y-4 mb-4">
+                <div>
+                  <Label class="mb-2">
+                    Answer
+                  </Label>
+                  <Input
+                    ref="answerInput"
+                    v-model="currentAnswer"
+                    type="text"
+                    placeholder="Enter answer word"
+                    class="uppercase"
+                    @keypress.enter="addWord"
+                    @input="handleAnswerInput"
+                    :disabled="isSaving"
+                  />
+                </div>
+                <div>
+                  <Label class="mb-2">
+                    Clue
+                  </Label>
+                  <Input
+                    v-model="currentClue"
+                    type="text"
+                    placeholder="Enter clue"
+                    @keypress.enter="addWord"
+                    :disabled="isSaving"
+                  />
+                </div>
               </div>
-              <Button variant="ghost" size="sm" @click="removeWord(word.id)">
-                <Trash2 class="h-4 w-4" />
+              <Button
+                @click="addWord"
+                type="button"
+                variant="outline"
+                class="w-full"
+                :disabled="isSaving"
+              >
+                <Plus class="mr-2 h-4 w-4" />
+                Add Word
               </Button>
             </div>
+
+            <!-- Grid Size Input -->
+            <div class="mb-6">
+              <Label class="mb-2">Grid Size</Label>
+              <NumberField
+                v-model="gridSize"
+                :min="10"
+                :max="20"
+                :default-value="15"
+                class="w-full"
+                :disabled="isSaving"
+              >
+                <NumberFieldContent>
+                  <NumberFieldDecrement />
+                  <NumberFieldInput />
+                  <NumberFieldIncrement />
+                </NumberFieldContent>
+              </NumberField>
+            </div>
           </div>
-        </div>
 
-        <!-- Grid Size Input -->
-        <div class="flex items-center gap-4 mb-6">
-          <div>
-            <Label class="mb-2">Grid Size</Label>
-            <Input
-              v-model.number="gridSize"
-              type="number"
-              min="10"
-              max="20"
-              class="w-24"
-              @input="handleGridSizeChange"
-            />
-          </div>
-          <Button @click="handleGenerate" :disabled="words.length === 0" class="mt-6">
-            Generate Crossword
-          </Button>
-        </div>
-
-        <!-- Generated Crossword Preview -->
-        <div v-if="grid.length > 0" class="border rounded-lg p-6 bg-muted/30">
-          <h3 class="text-lg font-semibold mb-4">Preview</h3>
-
-          <div class="mb-6 overflow-x-auto">
-            <div class="inline-block" style="font-size: 0">
-              <div v-for="(row, i) in grid" :key="i" style="display: flex">
-                <div
-                  v-for="(cell, j) in row"
-                  :key="j"
-                  :class="['relative', cell ? 'bg-white border-2 border-gray-800' : 'bg-gray-800']"
-                  style="width: 32px; height: 32px"
-                >
-                  <span
-                    v-if="getWordStart(i, j)"
-                    class="absolute top-0 left-1 text-[8px] font-bold text-gray-600"
+          <!-- Scrollable Words List Section -->
+          <div class="flex-1 min-h-0 overflow-hidden flex flex-col">
+            <div v-if="words.length > 0" class="flex flex-col h-full">
+              <h3 class="text-lg font-semibold mb-3 flex-shrink-0">Words ({{ words.length }})</h3>
+              <div class="space-y-2 overflow-y-auto flex-1 pr-2">
+                <div v-for="word in words" :key="word.id" class="flex items-center gap-2">
+                  <div class="flex-1 rounded-md border bg-card p-3">
+                    <div class="font-medium text-sm">{{ word.answer }}</div>
+                    <div class="text-sm text-muted-foreground">{{ word.clue }}</div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    @click="removeWord(word.id)"
+                    class="h-8 w-8"
+                    title="Remove word"
                   >
-                    {{ getWordStart(i, j)?.number }}
-                  </span>
+                    <X class="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="flex-1 flex items-center justify-center text-muted-foreground">
+              <div class="text-center">
+                <Grid3x3 class="mx-auto mb-2 h-12 w-12 opacity-50" />
+                <p>Add words to see a live preview</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel: Live Preview -->
+        <div class="w-1/2 overflow-auto px-6 py-4 bg-muted/30">
+          <h3 class="text-lg font-semibold mb-4">Live Preview</h3>
+
+          <div v-if="grid.length > 0" class="space-y-6">
+            <!-- Grid Preview -->
+            <div class="overflow-x-auto">
+              <div class="inline-block" style="font-size: 0">
+                <div v-for="(row, i) in grid" :key="i" style="display: flex">
                   <div
-                    v-if="cell"
-                    class="w-full h-full flex items-center justify-center text-sm font-bold text-gray-800"
+                    v-for="(cell, j) in row"
+                    :key="j"
+                    :class="[
+                      'relative',
+                      cell ? 'bg-white border-2 border-gray-800' : 'bg-gray-800',
+                    ]"
+                    style="width: 32px; height: 32px"
                   >
-                    {{ cell }}
+                    <span
+                      v-if="getWordStart(i, j)"
+                      class="absolute top-0 left-1 text-[8px] font-bold text-gray-600"
+                    >
+                      {{ getWordStart(i, j)?.number }}
+                    </span>
+                    <div
+                      v-if="cell"
+                      class="w-full h-full flex items-center justify-center text-sm font-bold text-gray-800"
+                    >
+                      {{ cell }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Clues -->
+            <div class="grid grid-cols-2 gap-6">
+              <div>
+                <h4 class="font-semibold mb-3">Across</h4>
+                <div class="space-y-2 text-sm">
+                  <div v-for="word in acrossClues" :key="word.number">
+                    <span class="font-semibold">{{ word.number }}.</span> {{ word.clue }}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 class="font-semibold mb-3">Down</h4>
+                <div class="space-y-2 text-sm">
+                  <div v-for="word in downClues" :key="word.number">
+                    <span class="font-semibold">{{ word.number }}.</span> {{ word.clue }}
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="grid md:grid-cols-2 gap-6">
-            <div>
-              <h4 class="font-semibold mb-3">Across</h4>
-              <div class="space-y-2 text-sm">
-                <div v-for="word in acrossClues" :key="word.number">
-                  <span class="font-semibold">{{ word.number }}.</span> {{ word.clue }}
-                </div>
-              </div>
-            </div>
-            <div>
-              <h4 class="font-semibold mb-3">Down</h4>
-              <div class="space-y-2 text-sm">
-                <div v-for="word in downClues" :key="word.number">
-                  <span class="font-semibold">{{ word.number }}.</span> {{ word.clue }}
-                </div>
-              </div>
+          <div v-else class="flex items-center justify-center h-full text-muted-foreground">
+            <div class="text-center">
+              <Grid3x3 class="mx-auto mb-2 h-16 w-16 opacity-50" />
+              <p>Preview will appear here</p>
             </div>
           </div>
         </div>
-      </div>
+      </form>
 
       <DialogFooter class="px-6 py-4 border-t">
-        <Button variant="outline" @click="handleClose"> Cancel </Button>
-        <Button @click="handleSave" :disabled="grid.length === 0 || isSaving">
+        <Button type="button" variant="outline" @click="handleClose" :disabled="isSaving">
+          Cancel
+        </Button>
+        <Button type="submit" @click="handleSave" :disabled="grid.length === 0 || isSaving">
           {{ isSaving ? 'Saving...' : 'Save Puzzle' }}
         </Button>
       </DialogFooter>
@@ -147,16 +217,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  NumberField,
+  NumberFieldContent,
+  NumberFieldDecrement,
+  NumberFieldIncrement,
+  NumberFieldInput,
+} from '@/components/ui/number-field'
 import {
   generateCrossword as generateCrosswordUtil,
   getWordStartAt,
   type WordEntry,
   type PlacedWord,
 } from '@/utils/crossword-generator'
-import { Grid3x3, Plus, Trash2 } from 'lucide-vue-next'
-import { computed, ref, watch } from 'vue'
+import { toTypedSchema } from '@vee-validate/zod'
+import { Grid3x3, Plus, X } from 'lucide-vue-next'
+import { useForm } from 'vee-validate'
+import { computed, nextTick, ref, watch } from 'vue'
+import * as z from 'zod'
 
 const props = defineProps<{
   open: boolean
@@ -165,10 +246,15 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:open': [value: boolean]
   save: [
-    data: { words: WordEntry[]; grid: string[][]; placedWords: PlacedWord[]; gridSize: number },
+    data: {
+      title: string
+      grid: string[][]
+      placedWords: PlacedWord[]
+    },
   ]
 }>()
 
+const answerInput = ref<InstanceType<typeof Input> | HTMLInputElement | null>(null)
 const words = ref<WordEntry[]>([])
 const currentAnswer = ref('')
 const currentClue = ref('')
@@ -176,11 +262,33 @@ const grid = ref<string[][]>([])
 const placedWords = ref<PlacedWord[]>([])
 const gridSize = ref(15)
 const isSaving = ref(false)
+const hasAttemptSubmit = ref(false)
+
+// Form Schema
+const formSchema = toTypedSchema(
+  z.object({
+    puzzleTitle: z.string().min(1, 'Puzzle title is required'),
+  }),
+)
+
+// Form
+const { handleSubmit, resetForm } = useForm({
+  validationSchema: formSchema,
+  keepValuesOnUnmount: true,
+  initialValues: {
+    puzzleTitle: '',
+  },
+})
 
 const acrossClues = computed(() => placedWords.value.filter((w) => w.direction === 'across'))
 const downClues = computed(() => placedWords.value.filter((w) => w.direction === 'down'))
 
-const addWord = () => {
+const handleAnswerInput = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  currentAnswer.value = target.value.toUpperCase().replace(/[^A-Z]/g, '')
+}
+
+const addWord = async () => {
   if (currentAnswer.value.trim() && currentClue.value.trim()) {
     words.value.push({
       id: Date.now().toString(),
@@ -189,30 +297,45 @@ const addWord = () => {
     })
     currentAnswer.value = ''
     currentClue.value = ''
+
+    // Focus back on answer input
+    await nextTick()
+    if (answerInput.value) {
+      // The Input component wraps a native input, access via $el
+      const inputElement = '$el' in answerInput.value ? answerInput.value.$el : answerInput.value
+      if (inputElement instanceof HTMLInputElement) {
+        inputElement.focus()
+      }
+    }
   }
 }
 
 const removeWord = (id: string) => {
   words.value = words.value.filter((w) => w.id !== id)
-  // Clear grid if words are removed
-  if (grid.value.length > 0) {
+}
+
+const generatePreview = () => {
+  if (words.value.length === 0) {
     grid.value = []
     placedWords.value = []
+    return
   }
-}
 
-const handleGridSizeChange = (e: Event) => {
-  const value = parseInt((e.target as HTMLInputElement).value) || 15
-  gridSize.value = Math.max(10, Math.min(20, value))
-}
-
-const handleGenerate = () => {
   const result = generateCrosswordUtil(words.value, gridSize.value)
   if (result) {
     grid.value = result.grid
     placedWords.value = result.placedWords
   }
 }
+
+// Auto-generate preview when words or grid size change
+watch(
+  [words, gridSize],
+  () => {
+    generatePreview()
+  },
+  { deep: true },
+)
 
 const getWordStart = (row: number, col: number): PlacedWord | undefined => {
   return getWordStartAt(placedWords.value, row, col)
@@ -226,15 +349,19 @@ const handleClose = () => {
   emit('update:open', false)
 }
 
-const handleSave = () => {
+const onSubmit = handleSubmit((formValues) => {
   if (grid.value.length > 0) {
     emit('save', {
-      words: words.value,
+      title: formValues.puzzleTitle,
       grid: grid.value,
       placedWords: placedWords.value,
-      gridSize: gridSize.value,
     })
   }
+})
+
+const handleSave = () => {
+  hasAttemptSubmit.value = true
+  onSubmit()
 }
 
 // Reset state when dialog closes
@@ -242,6 +369,11 @@ watch(
   () => props.open,
   (isOpen) => {
     if (!isOpen) {
+      resetForm({
+        values: {
+          puzzleTitle: '',
+        },
+      })
       words.value = []
       currentAnswer.value = ''
       currentClue.value = ''
@@ -249,6 +381,7 @@ watch(
       placedWords.value = []
       gridSize.value = 15
       isSaving.value = false
+      hasAttemptSubmit.value = false
     }
   },
 )
