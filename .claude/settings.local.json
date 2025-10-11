@@ -13,7 +13,10 @@
       "Bash(tree:*)",
       "Bash(npm run lint:*)",
       "Bash(mkdir:*)",
-      "Bash(npm run test:unit:*)"
+      "Bash(npm run test:unit:*)",
+      "Bash(npm run build:*)",
+      "WebFetch(domain:github.com)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

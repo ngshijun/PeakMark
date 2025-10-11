@@ -167,24 +167,6 @@ export class VideoService extends BaseService {
   }
 
   /**
-   * Get videos by subject and year
-   */
-  async getVideosBySubjectYear(subject: string, year: string): Promise<Video[]> {
-    const { data, error } = await this.client
-      .from('videos')
-      .select('*')
-      .eq('subject', subject)
-      .eq('year', year)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      this.handleError(error)
-    }
-
-    return data || []
-  }
-
-  /**
    * Create a new video
    */
   async createVideo(video: VideoInsert): Promise<Video> {

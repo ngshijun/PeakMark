@@ -13,7 +13,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'landing-page',
-      component: () => import('@/views/LandingPage.vue'),
+      component: () => import('@/views/CrosswordGenerator.vue'),
       meta: { requiresAuth: false },
     },
     {

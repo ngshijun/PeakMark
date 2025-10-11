@@ -131,22 +131,6 @@ export const useVideoStore = defineStore('video', () => {
     }
   }
 
-  // Fetch videos by subject and year
-  const fetchVideosBySubjectYear = async (subject: string, year: string) => {
-    loading.value = true
-    error.value = null
-
-    try {
-      const data = await videoService.getVideosBySubjectYear(subject, year)
-      return data
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'An error occurred'
-      throw err
-    } finally {
-      loading.value = false
-    }
-  }
-
   // Fetch a single video by ID
   const fetchVideoById = async (id: string) => {
     loading.value = true
@@ -236,7 +220,6 @@ export const useVideoStore = defineStore('video', () => {
     createFolder,
     updateFolder,
     fetchStudentVideos,
-    fetchVideosBySubjectYear,
     fetchVideoById,
     createVideo,
     updateVideo,

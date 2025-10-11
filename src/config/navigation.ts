@@ -12,6 +12,7 @@ import {
   Medal,
   Video,
   Files,
+  Puzzle,
 } from 'lucide-vue-next'
 
 export interface NavItem {
@@ -105,6 +106,11 @@ export const roleNavigation: RoleNavigation = {
           title: 'Documents',
           url: '/documents',
           icon: Files,
+        },
+        {
+          title: 'Puzzles',
+          url: '/puzzles',
+          icon: Puzzle,
         },
         {
           title: 'Question Sets',
