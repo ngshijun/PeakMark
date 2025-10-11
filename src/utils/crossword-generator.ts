@@ -32,7 +32,7 @@ export function canPlaceWord(
   row: number,
   col: number,
   direction: 'across' | 'down',
-  size: number
+  size: number,
 ): boolean {
   if (direction === 'across') {
     if (col < 0 || col + word.length > size || row < 0 || row >= size) return false
@@ -90,7 +90,7 @@ export function placeWord(
   word: string,
   row: number,
   col: number,
-  direction: 'across' | 'down'
+  direction: 'across' | 'down',
 ): void {
   for (let i = 0; i < word.length; i++) {
     const char = word[i]
@@ -143,7 +143,7 @@ export function generateCrossword(words: WordEntry[], gridSize: number): Crosswo
     row: startRow,
     col: startCol,
     direction: 'across',
-    number: 1
+    number: 1,
   })
 
   // Try to place remaining words
@@ -182,7 +182,7 @@ export function generateCrossword(words: WordEntry[], gridSize: number): Crosswo
                 row: newRow,
                 col: newCol,
                 direction: newDirection,
-                number: placed.length + 1
+                number: placed.length + 1,
               })
               wordPlaced = true
               break
@@ -213,7 +213,7 @@ export function generateCrossword(words: WordEntry[], gridSize: number): Crosswo
 export function getWordStartAt(
   placedWords: PlacedWord[],
   row: number,
-  col: number
+  col: number,
 ): PlacedWord | undefined {
-  return placedWords.find(w => w.row === row && w.col === col)
+  return placedWords.find((w) => w.row === row && w.col === col)
 }

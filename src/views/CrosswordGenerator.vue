@@ -92,10 +92,7 @@
               <div
                 v-for="(cell, j) in row"
                 :key="j"
-                :class="[
-                  'relative',
-                  cell ? 'bg-white border-2 border-gray-800' : 'bg-gray-800'
-                ]"
+                :class="['relative', cell ? 'bg-white border-2 border-gray-800' : 'bg-gray-800']"
                 style="width: 32px; height: 32px"
               >
                 <span
@@ -119,11 +116,7 @@
           <div>
             <h3 class="text-xl font-bold text-gray-800 mb-4">Across</h3>
             <div class="space-y-2">
-              <div
-                v-for="word in acrossClues"
-                :key="word.number"
-                class="text-gray-700"
-              >
+              <div v-for="word in acrossClues" :key="word.number" class="text-gray-700">
                 <span class="font-semibold">{{ word.number }}.</span> {{ word.clue }}
               </div>
             </div>
@@ -131,11 +124,7 @@
           <div>
             <h3 class="text-xl font-bold text-gray-800 mb-4">Down</h3>
             <div class="space-y-2">
-              <div
-                v-for="word in downClues"
-                :key="word.number"
-                class="text-gray-700"
-              >
+              <div v-for="word in downClues" :key="word.number" class="text-gray-700">
                 <span class="font-semibold">{{ word.number }}.</span> {{ word.clue }}
               </div>
             </div>
@@ -153,7 +142,7 @@ import {
   generateCrossword as generateCrosswordUtil,
   getWordStartAt,
   type WordEntry,
-  type PlacedWord
+  type PlacedWord,
 } from '@/utils/crossword-generator'
 
 const words = ref<WordEntry[]>([])
@@ -163,15 +152,15 @@ const grid = ref<string[][]>([])
 const placedWords = ref<PlacedWord[]>([])
 const gridSize = ref(15)
 
-const acrossClues = computed(() => placedWords.value.filter(w => w.direction === 'across'))
-const downClues = computed(() => placedWords.value.filter(w => w.direction === 'down'))
+const acrossClues = computed(() => placedWords.value.filter((w) => w.direction === 'across'))
+const downClues = computed(() => placedWords.value.filter((w) => w.direction === 'down'))
 
 const addWord = () => {
   if (currentAnswer.value.trim() && currentClue.value.trim()) {
     words.value.push({
       id: Date.now().toString(),
       answer: currentAnswer.value.toUpperCase().replace(/[^A-Z]/g, ''),
-      clue: currentClue.value
+      clue: currentClue.value,
     })
     currentAnswer.value = ''
     currentClue.value = ''
@@ -179,7 +168,7 @@ const addWord = () => {
 }
 
 const removeWord = (id: string) => {
-  words.value = words.value.filter(w => w.id !== id)
+  words.value = words.value.filter((w) => w.id !== id)
 }
 
 const handleGridSizeChange = (e: Event) => {

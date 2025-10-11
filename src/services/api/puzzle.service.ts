@@ -40,6 +40,23 @@ export class PuzzleService extends BaseService {
   }
 
   /**
+   * Get all puzzles in a classroom
+   */
+  async getPuzzlesByClassroom(classroomId: string): Promise<Puzzle[]> {
+    const { data, error } = await this.client
+      .from('puzzles')
+      .select('*')
+      .eq('classroom_id', classroomId)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      this.handleError(error)
+    }
+
+    return data || []
+  }
+
+  /**
    * Get puzzles for a student (from enrolled classrooms)
    */
   async getStudentPuzzles(studentId: string): Promise<Puzzle[]> {

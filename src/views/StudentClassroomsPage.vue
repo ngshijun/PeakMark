@@ -104,7 +104,12 @@
           </FormField>
 
           <DialogFooter>
-            <Button type="button" variant="outline" @click="closeJoinDialog" :disabled="isSubmitting">
+            <Button
+              type="button"
+              variant="outline"
+              @click="closeJoinDialog"
+              :disabled="isSubmitting"
+            >
               Cancel
             </Button>
             <Button type="submit" :disabled="isSubmitting" @click="hasAttemptSubmit = true">
