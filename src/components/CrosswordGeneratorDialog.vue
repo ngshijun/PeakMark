@@ -84,7 +84,7 @@
               <NumberField
                 v-model="gridSize"
                 :min="10"
-                :max="20"
+                :max="25"
                 :default-value="15"
                 class="w-full"
                 :disabled="isSaving"
@@ -120,18 +120,11 @@
                 </div>
               </div>
             </div>
-
-            <div v-else class="flex-1 flex items-center justify-center text-muted-foreground">
-              <div class="text-center">
-                <Grid3x3 class="mx-auto mb-2 h-12 w-12 opacity-50" />
-                <p>Add words to see a live preview</p>
-              </div>
-            </div>
           </div>
         </div>
 
         <!-- Right Panel: Live Preview -->
-        <div class="w-1/2 overflow-auto px-6 py-4 bg-muted/30">
+        <div class="w-1/2 overflow-auto px-6 py-4">
           <h3 class="text-lg font-semibold mb-4">Live Preview</h3>
 
           <div v-if="grid.length > 0" class="space-y-6">
