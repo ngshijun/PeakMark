@@ -38,12 +38,14 @@
         <div class="h-full overflow-auto">
           <div
             v-if="documentStore.loading"
-            class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 p-4"
+            class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 p-4"
           >
-            <div v-for="i in 8" :key="i" class="rounded-lg border bg-card p-4">
-              <Skeleton class="h-12 w-12 mb-3" />
-              <Skeleton class="h-5 w-3/4 mb-2" />
-              <Skeleton class="h-4 w-1/2" />
+            <div v-for="i in 8" :key="i" class="rounded-lg border bg-card overflow-hidden">
+              <Skeleton class="aspect-video w-full" />
+              <div class="p-4 space-y-2">
+                <Skeleton class="h-5 w-3/4" />
+                <Skeleton class="h-4 w-1/2" />
+              </div>
             </div>
           </div>
 
