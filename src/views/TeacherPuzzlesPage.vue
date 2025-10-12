@@ -180,9 +180,9 @@
 </template>
 
 <script setup lang="ts">
-import CrosswordGeneratorDialog from '@/components/CrosswordGeneratorDialog.vue'
-import CrosswordThumbnail from '@/components/CrosswordThumbnail.vue'
-import CrosswordViewerDialog from '@/components/CrosswordViewerDialog.vue'
+import CrosswordGeneratorDialog from '@/components/Puzzles/CrosswordGeneratorDialog.vue'
+import CrosswordThumbnail from '@/components/Puzzles/CrosswordThumbnail.vue'
+import CrosswordViewerDialog from '@/components/Puzzles/CrosswordViewerDialog.vue'
 import { Button } from '@/components/ui/button'
 import {
   ContextMenu,

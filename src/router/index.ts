@@ -13,7 +13,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'landing-page',
-      component: () => import('@/views/LandingPage.vue'),
+      component: () => import('@/views/TestPage.vue'),
       meta: { requiresAuth: false },
     },
     {
@@ -31,7 +31,7 @@ const router = createRouter({
     {
       path: '/classroom/:classroomId/dashboard',
       name: 'dashboard',
-      component: () => import('@/views/DashboardWrapper.vue'),
+      component: () => import('@/views/DashboardPageWrapper.vue'),
       meta: { requiresAuth: true, role: ['admin', 'teacher', 'student'] },
     },
     {
@@ -61,25 +61,25 @@ const router = createRouter({
     {
       path: '/classroom/:classroomId/documents',
       name: 'documents',
-      component: () => import('@/views/DocumentsWrapper.vue'),
+      component: () => import('@/views/DocumentsPageWrapper.vue'),
       meta: { requiresAuth: true, role: ['teacher', 'student'] },
     },
     {
       path: '/classroom/:classroomId/puzzles',
       name: 'puzzles',
-      component: () => import('@/views/TeacherPuzzlesPage.vue'),
-      meta: { requiresAuth: true, role: ['teacher'] },
+      component: () => import('@/views/PuzzlesPageWrapper.vue'),
+      meta: { requiresAuth: true, role: ['teacher', 'student'] },
     },
     {
       path: '/classrooms',
       name: 'classrooms',
-      component: () => import('@/views/ClassroomsWrapper.vue'),
+      component: () => import('@/views/ClassroomsPageWrapper.vue'),
       meta: { requiresAuth: true, role: ['teacher', 'student'] },
     },
     {
       path: '/classroom/:classroomId/settings',
       name: 'classroom-settings',
-      component: () => import('@/views/ClassroomSettingsWrapper.vue'),
+      component: () => import('@/views/ClassroomSettingsPageWrapper.vue'),
       meta: { requiresAuth: true, role: ['teacher', 'student'] },
     },
   ],
