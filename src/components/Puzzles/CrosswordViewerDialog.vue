@@ -12,9 +12,7 @@
         </DialogDescription>
       </DialogHeader>
 
-      <div
-        class="flex-1 overflow-hidden flex flex-col lg:flex-row"
-      >
+      <div class="flex-1 overflow-hidden flex flex-col lg:flex-row">
         <!-- Left Panel: Crossword Grid -->
         <div
           class="w-full lg:w-1/2 flex flex-col items-center justify-center px-6 py-4 overflow-hidden"
@@ -47,9 +45,7 @@
                   :key="word.number"
                   class="flex gap-3 p-2 rounded hover:bg-muted/50"
                 >
-                  <span
-                    class="font-semibold text-sm text-muted-foreground min-w-[2rem]"
-                  >
+                  <span class="font-semibold text-sm text-muted-foreground min-w-[2rem]">
                     {{ word.number }}.
                   </span>
                   <div class="flex-1">
@@ -71,9 +67,7 @@
                   :key="word.number"
                   class="flex gap-3 p-2 rounded hover:bg-muted/50"
                 >
-                  <span
-                    class="font-semibold text-sm text-muted-foreground min-w-[2rem]"
-                  >
+                  <span class="font-semibold text-sm text-muted-foreground min-w-[2rem]">
                     {{ word.number }}.
                   </span>
                   <div class="flex-1">
@@ -84,10 +78,7 @@
             </div>
           </div>
 
-          <div
-            v-else
-            class="flex items-center justify-center h-full text-muted-foreground"
-          >
+          <div v-else class="flex items-center justify-center h-full text-muted-foreground">
             <div class="text-center">
               <p>No clues available</p>
             </div>
@@ -116,6 +107,15 @@
             </div>
           </div>
           <div class="flex gap-2 w-full sm:w-auto">
+            <Button
+              v-if="!showSolutionToggle"
+              variant="default"
+              @click="handleStartSolving"
+              class="flex-1 sm:flex-none"
+            >
+              <Play class="h-4 w-4 mr-2" />
+              Start Solving
+            </Button>
             <Button variant="outline" @click="handleClose" class="flex-1 sm:flex-none"
               >Close</Button
             >
@@ -141,8 +141,9 @@ import { Switch } from '@/components/ui/switch'
 import CrosswordGrid from '@/components/Puzzles/CrosswordGrid.vue'
 import type { Tables } from '@/types/database.types'
 import type { PlacedWord } from '@/utils/crossword-generator'
-import { ArrowDown, ArrowRight } from 'lucide-vue-next'
+import { ArrowDown, ArrowRight, Play } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 type Puzzle = Tables<'puzzles'>
 
@@ -160,6 +161,9 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
+
+const router = useRouter()
+const route = useRoute()
 
 const showSolution = ref(false)
 
@@ -233,6 +237,20 @@ const handleOpenChange = (value: boolean) => {
 }
 
 const handleClose = () => {
+  emit('update:open', false)
+}
+
+const handleStartSolving = () => {
+  if (!props.puzzle) return
+
+  const classroomId = route.params.classroomId as string
+  router.push({
+    name: 'puzzle-solve',
+    params: {
+      classroomId,
+      puzzleId: props.puzzle.id,
+    },
+  })
   emit('update:open', false)
 }
 

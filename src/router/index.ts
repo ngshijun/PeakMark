@@ -13,7 +13,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'landing-page',
-      component: () => import('@/views/TestPage.vue'),
+      component: () => import('@/views/LandingPage.vue'),
       meta: { requiresAuth: false },
     },
     {
@@ -69,6 +69,12 @@ const router = createRouter({
       name: 'puzzles',
       component: () => import('@/views/PuzzlesPageWrapper.vue'),
       meta: { requiresAuth: true, role: ['teacher', 'student'] },
+    },
+    {
+      path: '/classroom/:classroomId/puzzles/:puzzleId/solve',
+      name: 'puzzle-solve',
+      component: () => import('@/views/PuzzleSolvePage.vue'),
+      meta: { requiresAuth: true, role: ['student'] },
     },
     {
       path: '/classrooms',
