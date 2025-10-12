@@ -58,8 +58,10 @@
                   @click="handlePuzzleClick(puzzle)"
                 >
                   <!-- Puzzle Thumbnail -->
-                  <div class="aspect-video">
-                    <CrosswordThumbnail :grid="puzzle.grid" :cell-size="25" :compact="false" />
+                  <div class="aspect-video flex items-center justify-center">
+                    <div class="h-full aspect-square">
+                      <CrosswordThumbnail :grid="puzzle.grid" :placed-words="puzzle.placed_words" />
+                    </div>
                   </div>
 
                   <!-- Puzzle Info -->

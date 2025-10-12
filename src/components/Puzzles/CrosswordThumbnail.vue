@@ -1,25 +1,13 @@
 <template>
   <div
-    class="relative w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50 overflow-hidden"
+    class="relative w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50 overflow-hidden pointer-events-none"
   >
-    <div v-if="parsedGrid.length > 0" class="flex items-center justify-center w-full h-full p-2">
-      <div class="inline-block" :style="{ fontSize: 0, transform: `scale(${scale})` }">
-        <div v-for="(row, i) in parsedGrid" :key="i" style="display: flex">
-          <div
-            v-for="(cell, j) in row"
-            :key="j"
-            :class="[
-              'relative',
-              cell ? 'bg-white border border-gray-400' : 'bg-gray-700',
-              compact ? '' : 'border-2',
-            ]"
-            :style="{
-              width: `${cellSize}px`,
-              height: `${cellSize}px`,
-            }"
-          ></div>
-        </div>
-      </div>
+    <div v-if="parsedGrid.length > 0" class="w-full h-full">
+      <CrosswordGrid
+        :grid="parsedGrid"
+        :placed-words="parsedPlacedWords"
+        :show-solution="false"
+      />
     </div>
     <div v-else class="text-muted-foreground">
       <Grid3x3 class="h-12 w-12 opacity-50" />
@@ -28,20 +16,18 @@
 </template>
 
 <script setup lang="ts">
+import CrosswordGrid from './CrosswordGrid.vue'
+import type { PlacedWord } from '@/utils/crossword-generator'
 import { Grid3x3 } from 'lucide-vue-next'
 import { computed } from 'vue'
 
 const props = withDefaults(
   defineProps<{
     grid: string[] | string[][]
-    cellSize?: number
-    compact?: boolean
-    maxSize?: number
+    placedWords?: string[] | PlacedWord[]
   }>(),
   {
-    cellSize: 16,
-    compact: false,
-    maxSize: 200,
+    placedWords: () => [],
   },
 )
 
@@ -63,13 +49,21 @@ const parsedGrid = computed<string[][]>(() => {
   return props.grid as string[][]
 })
 
-// Calculate scale to fit within maxSize
-const scale = computed(() => {
-  if (parsedGrid.value.length === 0) return 1
+// Parse placed words - same pattern as grid
+const parsedPlacedWords = computed<PlacedWord[]>(() => {
+  if (!props.placedWords || props.placedWords.length === 0) return []
 
-  const gridDimension = parsedGrid.value.length * props.cellSize
-  if (gridDimension <= props.maxSize) return 1
+  // If it's an array of strings (JSON), parse the first one
+  if (typeof props.placedWords[0] === 'string') {
+    try {
+      return JSON.parse(props.placedWords[0])
+    } catch (e) {
+      console.error('Failed to parse placed words:', e)
+      return []
+    }
+  }
 
-  return props.maxSize / gridDimension
+  // Already a parsed array
+  return props.placedWords as PlacedWord[]
 })
 </script>
