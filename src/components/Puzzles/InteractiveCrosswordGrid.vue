@@ -77,7 +77,7 @@ const emit = defineEmits<{
 const cellRefs = ref<Record<string, HTMLInputElement>>({})
 const currentDirection = ref<'across' | 'down'>('across')
 
-const setCellRef = (el: HTMLInputElement | Element | null, row: number, col: number) => {
+const setCellRef = (el: unknown, row: number, col: number) => {
   if (el && el instanceof HTMLInputElement) {
     cellRefs.value[`${row}-${col}`] = el
   }
