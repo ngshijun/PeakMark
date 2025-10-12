@@ -1,7 +1,7 @@
 <template>
   <div v-if="grid.length > 0" class="flex flex-col items-center justify-center w-full h-full">
     <div
-      class="crossword-grid"
+      :class="['crossword-grid', { 'crossword-grid-thumbnail': isThumbnail }]"
       :style="{
         display: 'grid',
         gridTemplateColumns: `repeat(${grid[0]?.length || 0}, 1fr)`,
@@ -13,15 +13,11 @@
         <div
           v-for="(cell, j) in row"
           :key="`cell-${i}-${j}`"
-          :class="[
-            'crossword-cell',
-            'relative',
-            cell ? 'bg-white' : 'bg-gray-800'
-          ]"
+          :class="['crossword-cell', 'relative', cell ? 'bg-white' : 'bg-gray-800']"
         >
           <!-- Word number -->
           <span
-            v-if="cell && getWordStartAt(placedWords, i, j)"
+            v-if="cell && !isThumbnail && getWordStartAt(placedWords, i, j)"
             class="absolute top-0.5 left-1 text-[0.6em] font-bold text-gray-600 leading-none"
           >
             {{ getWordStartAt(placedWords, i, j)?.number }}
@@ -52,23 +48,38 @@ import type { PlacedWord } from '@/utils/crossword-generator'
 import { getWordStartAt } from '@/utils/crossword-generator'
 import { Grid3x3 } from 'lucide-vue-next'
 
-defineProps<{
-  grid: string[][]
-  placedWords: PlacedWord[]
-  showSolution?: boolean
-}>()
+withDefaults(
+  defineProps<{
+    grid: string[][]
+    placedWords: PlacedWord[]
+    showSolution?: boolean
+    isThumbnail?: boolean
+  }>(),
+  {
+    isThumbnail: false,
+  },
+)
 </script>
 
 <style scoped>
 .crossword-grid {
-  width: min(100%, calc(100vh - 16rem));
-  height: min(100%, calc(100vh - 16rem));
+  width: 100%;
+  height: 100%;
   max-width: 600px;
   max-height: 600px;
   aspect-ratio: 1 / 1;
   font-size: clamp(10px, 1.2vw, 16px);
   background-color: rgb(31, 41, 55); /* gray-800 */
   margin: 0 auto;
+}
+
+/* Thumbnail mode: Use container-based sizing to avoid viewport issues */
+.crossword-grid-thumbnail {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  font-size: clamp(6px, 1.5vw, 12px);
 }
 
 .crossword-cell {
@@ -79,7 +90,7 @@ defineProps<{
 }
 
 @media print {
-  .crossword-grid {
+  .crossword-grid:not(.crossword-grid-thumbnail) {
     width: 600px;
     height: 600px;
     font-size: 14px;
@@ -89,17 +100,13 @@ defineProps<{
 }
 
 @media (max-width: 768px) {
-  .crossword-grid {
-    width: min(100%, calc(100vh - 14rem));
-    height: min(100%, calc(100vh - 14rem));
+  .crossword-grid:not(.crossword-grid-thumbnail) {
     font-size: clamp(8px, 1.5vw, 12px);
   }
 }
 
 @media (orientation: landscape) and (max-height: 600px) {
-  .crossword-grid {
-    width: min(100%, calc(100vh - 12rem));
-    height: min(100%, calc(100vh - 12rem));
+  .crossword-grid:not(.crossword-grid-thumbnail) {
     max-width: 400px;
     max-height: 400px;
   }

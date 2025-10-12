@@ -7,6 +7,7 @@
         :grid="parsedGrid"
         :placed-words="parsedPlacedWords"
         :show-solution="false"
+        :is-thumbnail="true"
       />
     </div>
     <div v-else class="text-muted-foreground">
