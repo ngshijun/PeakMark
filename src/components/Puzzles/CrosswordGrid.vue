@@ -89,16 +89,6 @@ withDefaults(
   min-height: 0;
 }
 
-@media print {
-  .crossword-grid:not(.crossword-grid-thumbnail) {
-    width: 600px;
-    height: 600px;
-    font-size: 14px;
-    page-break-inside: avoid;
-    gap: 1px;
-  }
-}
-
 @media (max-width: 768px) {
   .crossword-grid:not(.crossword-grid-thumbnail) {
     font-size: clamp(8px, 1.5vw, 12px);
