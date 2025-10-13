@@ -16,7 +16,11 @@
       "Bash(npm run test:unit:*)",
       "Bash(npm run build:*)",
       "WebFetch(domain:github.com)",
-      "WebSearch"
+      "WebSearch",
+      "Read(//private/tmp/**)",
+      "Read(//tmp/clinic-inventory-manager/src/components/ui/**)",
+      "Read(//tmp/clinic-inventory-manager/src/views/**)",
+      "Read(//tmp/clinic-inventory-manager/src/**)"
     ],
     "deny": [],
     "ask": []

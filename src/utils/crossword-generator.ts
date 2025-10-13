@@ -199,9 +199,17 @@ export function generateCrossword(words: WordEntry[], gridSize: number): Crosswo
     return a.col - b.col
   })
 
-  // Renumber
-  placed.forEach((word, idx) => {
-    word.number = idx + 1
+  // Renumber - words starting at same position get same number
+  const positionNumbers = new Map<string, number>()
+  let currentNumber = 1
+
+  placed.forEach((word) => {
+    const posKey = `${word.row},${word.col}`
+    if (!positionNumbers.has(posKey)) {
+      positionNumbers.set(posKey, currentNumber)
+      currentNumber++
+    }
+    word.number = positionNumbers.get(posKey)!
   })
 
   return { grid, placedWords: placed }
