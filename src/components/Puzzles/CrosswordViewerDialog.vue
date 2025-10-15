@@ -7,9 +7,6 @@
         <DialogTitle class="text-2xl flex items-center gap-3">
           {{ puzzle?.title }}
         </DialogTitle>
-        <DialogDescription v-if="puzzle?.description" class="mt-1">
-          {{ puzzle.description }}
-        </DialogDescription>
       </DialogHeader>
 
       <div class="flex-1 overflow-hidden flex flex-col lg:flex-row">
@@ -131,7 +128,6 @@ import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,

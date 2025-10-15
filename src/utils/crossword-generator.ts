@@ -2,7 +2,7 @@
  * Crossword Generator Utility (TypeScript, strict)
  *
  * - Improved placement algorithm (ported from Python)
- * - generateCrossword(words, gridSize, { seed? })
+ * - generateCrossword(words, gridSize, seed?)
  * - Centers the resulting puzzle in the grid
  *
  * This file is written to be strict-type friendly.
@@ -93,7 +93,9 @@ class RNG {
     const a = arr.slice()
     for (let i = a.length - 1; i > 0; i--) {
       const j = this.randInt(i + 1)
-      ;[a[i], a[j]] = [a[j], a[i]]
+      const tmp = a[i] as T
+      a[i] = a[j] as T
+      a[j] = tmp
     }
     return a
   }
@@ -127,7 +129,11 @@ class CrosswordBuilder {
   }
 
   private cellOccupied(row: number, col: number): boolean {
-    return this.grid[row][col] !== this.empty
+    if (row < 0 || row >= this.size) return false
+    const rowArr = this.grid[row]
+    if (!rowArr) return false
+    if (col < 0 || col >= rowArr.length) return false
+    return rowArr[col] !== this.empty
   }
 
   private setWord(wordRec: [string, string, number, number, boolean], row: number, col: number, vertical: boolean): void {
@@ -146,7 +152,10 @@ class CrosswordBuilder {
         else c += 1
         continue
       }
-      this.grid[r][c] = ch
+      const rowArr = this.grid[r]
+      if (rowArr) {
+        rowArr[c] = ch
+      }
       const existing = this.letCoords.get(ch) ?? []
       if (!existing.some((e) => e[0] === r && e[1] === c && e[2] === vertical)) {
         existing.push([r, c, vertical])
@@ -180,8 +189,12 @@ class CrosswordBuilder {
     let score = 1
     for (let i = 0; i < wordLength; i++) {
       // guard bounds
-      if (row < 0 || row >= this.size || col < 0 || col >= this.size) return 0
-      const activeCell = this.grid[row][col]
+      if (row < 0 || row >= this.size) return 0
+      const rowArr = this.grid[row]
+      if (!rowArr) return 0
+      if (col < 0 || col >= rowArr.length) return 0
+
+      const activeCell = rowArr[col] ?? this.empty
       if (activeCell === this.empty) {
         if ((row + 1 !== this.size && cellOccupied(row + 1, col)) || (row !== 0 && cellOccupied(row - 1, col))) {
           return 0
@@ -203,8 +216,12 @@ class CrosswordBuilder {
     }
     let score = 1
     for (let i = 0; i < wordLength; i++) {
-      if (row < 0 || row >= this.size || col < 0 || col >= this.size) return 0
-      const activeCell = this.grid[row][col]
+      if (row < 0 || row >= this.size) return 0
+      const rowArr = this.grid[row]
+      if (!rowArr) return 0
+      if (col < 0 || col >= rowArr.length) return 0
+
+      const activeCell = rowArr[col] ?? this.empty
       if (activeCell === this.empty) {
         if ((col + 1 !== this.size && cellOccupied(row, col + 1)) || (col !== 0 && cellOccupied(row, col - 1))) {
           return 0
@@ -225,7 +242,7 @@ class CrosswordBuilder {
 
     // For each letter in the word, see if that letter exists on the grid and test placement
     for (let letIndex = 0; letIndex < wordLength; letIndex++) {
-      const ch = word[0][letIndex]
+      const ch = String(word[0][letIndex])
       const coords = this.letCoords.get(ch) ?? []
       for (const item of coords) {
         const [rowc, colc, vertc] = item
@@ -279,7 +296,8 @@ class CrosswordBuilder {
 
       // place first word if available
       if (this.available.length > 0) {
-        this.firstWord(this.available[0])
+        // TS can't infer available[0] is defined otherwise, assert it
+        this.firstWord(this.available[0] as [string, string])
       }
 
       // attempt to add words (two passes)
@@ -346,8 +364,10 @@ export function generateCrossword(words: WordEntry[], gridSize: number, seed?: n
   let minC = gridSize
   let maxC = -1
   for (let r = 0; r < gridSize; r++) {
+    const rowArr = rawGrid[r]
+    if (!rowArr) continue
     for (let c = 0; c < gridSize; c++) {
-      const cell = rawGrid[r][c]
+      const cell = rowArr[c] ?? ''
       if (cell !== '') {
         if (r < minR) minR = r
         if (r > maxR) maxR = r
@@ -375,13 +395,18 @@ export function generateCrossword(words: WordEntry[], gridSize: number, seed?: n
   // Create centered grid and place letters from rawGrid shifted by (rowShift, colShift)
   const centeredGrid: string[][] = Array.from({ length: gridSize }, () => Array.from({ length: gridSize }, () => ''))
   for (let r = minR; r <= maxR; r++) {
+    const rowArr = rawGrid[r]
+    if (!rowArr) continue
     for (let c = minC; c <= maxC; c++) {
-      const ch = rawGrid[r][c]
-      if (ch && ch !== '') {
+      const ch = rowArr[c] ?? ''
+      if (ch !== '') {
         const nr = r + rowShift
         const nc = c + colShift
-        if (nr >= 0 && nr < gridSize && nc >= 0 && nc < gridSize) {
-          centeredGrid[nr][nc] = ch
+        if (nr >= 0 && nr < gridSize) {
+          const destRow = centeredGrid[nr]
+          if (destRow && nc >= 0 && nc < destRow.length) {
+            destRow[nc] = ch
+          }
         }
       }
     }

@@ -98,6 +98,8 @@
                  <NumberField
                    v-model="seed"
                    :default-value="1"
+                   :min="0"
+                   :max="9999"
                    class="w-full"
                    :disabled="isSaving"
                  >
@@ -113,6 +115,7 @@
                  <NumberField
                    v-model="exp"
                    :min="0"
+                   :max="9999"
                    :default-value="100"
                    class="w-full"
                    :disabled="isSaving"

@@ -192,8 +192,7 @@ const filteredPuzzles = computed(() => {
 
   return puzzleStore.puzzles.filter(
     (puzzle) =>
-      puzzle.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      puzzle.description?.toLowerCase().includes(searchQuery.value.toLowerCase()),
+      puzzle.title.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
 

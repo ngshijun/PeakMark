@@ -10,7 +10,6 @@
             Back to Puzzles
           </Button>
         </div>
-        <p v-if="puzzle?.description" class="text-muted-foreground">{{ puzzle.description }}</p>
       </div>
 
       <!-- Loading State -->
