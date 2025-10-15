@@ -265,9 +265,8 @@ const filteredPuzzles = computed(() => {
 
   return puzzleStore.puzzles.filter(
     (puzzle) =>
-      puzzle.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      puzzle.description?.toLowerCase().includes(searchQuery.value.toLowerCase()),
-  )
+      puzzle.title.toLowerCase().includes(searchQuery.value.toLowerCase())
+)
 })
 
 const totalPages = computed(() => {
@@ -305,6 +304,7 @@ const handleSavePuzzle = async (data: {
   title: string
   grid: string[][]
   placedWords: PlacedWord[]
+  exp: number
 }) => {
   if (!selectedClassroomId.value || !authStore.user) return
 
@@ -316,6 +316,7 @@ const handleSavePuzzle = async (data: {
       placed_words: [JSON.stringify(data.placedWords)],
       classroom_id: selectedClassroomId.value,
       created_by: authStore.user.id,
+      exp: data.exp,
     })
 
     toast.success('Puzzle created successfully')

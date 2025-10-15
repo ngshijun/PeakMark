@@ -1,9 +1,11 @@
 /**
- * Crossword Generator Utility
- * Pure functions for crossword puzzle generation
+ * Crossword Generator Utility (TypeScript, strict)
  *
- * Replaces generateCrossword with the improved placement algorithm while
- * keeping the input/output structure unchanged.
+ * - Improved placement algorithm (ported from Python)
+ * - generateCrossword(words, gridSize, { seed? })
+ * - Centers the resulting puzzle in the grid
+ *
+ * This file is written to be strict-type friendly.
  */
 
 export interface WordEntry {
@@ -24,66 +26,7 @@ export interface PlacedWord {
 export interface CrosswordResult {
   grid: string[][]
   placedWords: PlacedWord[]
-}
-
-/**
- * Check if a word can be placed at the given position
- * (kept for compatibility; note: generateCrossword uses its own checks)
- */
-export function canPlaceWord(
-  grid: string[][],
-  word: string,
-  row: number,
-  col: number,
-  direction: 'across' | 'down',
-  size: number,
-): boolean {
-  if (direction === 'across') {
-    if (col < 0 || col + word.length > size || row < 0 || row >= size) return false
-
-    const gridRow = grid[row]
-    if (!gridRow) return false
-
-    // Check before and after
-    if (col > 0 && gridRow[col - 1] !== '') return false
-    if (col + word.length < size && gridRow[col + word.length] !== '') return false
-
-    for (let i = 0; i < word.length; i++) {
-      const cell = gridRow[col + i]
-      if (cell !== '' && cell !== word[i]) return false
-
-      // Check above and below (except at intersection points)
-      if (cell === '') {
-        const aboveRow = grid[row - 1]
-        const belowRow = grid[row + 1]
-        if (row > 0 && aboveRow && aboveRow[col + i] !== '') return false
-        if (row < size - 1 && belowRow && belowRow[col + i] !== '') return false
-      }
-    }
-  } else {
-    if (row < 0 || row + word.length > size || col < 0 || col >= size) return false
-
-    // Check before and after
-    const beforeRow = grid[row - 1]
-    const afterRow = grid[row + word.length]
-    if (row > 0 && beforeRow && beforeRow[col] !== '') return false
-    if (row + word.length < size && afterRow && afterRow[col] !== '') return false
-
-    for (let i = 0; i < word.length; i++) {
-      const currentRow = grid[row + i]
-      if (!currentRow) return false
-
-      const cell = currentRow[col]
-      if (cell !== '' && cell !== word[i]) return false
-
-      // Check left and right (except at intersection points)
-      if (cell === '') {
-        if (col > 0 && currentRow[col - 1] !== '') return false
-        if (col < size - 1 && currentRow[col + 1] !== '') return false
-      }
-    }
-  }
-  return true
+  unusedWords: WordEntry[]
 }
 
 /**
@@ -125,10 +68,8 @@ export function getWordStartAt(
   return placedWords.find((w) => w.row === row && w.col === col)
 }
 
-/* ----------------- New algorithm implementation ----------------- */
-
 /**
- * Small RNG wrapper so runs are reproducible if desired.
+ * Small RNG wrapper (Park–Miller LCG) to allow reproducible runs
  */
 class RNG {
   private seed: number
@@ -140,12 +81,12 @@ class RNG {
     }
     if (this.seed <= 0) this.seed += 2147483646
   }
-  // Park-Miller LCG
   next(): number {
     this.seed = (this.seed * 16807) % 2147483647
     return (this.seed - 1) / 2147483646
   }
   randInt(maxExclusive: number): number {
+    if (maxExclusive <= 0) return 0
     return Math.floor(this.next() * maxExclusive)
   }
   shuffle<T>(arr: T[]): T[] {
@@ -159,13 +100,13 @@ class RNG {
 }
 
 /**
- * Internal builder: mirrors the algorithm used in the TypeScript utility.
- * Words are represented as [answer, clue, row?, col?, vertical?]
+ * Internal builder class. Words are stored internally as tuple:
+ * [answer, clue, row?, col?, vertical?]
  */
 class CrosswordBuilder {
-  size: number
-  empty: string
-  available: Array<[string, string]>
+  readonly size: number
+  readonly empty: string
+  readonly available: Array<[string, string]>
   grid: string[][]
   letCoords: Map<string, Array<[number, number, boolean]>>
   current: Array<[string, string, number, number, boolean]>
@@ -185,11 +126,11 @@ class CrosswordBuilder {
     this.rng = rng ?? new RNG()
   }
 
-  private cellOccupied(row: number, col: number) {
+  private cellOccupied(row: number, col: number): boolean {
     return this.grid[row][col] !== this.empty
   }
 
-  private setWord(wordRec: [string, string, number, number, boolean], row: number, col: number, vertical: boolean) {
+  private setWord(wordRec: [string, string, number, number, boolean], row: number, col: number, vertical: boolean): void {
     wordRec[2] = row
     wordRec[3] = col
     wordRec[4] = vertical
@@ -198,6 +139,13 @@ class CrosswordBuilder {
     let r = row
     let c = col
     for (const ch of wordRec[0]) {
+      // guard indexes
+      if (r < 0 || r >= this.size || c < 0 || c >= this.size) {
+        // Shouldn't happen if checks are correct; just skip if out of bounds
+        if (vertical) r += 1
+        else c += 1
+        continue
+      }
       this.grid[r][c] = ch
       const existing = this.letCoords.get(ch) ?? []
       if (!existing.some((e) => e[0] === r && e[1] === c && e[2] === vertical)) {
@@ -209,7 +157,7 @@ class CrosswordBuilder {
     }
   }
 
-  private firstWord(word: [string, string]) {
+  private firstWord(word: [string, string]): void {
     const vertical = this.rng.randInt(2) === 1
     let row: number
     let col: number
@@ -231,6 +179,8 @@ class CrosswordBuilder {
     }
     let score = 1
     for (let i = 0; i < wordLength; i++) {
+      // guard bounds
+      if (row < 0 || row >= this.size || col < 0 || col >= this.size) return 0
       const activeCell = this.grid[row][col]
       if (activeCell === this.empty) {
         if ((row + 1 !== this.size && cellOccupied(row + 1, col)) || (row !== 0 && cellOccupied(row - 1, col))) {
@@ -253,6 +203,7 @@ class CrosswordBuilder {
     }
     let score = 1
     for (let i = 0; i < wordLength; i++) {
+      if (row < 0 || row >= this.size || col < 0 || col >= this.size) return 0
       const activeCell = this.grid[row][col]
       if (activeCell === this.empty) {
         if ((col + 1 !== this.size && cellOccupied(row, col + 1)) || (col !== 0 && cellOccupied(row, col - 1))) {
@@ -303,7 +254,7 @@ class CrosswordBuilder {
     return coordlist[0]
   }
 
-  private addWords(word: [string, string]) {
+  private addWords(word: [string, string]): void {
     const coords = this.getCoords(word)
     if (!coords) return
     const [row, col, vertical] = coords
@@ -311,15 +262,17 @@ class CrosswordBuilder {
     this.setWord(rec, row, col, vertical)
   }
 
+  /**
+   * Compute best placement within time budget (seconds).
+   */
   compute(timeBudgetSeconds = 1.0): { grid: string[][]; placed: Array<[string, string, number, number, boolean]> } {
-    // Keep best found placement within the time budget (ms)
     this.bestGrid = this.grid.map((r) => r.slice())
     this.bestPlaced = []
     const start = Date.now()
     const budgetMs = Math.max(1, Math.floor(timeBudgetSeconds * 1000))
 
     while (Date.now() - start < budgetMs) {
-      // reset temp state
+      // reset temporary state
       this.letCoords.clear()
       this.current = []
       this.grid = Array.from({ length: this.size }, () => Array.from({ length: this.size }, () => this.empty))
@@ -339,6 +292,7 @@ class CrosswordBuilder {
       }
 
       if (this.current.length > this.bestPlaced.length) {
+        // copy current as best
         this.bestPlaced = this.current.map((c) => c.slice() as [string, string, number, number, boolean])
         this.bestGrid = this.grid.map((r) => r.slice())
       }
@@ -350,17 +304,21 @@ class CrosswordBuilder {
   }
 }
 
-/* ----------------- Exported generateCrossword (new algorithm) ----------------- */
+/* ----------------- Exported generateCrossword ----------------- */
 
 /**
  * Generate a crossword puzzle from a list of words using the improved algorithm.
  * Input/output structure remains the same as before.
+ *
+ * Added:
+ *  - seed?: number  -- for reproducible placement
+ *  - centers the placed puzzle in the returned grid
  */
-export function generateCrossword(words: WordEntry[], gridSize: number): CrosswordResult | null {
+export function generateCrossword(words: WordEntry[], gridSize: number, seed?: number): CrosswordResult | null {
   if (!words || words.length === 0) return null
 
   // ensure uppercase answers and keep clues
-  const inputs = words.map((w) => ({ id: w.id, answer: String(w.answer).toUpperCase(), clue: String(w.clue ?? '') }))
+  const inputs: WordEntry[] = words.map((w) => ({ id: w.id, answer: String(w.answer).toUpperCase(), clue: String(w.clue ?? '') }))
 
   // quick fail if longest word doesn't fit at all
   const longest = inputs.reduce((m, it) => Math.max(m, it.answer.length), 0)
@@ -369,20 +327,76 @@ export function generateCrossword(words: WordEntry[], gridSize: number): Crosswo
     return null
   }
 
-  const rng = new RNG()
+  const rng = new RNG(seed)
   const builder = new CrosswordBuilder(gridSize, inputs, rng, '')
 
-  // use a small time budget (1s default). You could expose as option later.
-  const { grid, placed } = builder.compute(1.0)
+  // use a small time budget (1s default).
+  const { grid: rawGrid, placed: rawPlaced } = builder.compute(1.0)
+
+  // Prepare empty grid to return if nothing placed
+  const emptyGrid = Array.from({ length: gridSize }, () => Array.from({ length: gridSize }, () => ''))
+
+  if (!rawPlaced || rawPlaced.length === 0) {
+    return { grid: emptyGrid, placedWords: [], unusedWords: [] }
+  }
+
+  // Compute bounding box of used cells in rawGrid
+  let minR = gridSize
+  let maxR = -1
+  let minC = gridSize
+  let maxC = -1
+  for (let r = 0; r < gridSize; r++) {
+    for (let c = 0; c < gridSize; c++) {
+      const cell = rawGrid[r][c]
+      if (cell !== '') {
+        if (r < minR) minR = r
+        if (r > maxR) maxR = r
+        if (c < minC) minC = c
+        if (c > maxC) maxC = c
+      }
+    }
+  }
+
+  if (maxR < minR || maxC < minC) {
+    // nothing placed
+    return { grid: emptyGrid, placedWords: [], unusedWords: [] }
+  }
+
+  const usedHeight = maxR - minR + 1
+  const usedWidth = maxC - minC + 1
+
+  // compute shifts to center bounding box within the full grid
+  const targetTop = Math.floor((gridSize - usedHeight) / 2)
+  const targetLeft = Math.floor((gridSize - usedWidth) / 2)
+
+  const rowShift = targetTop - minR
+  const colShift = targetLeft - minC
+
+  // Create centered grid and place letters from rawGrid shifted by (rowShift, colShift)
+  const centeredGrid: string[][] = Array.from({ length: gridSize }, () => Array.from({ length: gridSize }, () => ''))
+  for (let r = minR; r <= maxR; r++) {
+    for (let c = minC; c <= maxC; c++) {
+      const ch = rawGrid[r][c]
+      if (ch && ch !== '') {
+        const nr = r + rowShift
+        const nc = c + colShift
+        if (nr >= 0 && nr < gridSize && nc >= 0 && nc < gridSize) {
+          centeredGrid[nr][nc] = ch
+        }
+      }
+    }
+  }
+
+  const unusedWords = inputs.filter((w) => !rawPlaced.some((p) => p[0] === w.answer))
 
   // Convert placed internal format [word, clue, row, col, vertical] -> PlacedWord[]
-  const placedWords: PlacedWord[] = placed.map((p) => ({
+  const placedWords: PlacedWord[] = rawPlaced.map((p) => ({
     word: p[0],
     clue: p[1],
-    row: p[2],
-    col: p[3],
+    row: p[2] + rowShift,
+    col: p[3] + colShift,
     direction: p[4] ? 'down' : 'across',
-    number: 0, // will assign below
+    number: 0, // assigned below
   }))
 
   // Sort by row,col for numbering (same-start position -> same number)
@@ -395,9 +409,9 @@ export function generateCrossword(words: WordEntry[], gridSize: number): Crosswo
     if (!positionNumbers.has(key)) {
       positionNumbers.set(key, currentNumber++)
     }
-    pw.number = positionNumbers.get(key)!
+    // non-null assertion safe because we just set or previously set
+    pw.number = positionNumbers.get(key) as number
   }
 
-  // Ensure returned grid uses '' for empty cells (already does)
-  return { grid, placedWords }
+  return { grid: centeredGrid, placedWords, unusedWords }
 }

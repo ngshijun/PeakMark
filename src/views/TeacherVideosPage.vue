@@ -663,9 +663,7 @@ const handleFolderAction = () => {
 }
 
 const handleCreateFolder = async () => {
-  console.log('here1')
   if (!newFolderName.value.trim() || !selectedClassroomId.value) return
-  console.log('here2')
   try {
     await videoStore.createFolder(
       newFolderName.value.trim(),

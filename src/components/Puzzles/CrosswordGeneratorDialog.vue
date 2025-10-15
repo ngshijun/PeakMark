@@ -6,7 +6,7 @@
         <DialogDescription> Add words and clues to see a live preview </DialogDescription>
       </DialogHeader>
 
-      <form @submit="onSubmit" class="flex-1 overflow-hidden flex">
+      <form @submit.prevent="onSubmit" class="flex-1 overflow-hidden flex">
         <!-- Left Panel: Word Input and List -->
         <div class="w-1/2 flex flex-col px-6 py-4 border-r">
           <!-- Fixed Top Section -->
@@ -46,7 +46,7 @@
                     type="text"
                     placeholder="Enter answer word"
                     class="uppercase"
-                    @keypress.enter="addWord"
+                    @keydown.enter.prevent="addWord"
                     @input="handleAnswerInput"
                     :disabled="isSaving"
                   />
@@ -57,7 +57,7 @@
                     v-model="currentClue"
                     type="text"
                     placeholder="Enter clue"
-                    @keypress.enter="addWord"
+                    @keydown.enter.prevent="addWord"
                     :disabled="isSaving"
                   />
                 </div>
@@ -75,23 +75,56 @@
             </div>
 
             <!-- Grid Size Input -->
-            <div class="mb-6">
-              <Label class="mb-2">Grid Size</Label>
-              <NumberField
-                v-model="gridSize"
-                :min="10"
-                :max="25"
-                :default-value="15"
-                class="w-full"
-                :disabled="isSaving"
-              >
-                <NumberFieldContent>
-                  <NumberFieldDecrement />
-                  <NumberFieldInput />
-                  <NumberFieldIncrement />
-                </NumberFieldContent>
-              </NumberField>
-            </div>
+             <div class="grid grid-cols-3 mb-6 gap-6">
+               <div>
+                 <Label class="mb-2">Grid Size</Label>
+                 <NumberField
+                   v-model="gridSize"
+                   :min="10"
+                   :max="25"
+                   :default-value="15"
+                   class="w-full"
+                   :disabled="isSaving"
+                 >
+                   <NumberFieldContent>
+                     <NumberFieldDecrement />
+                     <NumberFieldInput />
+                     <NumberFieldIncrement />
+                   </NumberFieldContent>
+                 </NumberField>
+               </div>
+               <div>
+                 <Label class="mb-2">Seed</Label>
+                 <NumberField
+                   v-model="seed"
+                   :default-value="1"
+                   class="w-full"
+                   :disabled="isSaving"
+                 >
+                   <NumberFieldContent>
+                     <NumberFieldDecrement />
+                     <NumberFieldInput />
+                     <NumberFieldIncrement />
+                   </NumberFieldContent>
+                 </NumberField>
+               </div>
+               <div>
+                 <Label class="mb-2">exp</Label>
+                 <NumberField
+                   v-model="exp"
+                   :min="0"
+                   :default-value="100"
+                   class="w-full"
+                   :disabled="isSaving"
+                 >
+                   <NumberFieldContent>
+                     <NumberFieldDecrement />
+                     <NumberFieldInput />
+                     <NumberFieldIncrement />
+                   </NumberFieldContent>
+                 </NumberField>
+               </div>
+             </div>
           </div>
 
           <!-- Scrollable Words List Section -->
@@ -100,7 +133,7 @@
               <h3 class="text-lg font-semibold mb-3 flex-shrink-0">Words ({{ words.length }})</h3>
               <div class="space-y-2 overflow-y-auto flex-1 pr-2">
                 <div v-for="word in words" :key="word.id" class="flex items-center gap-2">
-                  <div class="flex-1 rounded-md border bg-card p-3">
+                  <div class="flex-1 rounded-md border bg-card p-3" :class="{ 'border-red-500 bg-red-50': unusedWords.some((w) => w.answer === word.answer) }">
                     <div class="font-medium text-sm">{{ word.answer }}</div>
                     <div class="text-sm text-muted-foreground">{{ word.clue }}</div>
                   </div>
@@ -239,6 +272,7 @@ const emit = defineEmits<{
       title: string
       grid: string[][]
       placedWords: PlacedWord[]
+      exp: number
     },
   ]
 }>()
@@ -249,7 +283,10 @@ const currentAnswer = ref('')
 const currentClue = ref('')
 const grid = ref<string[][]>([])
 const placedWords = ref<PlacedWord[]>([])
+const unusedWords = ref<WordEntry[]>([])
 const gridSize = ref(15)
+const seed = ref(1)
+const exp = ref(100)
 const isSaving = ref(false)
 const hasAttemptSubmit = ref(false)
 
@@ -310,16 +347,17 @@ const generatePreview = () => {
     return
   }
 
-  const result = generateCrosswordUtil(words.value, gridSize.value)
+  const result = generateCrosswordUtil(words.value, gridSize.value, seed.value)
   if (result) {
     grid.value = result.grid
     placedWords.value = result.placedWords
+    unusedWords.value = result.unusedWords
   }
 }
 
 // Auto-generate preview when words or grid size change
 watch(
-  [words, gridSize],
+  [words, gridSize, seed],
   () => {
     generatePreview()
   },
@@ -344,6 +382,7 @@ const onSubmit = handleSubmit((formValues) => {
       title: formValues.puzzleTitle,
       grid: grid.value,
       placedWords: placedWords.value,
+      exp: exp.value,
     })
   }
 })
@@ -369,6 +408,8 @@ watch(
       grid.value = []
       placedWords.value = []
       gridSize.value = 15
+      seed.value = 1
+      exp.value = 100
       isSaving.value = false
       hasAttemptSubmit.value = false
     }
