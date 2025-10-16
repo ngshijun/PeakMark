@@ -75,59 +75,61 @@
             </div>
 
             <!-- Grid Size Input -->
-             <div class="grid grid-cols-3 mb-6 gap-6">
-               <div>
-                 <Label class="mb-2">Grid Size</Label>
-                 <NumberField
-                   v-model="gridSize"
-                   :min="10"
-                   :max="25"
-                   :default-value="15"
-                   class="w-full"
-                   :disabled="isSaving"
-                 >
-                   <NumberFieldContent>
-                     <NumberFieldDecrement />
-                     <NumberFieldInput />
-                     <NumberFieldIncrement />
-                   </NumberFieldContent>
-                 </NumberField>
-               </div>
-               <div>
-                 <Label class="mb-2">Seed</Label>
-                 <NumberField
-                   v-model="seed"
-                   :default-value="1"
-                   :min="0"
-                   :max="9999"
-                   class="w-full"
-                   :disabled="isSaving"
-                 >
-                   <NumberFieldContent>
-                     <NumberFieldDecrement />
-                     <NumberFieldInput />
-                     <NumberFieldIncrement />
-                   </NumberFieldContent>
-                 </NumberField>
-               </div>
-               <div>
-                 <Label class="mb-2">exp</Label>
-                 <NumberField
-                   v-model="exp"
-                   :min="0"
-                   :max="9999"
-                   :default-value="100"
-                   class="w-full"
-                   :disabled="isSaving"
-                 >
-                   <NumberFieldContent>
-                     <NumberFieldDecrement />
-                     <NumberFieldInput />
-                     <NumberFieldIncrement />
-                   </NumberFieldContent>
-                 </NumberField>
-               </div>
-             </div>
+            <div class="grid grid-cols-3 mb-6 gap-6">
+              <div>
+                <Label class="mb-2">Grid Size</Label>
+                <NumberField
+                  v-model="gridSize"
+                  :min="10"
+                  :max="25"
+                  :default-value="15"
+                  class="w-full"
+                  :disabled="isSaving"
+                  @update:model-value="generatePreview"
+                >
+                  <NumberFieldContent>
+                    <NumberFieldDecrement />
+                    <NumberFieldInput />
+                    <NumberFieldIncrement />
+                  </NumberFieldContent>
+                </NumberField>
+              </div>
+              <div>
+                <Label class="mb-2">Seed</Label>
+                <NumberField
+                  v-model="seed"
+                  :default-value="1"
+                  :min="0"
+                  :max="9999"
+                  class="w-full"
+                  :disabled="isSaving"
+                  @update:model-value="generatePreview"
+                >
+                  <NumberFieldContent>
+                    <NumberFieldDecrement />
+                    <NumberFieldInput />
+                    <NumberFieldIncrement />
+                  </NumberFieldContent>
+                </NumberField>
+              </div>
+              <div>
+                <Label class="mb-2">exp</Label>
+                <NumberField
+                  v-model="exp"
+                  :min="0"
+                  :max="9999"
+                  :default-value="100"
+                  class="w-full"
+                  :disabled="isSaving"
+                >
+                  <NumberFieldContent>
+                    <NumberFieldDecrement />
+                    <NumberFieldInput />
+                    <NumberFieldIncrement />
+                  </NumberFieldContent>
+                </NumberField>
+              </div>
+            </div>
           </div>
 
           <!-- Scrollable Words List Section -->
@@ -136,7 +138,12 @@
               <h3 class="text-lg font-semibold mb-3 flex-shrink-0">Words ({{ words.length }})</h3>
               <div class="space-y-2 overflow-y-auto flex-1 pr-2">
                 <div v-for="word in words" :key="word.id" class="flex items-center gap-2">
-                  <div class="flex-1 rounded-md border bg-card p-3" :class="{ 'border-red-500 bg-red-50': unusedWords.some((w) => w.answer === word.answer) }">
+                  <div
+                    class="flex-1 rounded-md border bg-card p-3"
+                    :class="{
+                      'border-red-500 bg-red-50': unusedWords.some((w) => w.answer === word.answer),
+                    }"
+                  >
                     <div class="font-medium text-sm">{{ word.answer }}</div>
                     <div class="text-sm text-muted-foreground">{{ word.clue }}</div>
                   </div>
@@ -358,14 +365,8 @@ const generatePreview = () => {
   }
 }
 
-// Auto-generate preview when words or grid size change
-watch(
-  [words, gridSize, seed],
-  () => {
-    generatePreview()
-  },
-  { deep: true },
-)
+// Auto-generate preview when words change
+watch([() => words.value.length], generatePreview)
 
 const getWordStart = (row: number, col: number): PlacedWord | undefined => {
   return getWordStartAt(placedWords.value, row, col)

@@ -136,7 +136,12 @@ class CrosswordBuilder {
     return rowArr[col] !== this.empty
   }
 
-  private setWord(wordRec: [string, string, number, number, boolean], row: number, col: number, vertical: boolean): void {
+  private setWord(
+    wordRec: [string, string, number, number, boolean],
+    row: number,
+    col: number,
+    vertical: boolean,
+  ): void {
     wordRec[2] = row
     wordRec[3] = col
     wordRec[4] = vertical
@@ -181,9 +186,17 @@ class CrosswordBuilder {
     this.setWord(rec, row, col, vertical)
   }
 
-  private checkScoreHoriz(word: [string, string], row: number, col: number, wordLength: number): number {
+  private checkScoreHoriz(
+    word: [string, string],
+    row: number,
+    col: number,
+    wordLength: number,
+  ): number {
     const cellOccupied = this.cellOccupied.bind(this)
-    if ((col !== 0 && cellOccupied(row, col - 1)) || (col + wordLength !== this.size && cellOccupied(row, col + wordLength))) {
+    if (
+      (col !== 0 && cellOccupied(row, col - 1)) ||
+      (col + wordLength !== this.size && cellOccupied(row, col + wordLength))
+    ) {
       return 0
     }
     let score = 1
@@ -196,7 +209,10 @@ class CrosswordBuilder {
 
       const activeCell = rowArr[col] ?? this.empty
       if (activeCell === this.empty) {
-        if ((row + 1 !== this.size && cellOccupied(row + 1, col)) || (row !== 0 && cellOccupied(row - 1, col))) {
+        if (
+          (row + 1 !== this.size && cellOccupied(row + 1, col)) ||
+          (row !== 0 && cellOccupied(row - 1, col))
+        ) {
           return 0
         }
       } else if (activeCell === word[0][i]) {
@@ -209,9 +225,17 @@ class CrosswordBuilder {
     return score
   }
 
-  private checkScoreVert(word: [string, string], row: number, col: number, wordLength: number): number {
+  private checkScoreVert(
+    word: [string, string],
+    row: number,
+    col: number,
+    wordLength: number,
+  ): number {
     const cellOccupied = this.cellOccupied.bind(this)
-    if ((row !== 0 && cellOccupied(row - 1, col)) || (row + wordLength !== this.size && cellOccupied(row + wordLength, col))) {
+    if (
+      (row !== 0 && cellOccupied(row - 1, col)) ||
+      (row + wordLength !== this.size && cellOccupied(row + wordLength, col))
+    ) {
       return 0
     }
     let score = 1
@@ -223,7 +247,10 @@ class CrosswordBuilder {
 
       const activeCell = rowArr[col] ?? this.empty
       if (activeCell === this.empty) {
-        if ((col + 1 !== this.size && cellOccupied(row, col + 1)) || (col !== 0 && cellOccupied(row, col - 1))) {
+        if (
+          (col + 1 !== this.size && cellOccupied(row, col + 1)) ||
+          (col !== 0 && cellOccupied(row, col - 1))
+        ) {
           return 0
         }
       } else if (activeCell === word[0][i]) {
@@ -248,7 +275,7 @@ class CrosswordBuilder {
         const [rowc, colc, vertc] = item
         if (vertc) {
           // existing is vertical -> try place horizontally crossing it
-          if (colc - letIndex >= 0 && (colc - letIndex) + wordLength <= this.size) {
+          if (colc - letIndex >= 0 && colc - letIndex + wordLength <= this.size) {
             const row = rowc
             const col = colc - letIndex
             const score = this.checkScoreHoriz(word, row, col, wordLength)
@@ -256,7 +283,7 @@ class CrosswordBuilder {
           }
         } else {
           // existing is horizontal -> try place vertically crossing it
-          if (rowc - letIndex >= 0 && (rowc - letIndex) + wordLength <= this.size) {
+          if (rowc - letIndex >= 0 && rowc - letIndex + wordLength <= this.size) {
             const row = rowc - letIndex
             const col = colc
             const score = this.checkScoreVert(word, row, col, wordLength)
@@ -282,7 +309,10 @@ class CrosswordBuilder {
   /**
    * Compute best placement within time budget (seconds).
    */
-  compute(timeBudgetSeconds = 1.0): { grid: string[][]; placed: Array<[string, string, number, number, boolean]> } {
+  compute(timeBudgetSeconds = 1.0): {
+    grid: string[][]
+    placed: Array<[string, string, number, number, boolean]>
+  } {
     this.bestGrid = this.grid.map((r) => r.slice())
     this.bestPlaced = []
     const start = Date.now()
@@ -292,7 +322,9 @@ class CrosswordBuilder {
       // reset temporary state
       this.letCoords.clear()
       this.current = []
-      this.grid = Array.from({ length: this.size }, () => Array.from({ length: this.size }, () => this.empty))
+      this.grid = Array.from({ length: this.size }, () =>
+        Array.from({ length: this.size }, () => this.empty),
+      )
 
       // place first word if available
       if (this.available.length > 0) {
@@ -311,7 +343,9 @@ class CrosswordBuilder {
 
       if (this.current.length > this.bestPlaced.length) {
         // copy current as best
-        this.bestPlaced = this.current.map((c) => c.slice() as [string, string, number, number, boolean])
+        this.bestPlaced = this.current.map(
+          (c) => c.slice() as [string, string, number, number, boolean],
+        )
         this.bestGrid = this.grid.map((r) => r.slice())
       }
 
@@ -332,11 +366,19 @@ class CrosswordBuilder {
  *  - seed?: number  -- for reproducible placement
  *  - centers the placed puzzle in the returned grid
  */
-export function generateCrossword(words: WordEntry[], gridSize: number, seed?: number): CrosswordResult | null {
+export function generateCrossword(
+  words: WordEntry[],
+  gridSize: number,
+  seed?: number,
+): CrosswordResult | null {
   if (!words || words.length === 0) return null
 
   // ensure uppercase answers and keep clues
-  const inputs: WordEntry[] = words.map((w) => ({ id: w.id, answer: String(w.answer).toUpperCase(), clue: String(w.clue ?? '') }))
+  const inputs: WordEntry[] = words.map((w) => ({
+    id: w.id,
+    answer: String(w.answer).toUpperCase(),
+    clue: String(w.clue ?? ''),
+  }))
 
   // quick fail if longest word doesn't fit at all
   const longest = inputs.reduce((m, it) => Math.max(m, it.answer.length), 0)
@@ -352,7 +394,9 @@ export function generateCrossword(words: WordEntry[], gridSize: number, seed?: n
   const { grid: rawGrid, placed: rawPlaced } = builder.compute(1.0)
 
   // Prepare empty grid to return if nothing placed
-  const emptyGrid = Array.from({ length: gridSize }, () => Array.from({ length: gridSize }, () => ''))
+  const emptyGrid = Array.from({ length: gridSize }, () =>
+    Array.from({ length: gridSize }, () => ''),
+  )
 
   if (!rawPlaced || rawPlaced.length === 0) {
     return { grid: emptyGrid, placedWords: [], unusedWords: [] }
@@ -393,7 +437,9 @@ export function generateCrossword(words: WordEntry[], gridSize: number, seed?: n
   const colShift = targetLeft - minC
 
   // Create centered grid and place letters from rawGrid shifted by (rowShift, colShift)
-  const centeredGrid: string[][] = Array.from({ length: gridSize }, () => Array.from({ length: gridSize }, () => ''))
+  const centeredGrid: string[][] = Array.from({ length: gridSize }, () =>
+    Array.from({ length: gridSize }, () => ''),
+  )
   for (let r = minR; r <= maxR; r++) {
     const rowArr = rawGrid[r]
     if (!rowArr) continue
@@ -425,7 +471,7 @@ export function generateCrossword(words: WordEntry[], gridSize: number, seed?: n
   }))
 
   // Sort by row,col for numbering (same-start position -> same number)
-  placedWords.sort((a, b) => (a.row - b.row) || (a.col - b.col))
+  placedWords.sort((a, b) => a.row - b.row || a.col - b.col)
 
   const positionNumbers = new Map<string, number>()
   let currentNumber = 1
