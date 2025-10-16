@@ -494,9 +494,7 @@ const handleSubmit = async () => {
     }
 
     // Navigate back to puzzles page
-    setTimeout(() => {
-      router.push({ name: 'puzzles', params: { classroomId } })
-    }, 1500)
+    router.push({ name: 'puzzles', params: { classroomId } })
   } catch (error) {
     toast.error(error instanceof Error ? error.message : 'Failed to submit puzzle')
     console.error('Submit error:', error)

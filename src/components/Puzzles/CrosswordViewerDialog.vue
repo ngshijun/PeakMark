@@ -102,7 +102,10 @@
           class="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4"
         >
           <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div v-if="showSolutionToggle" class="flex items-center gap-2">
+            <div
+              v-if="showSolutionToggle || puzzleStatus === 'completed'"
+              class="flex items-center gap-2"
+            >
               <Label for="show-solution" class="text-sm font-medium">Show Solution</Label>
               <Switch
                 id="show-solution"
@@ -112,12 +115,17 @@
             </div>
             <div
               class="text-sm text-muted-foreground"
-              :class="{ 'sm:border-l sm:pl-3': showSolutionToggle }"
+              :class="{ 'sm:border-l sm:pl-3': showSolutionToggle || puzzleStatus === 'completed' }"
             >
               <p v-if="puzzleStatus === 'in-progress' && savedGrid && savedGrid.length > 0">
                 Showing your saved progress
               </p>
-              <p v-else-if="puzzleStatus === 'completed'">You have completed this puzzle</p>
+              <p v-else-if="puzzleStatus === 'completed' && !showSolution">
+                Showing your submitted answers
+              </p>
+              <p v-else-if="puzzleStatus === 'completed' && showSolution">
+                Showing correct solution
+              </p>
               <p v-else-if="puzzle?.created_at">Created {{ formatDate(puzzle.created_at) }}</p>
             </div>
           </div>
@@ -199,25 +207,7 @@ const displayGrid = computed<string[][]>(() => {
 
   // If we have saved progress, merge it with the original grid structure
   if (props.savedGrid && props.savedGrid.length > 0) {
-    // For completed puzzles, show correct answers for unanswered cells
-    if (props.puzzleStatus === 'completed') {
-      return parsedGrid.value.map((row, i) => {
-        return row.map((cell, j) => {
-          if (cell !== '') {
-            const savedAnswer = props.savedGrid?.[i]?.[j] || ''
-            // If cell is empty or space, show the correct answer
-            if (savedAnswer === '' || savedAnswer === ' ') {
-              return cell
-            }
-            // Otherwise show the student's answer
-            return savedAnswer
-          }
-          return ''
-        })
-      })
-    }
-
-    // For in-progress or not-started, show saved answers or empty cells
+    // Show student's answers (including empty cells as spaces)
     return parsedGrid.value.map((row, i) => {
       return row.map((cell, j) => {
         // If original grid has a letter here (not black cell)
@@ -242,8 +232,13 @@ const validationStates = computed<{
   correctAnswers: boolean[][]
   incorrectAnswers: boolean[][]
 } | null>(() => {
-  // Only compute for completed puzzles with saved grid
-  if (props.puzzleStatus !== 'completed' || !props.savedGrid || props.savedGrid.length === 0) {
+  // Only compute for completed puzzles with saved grid, and when NOT showing solution
+  if (
+    props.puzzleStatus !== 'completed' ||
+    !props.savedGrid ||
+    props.savedGrid.length === 0 ||
+    showSolution.value
+  ) {
     return null
   }
 
