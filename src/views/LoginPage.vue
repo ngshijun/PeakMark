@@ -43,7 +43,15 @@
               :validateOnModelUpdate="false"
             >
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <div class="flex items-center justify-between">
+                  <FormLabel>Password</FormLabel>
+                  <router-link
+                    to="/forgot-password"
+                    class="text-sm underline underline-offset-4 text-muted-foreground hover:text-foreground"
+                  >
+                    Forgot password?
+                  </router-link>
+                </div>
                 <FormControl>
                   <div class="relative">
                     <Input

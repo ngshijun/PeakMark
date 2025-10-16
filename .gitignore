@@ -29,4 +29,5 @@ coverage
 
 *.tsbuildinfo
 CLAUDE.md
+ARCHITECTURE.md
 .claude

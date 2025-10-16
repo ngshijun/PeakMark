@@ -137,7 +137,7 @@
             <div v-if="words.length > 0" class="flex flex-col h-full">
               <h3 class="text-lg font-semibold mb-3 flex-shrink-0">Words ({{ words.length }})</h3>
               <div class="space-y-2 overflow-y-auto flex-1 pr-2">
-                <div v-for="word in words" :key="word.id" class="flex items-center gap-2">
+                <div v-for="word in words" :key="word.answer" class="flex items-center gap-2">
                   <div
                     class="flex-1 rounded-md border bg-card p-3"
                     :class="{
@@ -150,7 +150,7 @@
                   <Button
                     variant="ghost"
                     size="icon"
-                    @click="removeWord(word.id)"
+                    @click="removeWord(word.answer)"
                     class="h-8 w-8"
                     title="Remove word"
                   >
@@ -269,6 +269,7 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { Grid3x3, Plus, X } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import { computed, nextTick, ref, watch } from 'vue'
+import { toast } from 'vue-sonner'
 import * as z from 'zod'
 
 const props = defineProps<{
@@ -326,9 +327,16 @@ const handleAnswerInput = (event: Event) => {
 
 const addWord = async () => {
   if (currentAnswer.value.trim() && currentClue.value.trim()) {
+    const normalized = currentAnswer.value.toUpperCase().replace(/[^A-Z]/g, '')
+
+    // Check for duplicates
+    if (words.value.some((w) => w.answer === normalized)) {
+      toast.error('This entry already exists!')
+      return
+    }
+
     words.value.push({
-      id: Date.now().toString(),
-      answer: currentAnswer.value.toUpperCase().replace(/[^A-Z]/g, ''),
+      answer: normalized,
       clue: currentClue.value,
     })
     currentAnswer.value = ''
@@ -346,8 +354,8 @@ const addWord = async () => {
   }
 }
 
-const removeWord = (id: string) => {
-  words.value = words.value.filter((w) => w.id !== id)
+const removeWord = (answer: string) => {
+  words.value = words.value.filter((w) => w.answer !== answer)
 }
 
 const generatePreview = () => {

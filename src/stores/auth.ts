@@ -95,6 +95,35 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const resetPassword = async (email: string) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      await authService.resetPassword(email)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const updatePassword = async (newPassword: string) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const updatedUser = await authService.updatePassword(newPassword)
+      user.value = updatedUser
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   const clearError = () => {
     error.value = null
   }
@@ -111,6 +140,8 @@ export const useAuthStore = defineStore('auth', () => {
     signUp,
     signInWithPassword,
     signOut,
+    resetPassword,
+    updatePassword,
     clearError,
   }
 })

@@ -2,8 +2,8 @@
 
 > Clean Architecture Implementation for Vue 3 + TypeScript + Supabase
 
-**Last Updated:** October 9, 2025
-**Version:** 2.0.0 (Post-Refactoring)
+**Last Updated:** October 16, 2025
+**Version:** 2.1.0 (Post-Refactoring)
 
 ---
 
@@ -92,6 +92,9 @@ src/services/
 │   ├── classroom.service.ts      # Classroom CRUD
 │   ├── question.service.ts       # Question operations
 │   ├── video.service.ts          # Video operations
+│   ├── document.service.ts       # Document & folder management
+│   ├── puzzle.service.ts         # Puzzle operations
+│   ├── storage.service.ts        # File upload/download (Supabase Storage)
 │   ├── profile.service.ts        # User profile
 │   └── exp.service.ts            # Experience/leveling
 └── permissions.service.ts        # Authorization logic
@@ -101,10 +104,51 @@ src/services/
 
 ```typescript
 export class BaseService {
-  protected client = supabase
+  /**
+   * Execute a query and return data with type safety
+   * @throws AppError if the query fails
+   */
+  protected async query<T>(queryBuilder: Promise<PostgrestSingleResponse<T>>): Promise<T> {
+    const { data, error } = await queryBuilder
+    if (error) this.handleError(error)
+    if (data === null) throw new AppError('No data returned from query', 'NO_DATA', 404)
+    return data
+  }
 
+  /**
+   * Execute an insert operation
+   */
+  protected async insert<T>(queryBuilder: Promise<PostgrestSingleResponse<T>>): Promise<T> {
+    return this.query(queryBuilder)
+  }
+
+  /**
+   * Execute an update operation
+   */
+  protected async update<T>(queryBuilder: Promise<PostgrestSingleResponse<T>>): Promise<T> {
+    return this.query(queryBuilder)
+  }
+
+  /**
+   * Execute a delete operation
+   */
+  protected async delete(queryBuilder: Promise<PostgrestSingleResponse<void>>): Promise<void> {
+    const { error } = await queryBuilder
+    if (error) this.handleError(error)
+  }
+
+  /**
+   * Handle Supabase errors and convert to AppError
+   */
   protected handleError(error: PostgrestError): never {
     return handleSupabaseError(error)
+  }
+
+  /**
+   * Get the Supabase client instance
+   */
+  protected get client() {
+    return supabase
   }
 }
 
@@ -131,10 +175,12 @@ export const classroomService = new ClassroomService()
 ```
 src/stores/
 ├── auth.ts          # Authentication state
+├── profile.ts       # User profile state
 ├── classrooms.ts    # Classroom state
 ├── questions.ts     # Question state
 ├── videos.ts        # Video state
-└── profile.ts       # User profile state
+├── documents.ts     # Document & folder state
+└── puzzles.ts       # Puzzle state
 ```
 
 **Pattern:**
@@ -174,6 +220,7 @@ src/composables/
 ├── useNavigation.ts    # Navigation logic
 ├── usePermissions.ts   # Permission checks
 ├── useLevel.ts         # Level calculations
+├── usePuzzle.ts        # Puzzle-related logic
 └── useTheme.ts         # Theme management
 ```
 
@@ -247,9 +294,10 @@ router.beforeEach(composeGuards(
 
 ```
 src/utils/
-├── stats.ts     # Statistics calculations
-├── errors.ts    # Error handling utilities
-└── elo.ts       # ELO rating calculations
+├── stats.ts                # Statistics calculations
+├── errors.ts               # Error handling utilities
+├── elo.ts                  # ELO rating calculations
+└── crossword-generator.ts  # Crossword puzzle generation
 ```
 
 **Pattern:**
@@ -345,21 +393,27 @@ src/
 │   │   ├── classroom.service.ts
 │   │   ├── question.service.ts
 │   │   ├── video.service.ts
+│   │   ├── document.service.ts
+│   │   ├── puzzle.service.ts
+│   │   ├── storage.service.ts
 │   │   ├── profile.service.ts
 │   │   └── exp.service.ts
 │   └── permissions.service.ts
 │
 ├── stores/                # State management (Pinia)
 │   ├── auth.ts
+│   ├── profile.ts
 │   ├── classrooms.ts
 │   ├── questions.ts
 │   ├── videos.ts
-│   └── profile.ts
+│   ├── documents.ts
+│   └── puzzles.ts
 │
 ├── composables/           # Reusable reactive logic
 │   ├── useNavigation.ts
 │   ├── usePermissions.ts
 │   ├── useLevel.ts
+│   ├── usePuzzle.ts
 │   └── useTheme.ts
 │
 ├── router/                # Routing configuration
@@ -375,7 +429,8 @@ src/
 │   ├── __tests__/         # Utility tests
 │   ├── stats.ts
 │   ├── errors.ts
-│   └── elo.ts
+│   ├── elo.ts
+│   └── crossword-generator.ts
 │
 ├── components/            # Reusable components
 │   ├── ui/                # Base UI components
@@ -383,11 +438,26 @@ src/
 │   └── ThemeToggle.vue
 │
 ├── views/                 # Route-level components
+│   ├── wrappers/          # Wrapper components for role-based routing
+│   │   ├── ClassroomsPageWrapper.vue
+│   │   ├── DashboardPageWrapper.vue
+│   │   ├── VideosPageWrapper.vue
+│   │   ├── DocumentsPageWrapper.vue
+│   │   ├── PuzzlesPageWrapper.vue
+│   │   └── ClassroomSettingsPageWrapper.vue
 │   ├── LoginPage.vue
+│   ├── RegisterPage.vue
+│   ├── LandingPage.vue
 │   ├── TeacherClassroomsPage.vue
 │   ├── StudentClassroomsPage.vue
-│   ├── QuestionsPage.vue
-│   └── ...
+│   ├── TeacherQuestionsPage.vue
+│   ├── TeacherVideosPage.vue
+│   ├── StudentVideosPage.vue
+│   ├── TeacherDocumentsPage.vue
+│   ├── StudentDocumentsPage.vue
+│   ├── TeacherPuzzlesPage.vue
+│   ├── PuzzleSolvePage.vue
+│   └── AdminDashboardPage.vue
 │
 ├── layouts/               # Layout components
 │   ├── MainLayout.vue
@@ -634,6 +704,123 @@ describe('ClassroomService', () => {
 
 ---
 
+## Service Layer Deep Dive
+
+### Storage Service
+
+The `StorageService` handles file uploads/downloads using Supabase Storage.
+
+**Key Features:**
+- Upload question images (max 5MB)
+- Upload documents (max 10MB)
+- Delete files from storage
+- Get public URLs for files
+
+**Example:**
+```typescript
+// Upload an image
+const imageUrl = await storageService.uploadQuestionImage(file, classroomId, questionId)
+
+// Delete an image
+await storageService.deleteQuestionImage(imageUrl)
+
+// Upload a document
+const docUrl = await storageService.uploadDocument(file, classroomId, documentId)
+```
+
+### Document Service
+
+The `DocumentService` manages documents and folders with hierarchical structure.
+
+**Key Features:**
+- Create/update/delete documents and folders
+- Get documents by classroom and parent folder
+- Get folder breadcrumb path
+- Get all descendants of a folder
+
+**Example:**
+```typescript
+// Get documents in a folder
+const documents = await documentService.getDocumentsByClassroom(classroomId, parentId)
+
+// Create a folder
+const folder = await documentService.createFolder('My Folder', classroomId, userId, parentId)
+
+// Get folder path (breadcrumbs)
+const path = await documentService.getFolderPath(folderId)
+
+// Get all descendants
+const descendants = await documentService.getFolderDescendants(folderId)
+```
+
+### Puzzle Service
+
+The `PuzzleService` handles crossword puzzle CRUD operations.
+
+**Key Features:**
+- Create/update/delete puzzles
+- Get puzzles by classroom
+- Get student-accessible puzzles
+
+**Example:**
+```typescript
+// Get puzzles in a classroom
+const puzzles = await puzzleService.getPuzzlesByClassroom(classroomId)
+
+// Create a puzzle
+const puzzle = await puzzleService.createPuzzle({
+  classroom_id: classroomId,
+  title: 'Math Puzzle',
+  grid: crosswordGrid,
+  clues: cluesData,
+})
+
+// Get student's available puzzles
+const studentPuzzles = await puzzleService.getStudentPuzzles(studentId)
+```
+
+---
+
+## Utility Deep Dive
+
+### Crossword Generator
+
+The `crossword-generator.ts` utility generates crossword puzzles from word lists.
+
+**Features:**
+- Generates crossword grids from word entries
+- Automatic word placement algorithm
+- Centers the puzzle in the grid
+- Returns placed words with clues and positions
+
+**Example:**
+```typescript
+import { generateCrossword, type WordEntry } from '@/utils/crossword-generator'
+
+const words: WordEntry[] = [
+  { id: '1', answer: 'PYTHON', clue: 'A programming language' },
+  { id: '2', answer: 'CODE', clue: 'What developers write' },
+  { id: '3', answer: 'DEBUG', clue: 'Fix errors' },
+]
+
+const result = generateCrossword(words, 15, 12345) // gridSize, seed
+
+console.log(result.grid)          // string[][]
+console.log(result.placedWords)   // PlacedWord[]
+console.log(result.unusedWords)   // WordEntry[]
+```
+
+### ELO Rating System
+
+The `elo.ts` utility implements ELO rating calculations for competitive features.
+
+**Features:**
+- Calculate rating changes based on match results
+- Configurable K-factor
+- Expected score calculation
+
+---
+
 ## Conclusion
 
 PeakMark's architecture follows industry best practices with clear separation of concerns, making it:
@@ -648,7 +835,7 @@ For questions or contributions, please refer to the REFACTORING_PLAN.md for deta
 
 ---
 
-*Architecture v2.0.0 - Implemented October 2025*
+*Architecture v2.1.0 - Updated October 16, 2025*
 
 ## References
 

@@ -29,6 +29,18 @@ const router = createRouter({
       meta: { requiresAuth: false },
     },
     {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: () => import('@/views/ForgotPasswordPage.vue'),
+      meta: { requiresAuth: false },
+    },
+    {
+      path: '/reset-password',
+      name: 'reset-password',
+      component: () => import('@/views/ResetPasswordPage.vue'),
+      meta: { requiresAuth: false },
+    },
+    {
       path: '/classroom/:classroomId/dashboard',
       name: 'dashboard',
       component: () => import('@/views/wrappers/DashboardPageWrapper.vue'),

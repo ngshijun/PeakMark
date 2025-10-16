@@ -77,6 +77,38 @@ export class AuthService extends BaseService {
   }
 
   /**
+   * Send password reset email
+   */
+  async resetPassword(email: string): Promise<void> {
+    const { error } = await this.client.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+
+    if (error) {
+      handleAuthError(error)
+    }
+  }
+
+  /**
+   * Update user password (used after clicking reset link)
+   */
+  async updatePassword(newPassword: string): Promise<User> {
+    const { data, error } = await this.client.auth.updateUser({
+      password: newPassword,
+    })
+
+    if (error) {
+      handleAuthError(error)
+    }
+
+    if (!data.user) {
+      throw new AppError('No user returned from password update', 'AUTH_ERROR', 401)
+    }
+
+    return data.user
+  }
+
+  /**
    * Subscribe to auth state changes
    */
   onAuthStateChange(

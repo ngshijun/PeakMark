@@ -9,7 +9,6 @@
  */
 
 export interface WordEntry {
-  id: string
   answer: string
   clue: string
 }
@@ -375,7 +374,6 @@ export function generateCrossword(
 
   // ensure uppercase answers and keep clues
   const inputs: WordEntry[] = words.map((w) => ({
-    id: w.id,
     answer: String(w.answer).toUpperCase(),
     clue: String(w.clue ?? ''),
   }))
@@ -391,7 +389,7 @@ export function generateCrossword(
   const builder = new CrosswordBuilder(gridSize, inputs, rng, '')
 
   // use a small time budget (1s default).
-  const { grid: rawGrid, placed: rawPlaced } = builder.compute(1.0)
+  const { grid: rawGrid, placed: rawPlaced } = builder.compute(0.5)
 
   // Prepare empty grid to return if nothing placed
   const emptyGrid = Array.from({ length: gridSize }, () =>
