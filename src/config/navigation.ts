@@ -52,7 +52,7 @@ export const roleNavigation: RoleNavigation = {
         },
         {
           title: 'Documents',
-          url: '/student-documents',
+          url: '/documents',
           icon: Files,
         },
         {

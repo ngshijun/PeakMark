@@ -109,6 +109,22 @@ export class AuthService extends BaseService {
   }
 
   /**
+   * Sign in with Google OAuth
+   */
+  async signInWithGoogle(): Promise<void> {
+    const { error } = await this.client.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/classrooms`,
+      },
+    })
+
+    if (error) {
+      handleAuthError(error)
+    }
+  }
+
+  /**
    * Subscribe to auth state changes
    */
   onAuthStateChange(

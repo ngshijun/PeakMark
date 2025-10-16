@@ -124,6 +124,21 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const signInWithGoogle = async () => {
+    loading.value = true
+    error.value = null
+
+    try {
+      await authService.signInWithGoogle()
+      // OAuth will redirect, so no need to update state here
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   const clearError = () => {
     error.value = null
   }
@@ -139,6 +154,7 @@ export const useAuthStore = defineStore('auth', () => {
     initAuth,
     signUp,
     signInWithPassword,
+    signInWithGoogle,
     signOut,
     resetPassword,
     updatePassword,
