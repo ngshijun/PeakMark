@@ -69,7 +69,7 @@
                 This file type cannot be previewed. Please download it to view.
               </p>
             </div>
-            <Button variant="outline" @click="downloadFile" class="mt-4">
+            <Button variant="default" @click="downloadFile" class="mt-4">
               <Download class="mr-2 h-4 w-4" />
               Download File
             </Button>
@@ -78,7 +78,7 @@
       </div>
 
       <div class="px-6 py-4 border-t bg-background flex justify-end">
-        <Button v-if="document?.file_url" variant="outline" @click="downloadFile">
+        <Button v-if="document?.file_url" variant="default" @click="downloadFile">
           <Download class="mr-2 h-4 w-4" />
           Download
         </Button>

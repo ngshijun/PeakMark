@@ -75,6 +75,9 @@
                       <div class="text-sm text-muted-foreground space-y-1">
                         <p class="capitalize">{{ puzzle.puzzle_type }}</p>
                         <p>{{ formatDate(puzzle.created_at) }}</p>
+                        <p class="text-amber-600 dark:text-amber-500 font-medium">
+                          {{ puzzle.exp }} XP
+                        </p>
                       </div>
                     </div>
                   </div>

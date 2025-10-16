@@ -6,6 +6,18 @@
       <DialogHeader class="px-6 pt-6 pb-4 border-b">
         <DialogTitle class="text-2xl flex items-center gap-3">
           {{ puzzle?.title }}
+          <Badge
+            v-if="puzzleStatus === 'completed'"
+            variant="default"
+            class="bg-green-600 hover:bg-green-700"
+          >
+            <CheckCircle2 class="h-3 w-3 mr-1" />
+            Completed
+          </Badge>
+          <Badge v-else-if="puzzleStatus === 'in-progress'" variant="secondary">
+            <Clock class="h-3 w-3 mr-1" />
+            In Progress
+          </Badge>
         </DialogTitle>
       </DialogHeader>
 
@@ -16,9 +28,11 @@
         >
           <div class="w-full h-full max-w-[600px] max-h-[600px] flex items-center justify-center">
             <CrosswordGrid
-              :grid="parsedGrid"
+              :grid="displayGrid"
               :placed-words="parsedPlacedWords"
-              :show-solution="showSolution"
+              :show-solution="showSolutionToggle ? showSolution : true"
+              :correct-answers="validationStates?.correctAnswers"
+              :incorrect-answers="validationStates?.incorrectAnswers"
             />
           </div>
         </div>
@@ -100,22 +114,26 @@
               class="text-sm text-muted-foreground"
               :class="{ 'sm:border-l sm:pl-3': showSolutionToggle }"
             >
-              <p v-if="puzzle?.created_at">Created {{ formatDate(puzzle.created_at) }}</p>
+              <p v-if="puzzleStatus === 'in-progress' && savedGrid && savedGrid.length > 0">
+                Showing your saved progress
+              </p>
+              <p v-else-if="puzzleStatus === 'completed'">You have completed this puzzle</p>
+              <p v-else-if="puzzle?.created_at">Created {{ formatDate(puzzle.created_at) }}</p>
             </div>
           </div>
           <div class="flex gap-2 w-full sm:w-auto">
+            <Button variant="outline" @click="handleClose" class="flex-1 sm:flex-none"
+              >Close</Button
+            >
             <Button
-              v-if="!showSolutionToggle"
+              v-if="!showSolutionToggle && puzzleStatus !== 'completed'"
               variant="default"
               @click="handleStartSolving"
               class="flex-1 sm:flex-none"
             >
               <Play class="h-4 w-4 mr-2" />
-              Start Solving
+              {{ puzzleStatus === 'in-progress' ? 'Continue Solving' : 'Start Solving' }}
             </Button>
-            <Button variant="outline" @click="handleClose" class="flex-1 sm:flex-none"
-              >Close</Button
-            >
           </div>
         </div>
       </DialogFooter>
@@ -125,6 +143,7 @@
 
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -137,7 +156,7 @@ import { Switch } from '@/components/ui/switch'
 import CrosswordGrid from '@/components/Puzzles/CrosswordGrid.vue'
 import type { Tables } from '@/types/database.types'
 import type { PlacedWord } from '@/utils/crossword-generator'
-import { ArrowDown, ArrowRight, Play } from 'lucide-vue-next'
+import { ArrowDown, ArrowRight, Play, CheckCircle2, Clock } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -148,9 +167,13 @@ const props = withDefaults(
     open: boolean
     puzzle: Puzzle | null
     showSolutionToggle?: boolean
+    puzzleStatus?: 'not-started' | 'in-progress' | 'completed'
+    savedGrid?: string[][]
   }>(),
   {
     showSolutionToggle: true,
+    puzzleStatus: 'not-started',
+    savedGrid: undefined,
   },
 )
 
@@ -166,6 +189,87 @@ const showSolution = ref(false)
 const handleShowSolutionChange = (value: boolean) => {
   showSolution.value = value
 }
+
+// Compute the display grid (either saved progress or original grid)
+const displayGrid = computed<string[][]>(() => {
+  // If showing solution, always show the complete grid
+  if (showSolution.value) {
+    return parsedGrid.value
+  }
+
+  // If we have saved progress, merge it with the original grid structure
+  if (props.savedGrid && props.savedGrid.length > 0) {
+    // For completed puzzles, show correct answers for unanswered cells
+    if (props.puzzleStatus === 'completed') {
+      return parsedGrid.value.map((row, i) => {
+        return row.map((cell, j) => {
+          if (cell !== '') {
+            const savedAnswer = props.savedGrid?.[i]?.[j] || ''
+            // If cell is empty or space, show the correct answer
+            if (savedAnswer === '' || savedAnswer === ' ') {
+              return cell
+            }
+            // Otherwise show the student's answer
+            return savedAnswer
+          }
+          return ''
+        })
+      })
+    }
+
+    // For in-progress or not-started, show saved answers or empty cells
+    return parsedGrid.value.map((row, i) => {
+      return row.map((cell, j) => {
+        // If original grid has a letter here (not black cell)
+        if (cell !== '') {
+          // Show the saved answer if available, otherwise show space for empty cell
+          const savedAnswer = props.savedGrid?.[i]?.[j] || ''
+          // Return space character for empty cells to show as white, or the answer
+          return savedAnswer || ' '
+        }
+        // Black cell - keep as empty string
+        return ''
+      })
+    })
+  }
+
+  // Otherwise show empty grid structure (for not started)
+  return parsedGrid.value.map((row) => row.map((cell) => (cell !== '' ? ' ' : '')))
+})
+
+// Compute validation states for completed puzzles
+const validationStates = computed<{
+  correctAnswers: boolean[][]
+  incorrectAnswers: boolean[][]
+} | null>(() => {
+  // Only compute for completed puzzles with saved grid
+  if (props.puzzleStatus !== 'completed' || !props.savedGrid || props.savedGrid.length === 0) {
+    return null
+  }
+
+  const correctAnswers = parsedGrid.value.map((row, i) =>
+    row.map((cell, j) => {
+      if (cell === '') return false
+      const savedAnswer = props.savedGrid?.[i]?.[j] || ''
+      return savedAnswer.toUpperCase() === cell.toUpperCase()
+    }),
+  )
+
+  const incorrectAnswers = parsedGrid.value.map((row, i) =>
+    row.map((cell, j) => {
+      if (cell === '') return false
+      const savedAnswer = props.savedGrid?.[i]?.[j] || ''
+      // Mark as incorrect if: wrong answer OR empty/unanswered
+      return (
+        savedAnswer.toUpperCase() !== cell.toUpperCase() ||
+        savedAnswer === '' ||
+        savedAnswer === ' '
+      )
+    }),
+  )
+
+  return { correctAnswers, incorrectAnswers }
+})
 
 /**
  * Parse grid from JSON string array

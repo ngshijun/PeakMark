@@ -196,6 +196,54 @@ export type Database = {
           },
         ]
       }
+      puzzle_attempts: {
+        Row: {
+          attempted_by: string
+          created_at: string
+          exp_earned: number | null
+          grid: string[]
+          id: string
+          is_completed: boolean
+          puzzle_id: string
+          updated_at: string
+        }
+        Insert: {
+          attempted_by: string
+          created_at?: string
+          exp_earned?: number | null
+          grid: string[]
+          id?: string
+          is_completed?: boolean
+          puzzle_id: string
+          updated_at?: string
+        }
+        Update: {
+          attempted_by?: string
+          created_at?: string
+          exp_earned?: number | null
+          grid?: string[]
+          id?: string
+          is_completed?: boolean
+          puzzle_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'puzzle_attempts_attempted_by_fkey'
+            columns: ['attempted_by']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'puzzle_attempts_puzzle_id_fkey'
+            columns: ['puzzle_id']
+            isOneToOne: false
+            referencedRelation: 'puzzles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       puzzles: {
         Row: {
           classroom_id: string

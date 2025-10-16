@@ -13,7 +13,11 @@
         <div
           v-for="(cell, j) in row"
           :key="`cell-${i}-${j}`"
-          :class="['crossword-cell', 'relative', cell ? 'bg-white' : 'bg-gray-800']"
+          :class="[
+            'crossword-cell',
+            'relative',
+            cell ? getCellBackgroundClass(i, j) : 'bg-gray-800',
+          ]"
         >
           <!-- Word number -->
           <span
@@ -48,17 +52,40 @@ import type { PlacedWord } from '@/utils/crossword-generator'
 import { getWordStartAt } from '@/utils/crossword-generator'
 import { Grid3x3 } from 'lucide-vue-next'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     grid: string[][]
     placedWords: PlacedWord[]
     showSolution?: boolean
     isThumbnail?: boolean
+    correctAnswers?: boolean[][]
+    incorrectAnswers?: boolean[][]
   }>(),
   {
     isThumbnail: false,
+    correctAnswers: undefined,
+    incorrectAnswers: undefined,
   },
 )
+
+// Determine cell background color based on validation state
+const getCellBackgroundClass = (row: number, col: number): string => {
+  // If we have validation data
+  if (props.correctAnswers && props.incorrectAnswers) {
+    const isCorrect = props.correctAnswers[row]?.[col]
+    const isIncorrect = props.incorrectAnswers[row]?.[col]
+
+    if (isCorrect) {
+      return 'bg-green-100'
+    }
+    if (isIncorrect) {
+      return 'bg-red-100'
+    }
+  }
+
+  // Default white background
+  return 'bg-white'
+}
 </script>
 
 <style scoped>

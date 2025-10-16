@@ -37,15 +37,13 @@
             v-if="cell"
             type="text"
             maxlength="1"
-            :value="showSolution ? cell : userAnswers[i]?.[j] || ''"
+            :value="userAnswers[i]?.[j] || ''"
             @input="(e) => handleInput(e, i, j)"
             @keydown="(e) => handleKeydown(e, i, j)"
             @focus="() => handleFocus(i, j)"
             @click="() => handleClick(i, j)"
             :ref="(el) => setCellRef(el, i, j)"
-            :disabled="showSolution"
-            class="w-full h-full flex items-center justify-center font-bold text-[1.2em] text-center bg-transparent border-0 outline-none uppercase cursor-pointer disabled:cursor-default"
-            :class="showSolution ? 'text-gray-800' : 'text-gray-900'"
+            class="w-full h-full flex items-center justify-center font-bold text-[1.2em] text-center bg-transparent border-0 outline-none uppercase cursor-pointer text-gray-900"
           />
         </div>
       </template>
@@ -64,7 +62,6 @@ const props = defineProps<{
   checkedAnswers: boolean[][]
   incorrectAnswers: boolean[][]
   currentClue: PlacedWord | null
-  showSolution?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -108,8 +105,6 @@ const isIncorrect = (row: number, col: number) => {
 }
 
 const handleInput = (event: Event, row: number, col: number) => {
-  if (props.showSolution) return
-
   const target = event.target as HTMLInputElement
   const value = target.value.toUpperCase()
 
@@ -225,7 +220,10 @@ const moveToNextCell = async (row: number, col: number) => {
   }
 }
 
-const focusCell = async (row: number, col: number) => {
+const focusCell = async (row: number, col: number, direction?: 'across' | 'down') => {
+  if (direction) {
+    currentDirection.value = direction
+  }
   await nextTick()
   const cell = cellRefs.value[`${row}-${col}`]
   if (cell) {

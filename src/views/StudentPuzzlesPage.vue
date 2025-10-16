@@ -52,9 +52,27 @@
               @click="handlePuzzleClick(puzzle)"
             >
               <!-- Puzzle Thumbnail -->
-              <div class="aspect-video flex items-center justify-center">
+              <div class="aspect-video flex items-center justify-center relative">
                 <div class="h-full aspect-square">
                   <CrosswordThumbnail :grid="puzzle.grid" :placed-words="puzzle.placed_words" />
+                </div>
+                <!-- Status Badge -->
+                <div class="absolute top-2 right-2">
+                  <Badge
+                    v-if="getPuzzleStatus(puzzle.id) === 'completed'"
+                    variant="default"
+                    class="bg-green-600 hover:bg-green-700"
+                  >
+                    <CheckCircle2 class="h-3 w-3 mr-1" />
+                    Completed
+                  </Badge>
+                  <Badge
+                    v-else-if="getPuzzleStatus(puzzle.id) === 'in-progress'"
+                    variant="secondary"
+                  >
+                    <Clock class="h-3 w-3 mr-1" />
+                    In Progress
+                  </Badge>
                 </div>
               </div>
 
@@ -67,6 +85,17 @@
                   <div class="text-sm text-muted-foreground space-y-1">
                     <p class="capitalize">{{ puzzle.puzzle_type }}</p>
                     <p>{{ formatDate(puzzle.created_at) }}</p>
+                    <div class="flex items-center justify-between">
+                      <p class="text-amber-600 dark:text-amber-500 font-medium">
+                        {{ puzzle.exp }} XP
+                      </p>
+                      <p
+                        v-if="getEarnedXP(puzzle.id) !== null"
+                        class="text-green-600 dark:text-green-500 font-medium"
+                      >
+                        Earned: {{ getEarnedXP(puzzle.id) }} XP
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -130,6 +159,8 @@
       :open="isViewerDialogOpen"
       :puzzle="selectedPuzzle"
       :show-solution-toggle="false"
+      :puzzle-status="selectedPuzzleStatus"
+      :saved-grid="selectedPuzzleSavedGrid"
       @update:open="(val) => (isViewerDialogOpen = val)"
     />
   </MainLayout>
@@ -155,17 +186,22 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Badge } from '@/components/ui/badge'
 import { useNavigation } from '@/composables/useNavigation'
 import MainLayout from '@/layouts/MainLayout.vue'
+import { puzzleAttemptService } from '@/services/api/puzzle-attempt.service'
+import { useAuthStore } from '@/stores/auth'
 import { usePuzzleStore } from '@/stores/puzzles'
 import type { Tables } from '@/types/database.types'
-import { Puzzle, Search } from 'lucide-vue-next'
+import { Puzzle, Search, CheckCircle2, Clock } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 
 type PuzzleType = Tables<'puzzles'>
+type PuzzleAttempt = Tables<'puzzle_attempts'>
 
 const puzzleStore = usePuzzleStore()
+const authStore = useAuthStore()
 const { selectedClassroomId } = useNavigation()
 
 const breadcrumbs = [{ label: 'Puzzles' }]
@@ -184,6 +220,37 @@ const itemsPerPageString = computed({
 
 const isViewerDialogOpen = ref(false)
 const selectedPuzzle = ref<PuzzleType | null>(null)
+const selectedPuzzleStatus = ref<'not-started' | 'in-progress' | 'completed'>('not-started')
+const selectedPuzzleSavedGrid = ref<string[][]>([])
+const puzzleAttempts = ref<PuzzleAttempt[]>([])
+const attemptsLoading = ref(false)
+
+// Get puzzle status
+const getPuzzleStatus = (puzzleId: string) => {
+  const attempts = puzzleAttempts.value.filter((a) => a.puzzle_id === puzzleId)
+
+  if (attempts.length === 0) {
+    return 'not-started'
+  }
+
+  const hasCompleted = attempts.some((a) => a.is_completed)
+  if (hasCompleted) {
+    return 'completed'
+  }
+
+  return 'in-progress'
+}
+
+// Get highest XP earned for a puzzle
+const getEarnedXP = (puzzleId: string) => {
+  const completedAttempts = puzzleAttempts.value.filter(
+    (a) => a.puzzle_id === puzzleId && a.is_completed && a.exp_earned !== null,
+  )
+
+  if (completedAttempts.length === 0) return null
+
+  return Math.max(...completedAttempts.map((a) => a.exp_earned || 0))
+}
 
 const filteredPuzzles = computed(() => {
   if (!searchQuery.value) {
@@ -217,14 +284,59 @@ const formatDate = (dateString: string | null): string => {
 
 const handlePuzzleClick = (puzzle: PuzzleType) => {
   selectedPuzzle.value = puzzle
+  selectedPuzzleStatus.value = getPuzzleStatus(puzzle.id)
+
+  // Get saved grid based on puzzle status
+  let attemptToShow = null
+
+  if (selectedPuzzleStatus.value === 'completed') {
+    // For completed puzzles, get the latest completed attempt
+    attemptToShow = puzzleAttempts.value
+      .filter((a) => a.puzzle_id === puzzle.id && a.is_completed)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+  } else if (selectedPuzzleStatus.value === 'in-progress') {
+    // For in-progress puzzles, get the latest incomplete attempt
+    attemptToShow = puzzleAttempts.value.find((a) => a.puzzle_id === puzzle.id && !a.is_completed)
+  }
+
+  if (attemptToShow && attemptToShow.grid) {
+    // Parse saved grid from database
+    selectedPuzzleSavedGrid.value = attemptToShow.grid.map((rowString) => {
+      try {
+        return JSON.parse(rowString)
+      } catch {
+        return []
+      }
+    })
+  } else {
+    selectedPuzzleSavedGrid.value = []
+  }
+
   isViewerDialogOpen.value = true
+}
+
+// Fetch puzzle attempts for current student
+const fetchPuzzleAttempts = async () => {
+  if (!selectedClassroomId.value || !authStore.user) return
+
+  attemptsLoading.value = true
+  try {
+    puzzleAttempts.value = await puzzleAttemptService.getStudentAttempts(
+      authStore.user.id,
+      selectedClassroomId.value,
+    )
+  } catch (error) {
+    console.error('Failed to load puzzle attempts:', error)
+  } finally {
+    attemptsLoading.value = false
+  }
 }
 
 onMounted(async () => {
   if (!selectedClassroomId.value) return
 
   try {
-    await puzzleStore.fetchPuzzles(selectedClassroomId.value)
+    await Promise.all([puzzleStore.fetchPuzzles(selectedClassroomId.value), fetchPuzzleAttempts()])
   } catch (error) {
     toast.error(error instanceof Error ? error.message : 'Failed to load puzzles')
   }

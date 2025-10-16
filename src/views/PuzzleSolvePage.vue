@@ -33,9 +33,9 @@
         <div class="h-full overflow-auto">
           <div class="container mx-auto p-6">
             <div class="flex flex-col lg:flex-row gap-8">
-              <!-- Left Panel: Crossword Grid -->
-              <div class="flex-1 flex flex-col">
-                <div class="bg-white rounded-lg border p-6">
+              <!-- Left Panel: Crossword Grid and Controls -->
+              <div class="flex-1 flex flex-col gap-4">
+                <div class="bg-white rounded-lg border p-4 sm:p-6">
                   <div class="w-full h-full max-w-[600px] max-h-[600px] mx-auto">
                     <InteractiveCrosswordGrid
                       :grid="grid"
@@ -44,7 +44,6 @@
                       :checked-answers="checkedAnswers"
                       :incorrect-answers="incorrectAnswers"
                       :current-clue="currentClue"
-                      :show-solution="showSolution"
                       @update:user-answers="userAnswers = $event"
                       @update:current-clue="currentClue = $event"
                       @update:current-direction="currentDirection = $event"
@@ -52,22 +51,26 @@
                       ref="gridRef"
                     />
                   </div>
+                </div>
 
-                  <!-- Controls -->
-                  <div class="mt-6 flex gap-3 flex-wrap">
-                    <Button @click="checkAnswers" variant="default">
-                      <CheckCircle class="h-4 w-4 mr-2" />
-                      Check Answers
-                    </Button>
-                    <Button @click="clearGrid" variant="outline">
-                      <Eraser class="h-4 w-4 mr-2" />
-                      Clear
-                    </Button>
-                    <Button @click="showSolution = !showSolution" variant="outline">
-                      <Eye class="h-4 w-4 mr-2" />
-                      {{ showSolution ? 'Hide' : 'Show' }} Solution
-                    </Button>
-                  </div>
+                <!-- Controls -->
+                <div class="bg-white rounded-lg border p-4 flex flex-col sm:flex-row gap-3">
+                  <Button @click="clearGrid" variant="outline" class="w-full sm:flex-1">
+                    <Eraser class="h-4 w-4 mr-2" />
+                    Clear
+                  </Button>
+                  <Button @click="handleSave" variant="outline" class="w-full sm:flex-1">
+                    <Save class="h-4 w-4 mr-2" />
+                    Save Progress
+                  </Button>
+                  <Button @click="handleCheckAnswers" variant="outline" class="w-full sm:flex-1">
+                    <Eye class="h-4 w-4 mr-2" />
+                    Check Answers
+                  </Button>
+                  <Button @click="openSubmitDialog" variant="default" class="w-full sm:flex-1">
+                    <CheckCircle class="h-4 w-4 mr-2" />
+                    Submit
+                  </Button>
                 </div>
               </div>
 
@@ -87,12 +90,18 @@
                         <div
                           v-for="clue in acrossClues"
                           :key="`across-${clue.number}`"
-                          class="clue"
-                          :class="{ active: isActiveClue(clue) }"
+                          class="px-3 py-2 cursor-pointer rounded-md transition-all duration-200 flex gap-2 items-start"
+                          :class="
+                            isActiveClue(clue)
+                              ? 'bg-primary text-primary-foreground font-medium shadow-sm'
+                              : 'hover:bg-muted'
+                          "
                           @click="selectClue(clue)"
                         >
-                          <span class="clue-number">{{ clue.number }}.</span>
-                          <span class="clue-text">{{ clue.clue }} ({{ clue.word.length }})</span>
+                          <span class="font-semibold min-w-8 flex-shrink-0"
+                            >{{ clue.number }}.</span
+                          >
+                          <span class="flex-1">{{ clue.clue }} ({{ clue.word.length }})</span>
                         </div>
                       </div>
                     </div>
@@ -107,12 +116,18 @@
                         <div
                           v-for="clue in downClues"
                           :key="`down-${clue.number}`"
-                          class="clue"
-                          :class="{ active: isActiveClue(clue) }"
+                          class="px-3 py-2 cursor-pointer rounded-md transition-all duration-200 flex gap-2 items-start"
+                          :class="
+                            isActiveClue(clue)
+                              ? 'bg-primary text-primary-foreground font-medium shadow-sm'
+                              : 'hover:bg-muted'
+                          "
                           @click="selectClue(clue)"
                         >
-                          <span class="clue-number">{{ clue.number }}.</span>
-                          <span class="clue-text">{{ clue.clue }} ({{ clue.word.length }})</span>
+                          <span class="font-semibold min-w-8 flex-shrink-0"
+                            >{{ clue.number }}.</span
+                          >
+                          <span class="flex-1">{{ clue.clue }} ({{ clue.word.length }})</span>
                         </div>
                       </div>
                     </div>
@@ -124,16 +139,83 @@
         </div>
       </div>
     </div>
+
+    <!-- Submit Confirmation Dialog -->
+    <Dialog :open="isSubmitDialogOpen" @update:open="(val) => (isSubmitDialogOpen = val)">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Submit Puzzle</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to submit your answers? This will finalize your attempt.
+          </DialogDescription>
+        </DialogHeader>
+        <div class="space-y-4 py-4">
+          <div class="rounded-lg border bg-muted/50 p-4 space-y-2">
+            <div class="flex justify-between">
+              <span class="text-sm font-medium">Correct Answers:</span>
+              <span class="text-sm font-semibold"
+                >{{ submitStats.correctCount }} / {{ submitStats.totalCount }}</span
+              >
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm font-medium">Accuracy:</span>
+              <span class="text-sm font-semibold">{{ submitStats.accuracy }}%</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm font-medium">XP to Earn:</span>
+              <span class="text-sm font-semibold text-amber-600 dark:text-amber-500">
+                {{ submitStats.expEarned }} XP
+              </span>
+            </div>
+          </div>
+          <p class="text-sm text-muted-foreground">
+            {{
+              submitStats.correctCount === submitStats.totalCount
+                ? 'Perfect score! You got all answers correct!'
+                : 'You can check your answers before submitting to improve your score.'
+            }}
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="isSubmitDialogOpen = false" :disabled="isSubmitting">
+            Cancel
+          </Button>
+          <Button @click="handleSubmit" :disabled="isSubmitting">
+            {{ isSubmitting ? 'Submitting...' : 'Confirm Submit' }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </MainLayout>
 </template>
 
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import InteractiveCrosswordGrid from '@/components/Puzzles/InteractiveCrosswordGrid.vue'
 import MainLayout from '@/layouts/MainLayout.vue'
+import { puzzleAttemptService } from '@/services/api/puzzle-attempt.service'
+import { expService } from '@/services/api/exp.service'
+import { useAuthStore } from '@/stores/auth'
 import { usePuzzleStore } from '@/stores/puzzles'
 import type { PlacedWord } from '@/utils/crossword-generator'
-import { ArrowDown, ArrowLeft, ArrowRight, CheckCircle, Eraser, Eye, Puzzle } from 'lucide-vue-next'
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle,
+  Eraser,
+  Eye,
+  Puzzle,
+  Save,
+} from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -141,6 +223,7 @@ import { toast } from 'vue-sonner'
 const route = useRoute()
 const router = useRouter()
 const puzzleStore = usePuzzleStore()
+const authStore = useAuthStore()
 
 const puzzleId = route.params.puzzleId as string
 const classroomId = route.params.classroomId as string
@@ -156,8 +239,15 @@ const checkedAnswers = ref<boolean[][]>([])
 const incorrectAnswers = ref<boolean[][]>([])
 const currentClue = ref<PlacedWord | null>(null)
 const currentDirection = ref<'across' | 'down'>('across')
-const showSolution = ref(false)
 const gridRef = ref<InstanceType<typeof InteractiveCrosswordGrid> | null>(null)
+const isSubmitDialogOpen = ref(false)
+const isSubmitting = ref(false)
+const submitStats = ref({
+  correctCount: 0,
+  totalCount: 0,
+  accuracy: 0,
+  expEarned: 0,
+})
 
 // Get puzzle from store
 const puzzle = computed(() => puzzleStore.selectedPuzzle)
@@ -210,11 +300,12 @@ const initializeUserAnswers = () => {
 }
 
 const isActiveClue = (clue: PlacedWord) => {
-  return (
+  const isActive =
     currentClue.value &&
     currentClue.value.number === clue.number &&
     currentClue.value.direction === clue.direction
-  )
+
+  return isActive
 }
 
 // Clue selection
@@ -222,9 +313,11 @@ const selectClue = (clue: PlacedWord) => {
   currentClue.value = clue
   currentDirection.value = clue.direction
 
-  // Focus the first cell of the clue
+  console.log('Clue selected:', clue.number, clue.direction)
+
+  // Focus the first cell of the clue with the correct direction
   if (gridRef.value) {
-    gridRef.value.focusCell(clue.row, clue.col)
+    gridRef.value.focusCell(clue.row, clue.col, clue.direction)
   }
 }
 
@@ -233,13 +326,72 @@ const handleClueSelected = (clue: PlacedWord) => {
 }
 
 // Actions
-const checkAnswers = () => {
+const handleSave = async () => {
+  if (!authStore.user) {
+    toast.error('You must be logged in to save progress')
+    return
+  }
+
+  try {
+    // Check if there's an existing incomplete attempt
+    const existingAttempt = await puzzleAttemptService.getLatestAttempt(puzzleId, authStore.user.id)
+
+    if (existingAttempt && !existingAttempt.is_completed) {
+      // Update existing incomplete attempt
+      await puzzleAttemptService.updateAttempt(existingAttempt.id, {
+        grid: userAnswers.value.map((row) => JSON.stringify(row)),
+      })
+      toast.success('Progress saved!')
+    } else {
+      // Create new attempt
+      await puzzleAttemptService.createAttempt({
+        puzzle_id: puzzleId,
+        attempted_by: authStore.user.id,
+        grid: userAnswers.value.map((row) => JSON.stringify(row)),
+        exp_earned: null,
+        is_completed: false,
+      })
+      toast.success('Progress saved!')
+    }
+  } catch (error) {
+    toast.error('Failed to save progress')
+    console.error('Save error:', error)
+  }
+}
+
+// Calculate correct answers and stats
+const calculateAnswers = () => {
   let correctCount = 0
   let totalCount = 0
 
+  for (let i = 0; i < grid.value.length; i++) {
+    const gridRow = grid.value[i]
+    const userRow = userAnswers.value[i]
+
+    if (!gridRow || !userRow) continue
+
+    for (let j = 0; j < gridRow.length; j++) {
+      if (gridRow[j] !== '') {
+        totalCount++
+        const isAnswerCorrect = userRow[j]?.toUpperCase() === gridRow[j]
+        if (isAnswerCorrect) {
+          correctCount++
+        }
+      }
+    }
+  }
+
+  return { correctCount, totalCount }
+}
+
+// Check answers without submitting
+const handleCheckAnswers = () => {
   // Reset validation states
   checkedAnswers.value = grid.value.map((row) => row.map(() => false))
   incorrectAnswers.value = grid.value.map((row) => row.map(() => false))
+
+  let correctCount = 0
+  let totalCount = 0
 
   for (let i = 0; i < grid.value.length; i++) {
     const gridRow = grid.value[i]
@@ -263,10 +415,93 @@ const checkAnswers = () => {
     }
   }
 
+  const accuracy = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0
+
   if (correctCount === totalCount) {
-    toast.success('Congratulations! All answers are correct!')
+    toast.success(`Perfect! All ${totalCount} answers correct! (${accuracy}%)`)
   } else {
-    toast.info(`${correctCount} out of ${totalCount} answers are correct`)
+    toast.info(`${correctCount} out of ${totalCount} answers correct (${accuracy}%)`)
+  }
+}
+
+// Open submit dialog with calculated stats
+const openSubmitDialog = () => {
+  if (!puzzle.value) return
+
+  const { correctCount, totalCount } = calculateAnswers()
+  const accuracy = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0
+  const correctRate = totalCount > 0 ? correctCount / totalCount : 0
+  const expEarned = Math.ceil(puzzle.value.exp * correctRate)
+
+  submitStats.value = {
+    correctCount,
+    totalCount,
+    accuracy,
+    expEarned,
+  }
+
+  isSubmitDialogOpen.value = true
+}
+
+// Submit puzzle attempt to database
+const handleSubmit = async () => {
+  if (!puzzle.value || !authStore.user) {
+    toast.error('Unable to submit. Please try again.')
+    return
+  }
+
+  isSubmitting.value = true
+
+  try {
+    const { correctCount, totalCount } = calculateAnswers()
+    const correctRate = totalCount > 0 ? correctCount / totalCount : 0
+    const expEarned = Math.ceil(puzzle.value.exp * correctRate)
+
+    // Check if there's an existing incomplete attempt
+    const existingAttempt = await puzzleAttemptService.getLatestAttempt(puzzleId, authStore.user.id)
+
+    if (existingAttempt && !existingAttempt.is_completed) {
+      // Update existing incomplete attempt with final results
+      await puzzleAttemptService.updateAttempt(existingAttempt.id, {
+        grid: userAnswers.value.map((row) => JSON.stringify(row)),
+        exp_earned: expEarned,
+        is_completed: true,
+      })
+    } else {
+      // Create new puzzle attempt
+      await puzzleAttemptService.createAttempt({
+        puzzle_id: puzzleId,
+        attempted_by: authStore.user.id,
+        grid: userAnswers.value.map((row) => JSON.stringify(row)),
+        exp_earned: expEarned,
+        is_completed: true,
+      })
+    }
+
+    // Update student's total exp
+    if (expEarned > 0) {
+      await expService.addExpToStudent(authStore.user.id, puzzle.value.classroom_id, expEarned)
+    }
+
+    // Close dialog
+    isSubmitDialogOpen.value = false
+
+    // Show success message
+    if (correctCount === totalCount) {
+      toast.success(`Perfect! You earned ${expEarned} XP!`)
+    } else {
+      toast.success(`Submitted! You earned ${expEarned} XP!`)
+    }
+
+    // Navigate back to puzzles page
+    setTimeout(() => {
+      router.push({ name: 'puzzles', params: { classroomId } })
+    }, 1500)
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : 'Failed to submit puzzle')
+    console.error('Submit error:', error)
+  } finally {
+    isSubmitting.value = false
   }
 }
 
@@ -281,12 +516,44 @@ const handleBack = () => {
   router.push({ name: 'puzzles', params: { classroomId } })
 }
 
+// Load saved progress from database
+const loadSavedProgress = async () => {
+  if (!authStore.user) return
+
+  try {
+    const existingAttempt = await puzzleAttemptService.getLatestAttempt(puzzleId, authStore.user.id)
+
+    if (existingAttempt && !existingAttempt.is_completed && existingAttempt.grid) {
+      userAnswers.value = existingAttempt.grid.map((rowString) => {
+        try {
+          return JSON.parse(rowString)
+        } catch {
+          return []
+        }
+      })
+      toast.info('Loaded saved progress')
+    }
+  } catch (error) {
+    console.error('Failed to load saved progress:', error)
+  }
+}
+
 // Load puzzle on mount
 onMounted(async () => {
   try {
     await puzzleStore.fetchPuzzleById(puzzleId)
     if (puzzle.value) {
       initializeUserAnswers()
+      await loadSavedProgress()
+
+      // Select the first clue by default for better UX
+      if (acrossClues.value.length > 0 && acrossClues.value[0]) {
+        currentClue.value = acrossClues.value[0]
+        currentDirection.value = 'across'
+      } else if (downClues.value.length > 0 && downClues.value[0]) {
+        currentClue.value = downClues.value[0]
+        currentDirection.value = 'down'
+      }
     }
   } catch (error) {
     toast.error(error instanceof Error ? error.message : 'Failed to load puzzle')
@@ -294,35 +561,3 @@ onMounted(async () => {
   }
 })
 </script>
-
-<style scoped>
-.clue {
-  padding: 8px 12px;
-  margin: 4px 0;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.2s;
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
-}
-
-.clue:hover {
-  background-color: hsl(var(--muted));
-}
-
-.clue.active {
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-}
-
-.clue-number {
-  font-weight: 600;
-  min-width: 2rem;
-  flex-shrink: 0;
-}
-
-.clue-text {
-  flex: 1;
-}
-</style>
