@@ -19,6 +19,14 @@ export interface ClassroomMemberWithUser extends ClassroomMember {
   }
 }
 
+export interface StudentWithStats {
+  id: string
+  full_name: string
+  joined_at: string
+  exp: number
+  elo_rating: number | null
+}
+
 /**
  * Classroom service
  * Handles all classroom-related API operations
@@ -182,6 +190,71 @@ export class ClassroomService extends BaseService {
     }
 
     return data || []
+  }
+
+  /**
+   * Get students with their stats (exp and elo) for a classroom
+   */
+  async getStudentsWithStats(classroomId: string): Promise<StudentWithStats[]> {
+    interface MemberWithUser {
+      joined_at: string
+      users: {
+        id: string
+        full_name: string
+      } | null
+    }
+
+    const { data, error } = await this.client
+      .from('classroom_members')
+      .select(
+        `
+        joined_at,
+        users!classroom_members_student_id_fkey(
+          id,
+          full_name
+        )
+      `,
+      )
+      .eq('classroom_id', classroomId)
+      .order('joined_at', { ascending: false })
+
+    if (error) {
+      this.handleError(error)
+    }
+
+    // Get exp and elo data for all students
+    const students = (data || []) as MemberWithUser[]
+    const studentIds = students.map((s) => s.users?.id).filter(Boolean) as string[]
+
+    // Fetch exp data
+    const { data: expData } = await this.client
+      .from('student_exp')
+      .select('student_id, exp')
+      .eq('classroom_id', classroomId)
+      .in('student_id', studentIds)
+
+    // Fetch elo data
+    const { data: eloData } = await this.client
+      .from('student_elo')
+      .select('user_id, elo_rating')
+      .eq('classroom_id', classroomId)
+      .in('user_id', studentIds)
+
+    // Create maps for quick lookup
+    const expMap = new Map(expData?.map((e) => [e.student_id, e.exp]) || [])
+    const eloMap = new Map(eloData?.map((e) => [e.user_id, e.elo_rating]) || [])
+
+    // Combine data
+    return students.map((student) => {
+      const userId = student.users?.id || ''
+      return {
+        id: userId,
+        full_name: student.users?.full_name || 'Unknown',
+        joined_at: student.joined_at,
+        exp: expMap.get(userId) || 0,
+        elo_rating: eloMap.get(userId) || null,
+      }
+    })
   }
 
   /**
