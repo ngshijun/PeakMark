@@ -67,8 +67,8 @@ export const roleNavigation: RoleNavigation = {
           icon: Puzzle,
         },
         {
-          title: 'Achievements',
-          url: '/achievements',
+          title: 'Leaderboard',
+          url: '/leaderboard',
           icon: Medal,
         },
         {
