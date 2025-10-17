@@ -4,6 +4,8 @@ import type { ClassroomWithMemberCount } from '@/services/api/classroom.service'
 import type { Tables, TablesInsert, TablesUpdate } from '@/types/database.types'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { useLevelUpStore } from '@/stores/level-up'
+import { calculateLevel } from '@/composables/useLevel'
 
 type ClassroomInsert = TablesInsert<'classrooms'>
 type ClassroomUpdate = TablesUpdate<'classrooms'>
@@ -133,6 +135,11 @@ export const useClassroomStore = defineStore('classroom', () => {
       const experience = await expService.createStudentExp(studentId, classroomId)
       studentExp.value = experience
 
+      // Initialize level tracking for this classroom (starts at level 1 with 0 XP)
+      const levelUpStore = useLevelUpStore()
+      const currentLevel = calculateLevel(experience.exp)
+      levelUpStore.initializeLevel(classroomId, currentLevel)
+
       // Refresh enrolled classrooms
       await fetchStudentClassrooms(studentId)
 
@@ -200,6 +207,14 @@ export const useClassroomStore = defineStore('classroom', () => {
     try {
       const data = await expService.getStudentExp(studentId, classroomId)
       studentExp.value = data
+
+      // Initialize level tracking for this classroom
+      if (data) {
+        const levelUpStore = useLevelUpStore()
+        const currentLevel = calculateLevel(data.exp)
+        levelUpStore.initializeLevel(classroomId, currentLevel)
+      }
+
       return data
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'An error occurred'
@@ -216,6 +231,44 @@ export const useClassroomStore = defineStore('classroom', () => {
     try {
       const data = await expService.updateStudentExp(studentId, classroomId, exp)
       studentExp.value = data
+
+      // Check for level up
+      const levelUpStore = useLevelUpStore()
+      const newLevel = calculateLevel(data.exp)
+
+      // Find classroom name for better celebration message
+      const classroom = studentClassrooms.value.find((c) => c.id === classroomId)
+      const classroomName = classroom?.name
+
+      levelUpStore.checkLevelUp(classroomId, newLevel, classroomName)
+
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const addStudentExp = async (studentId: string, classroomId: string, expToAdd: number) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const data = await expService.addExpToStudent(studentId, classroomId, expToAdd)
+      studentExp.value = data
+
+      // Check for level up
+      const levelUpStore = useLevelUpStore()
+      const newLevel = calculateLevel(data.exp)
+
+      // Find classroom name for better celebration message
+      const classroom = studentClassrooms.value.find((c) => c.id === classroomId)
+      const classroomName = classroom?.name
+
+      levelUpStore.checkLevelUp(classroomId, newLevel, classroomName)
+
       return data
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'An error occurred'
@@ -260,6 +313,7 @@ export const useClassroomStore = defineStore('classroom', () => {
     fetchClassroomSettings,
     fetchStudentExp,
     updateStudentExp,
+    addStudentExp,
     clearError,
     isStudentMemberFromStore,
     isTeacherOwnerFromStore,

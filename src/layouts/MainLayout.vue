@@ -54,12 +54,16 @@
         <slot />
       </div>
     </SidebarInset>
+
+    <!-- Global Level Up Dialog -->
+    <LevelUpDialog />
   </SidebarProvider>
 </template>
 
 <script setup lang="ts">
 import AppSidebar from '@/components/AppSidebar.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
+import LevelUpDialog from '@/components/LevelUpDialog.vue'
 import {
   Breadcrumb,
   BreadcrumbItem,

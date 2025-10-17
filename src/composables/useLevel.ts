@@ -4,7 +4,7 @@ import { useClassroomStore } from '@/stores/classrooms'
 // Level calculation formula: level = floor(sqrt(exp / 100)) + 1
 // Each level requires progressively more XP
 // Minimum level is 1 (even with 0 XP)
-const calculateLevel = (exp: number): number => {
+export const calculateLevel = (exp: number): number => {
   return Math.floor(Math.sqrt(exp / 100)) + 1
 }
 

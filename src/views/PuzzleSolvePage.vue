@@ -202,9 +202,9 @@ import {
 import InteractiveCrosswordGrid from '@/components/Puzzles/InteractiveCrosswordGrid.vue'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { puzzleAttemptService } from '@/services/api/puzzle-attempt.service'
-import { expService } from '@/services/api/exp.service'
 import { useAuthStore } from '@/stores/auth'
 import { usePuzzleStore } from '@/stores/puzzles'
+import { useClassroomStore } from '@/stores/classrooms'
 import type { PlacedWord } from '@/utils/crossword-generator'
 import {
   ArrowDown,
@@ -224,6 +224,7 @@ const route = useRoute()
 const router = useRouter()
 const puzzleStore = usePuzzleStore()
 const authStore = useAuthStore()
+const classroomStore = useClassroomStore()
 
 const puzzleId = route.params.puzzleId as string
 const classroomId = route.params.classroomId as string
@@ -478,9 +479,9 @@ const handleSubmit = async () => {
       })
     }
 
-    // Update student's total exp
+    // Update student's total exp (triggers level-up check)
     if (expEarned > 0) {
-      await expService.addExpToStudent(authStore.user.id, puzzle.value.classroom_id, expEarned)
+      await classroomStore.addStudentExp(authStore.user.id, puzzle.value.classroom_id, expEarned)
     }
 
     // Close dialog
