@@ -25,6 +25,7 @@ export interface StudentWithStats {
   joined_at: string
   exp: number
   elo_rating: number | null
+  avatar_url: string | null
 }
 
 /**
@@ -201,6 +202,7 @@ export class ClassroomService extends BaseService {
       users: {
         id: string
         full_name: string
+        avatar_url: string | null
       } | null
     }
 
@@ -211,7 +213,8 @@ export class ClassroomService extends BaseService {
         joined_at,
         users!classroom_members_student_id_fkey(
           id,
-          full_name
+          full_name,
+          avatar_url
         )
       `,
       )
@@ -253,6 +256,7 @@ export class ClassroomService extends BaseService {
         joined_at: student.joined_at,
         exp: expMap.get(userId) || 0,
         elo_rating: eloMap.get(userId) || null,
+        avatar_url: student.users?.avatar_url || null,
       }
     })
   }

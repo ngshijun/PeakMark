@@ -49,6 +49,10 @@
               <div class="flex-1">
                 <div class="flex items-center gap-3 mb-2">
                   <Avatar class="h-12 w-12">
+                    <AvatarImage
+                      v-if="currentUserRank.student.avatar_url"
+                      :src="currentUserRank.student.avatar_url"
+                    />
                     <AvatarFallback class="bg-primary/10 text-primary font-medium text-lg">
                       {{ getInitials(currentUserRank.student.full_name) }}
                     </AvatarFallback>
@@ -126,6 +130,7 @@
                 <!-- Avatar & Name -->
                 <div class="flex items-center gap-3 flex-1 min-w-0">
                   <Avatar class="h-10 w-10 shrink-0">
+                    <AvatarImage v-if="entry.student.avatar_url" :src="entry.student.avatar_url" />
                     <AvatarFallback class="bg-primary/10 text-primary font-medium">
                       {{ getInitials(entry.student.full_name) }}
                     </AvatarFallback>
@@ -162,7 +167,7 @@ import { toast } from 'vue-sonner'
 import { Trophy } from 'lucide-vue-next'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useAuthStore } from '@/stores/auth'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'

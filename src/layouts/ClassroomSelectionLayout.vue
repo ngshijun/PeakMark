@@ -10,20 +10,22 @@
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <Button variant="ghost" size="icon" class="h-9 w-9 rounded-full">
-                <div
-                  class="flex aspect-square size-8 items-center justify-center rounded-lg bg-muted"
-                >
-                  <component :is="roleIcon" class="size-4" />
-                </div>
+                <Avatar class="size-8">
+                  <AvatarImage v-if="currentAvatarUrl" :src="currentAvatarUrl" />
+                  <AvatarFallback class="bg-primary/10 text-primary">
+                    {{ getInitials(userName) }}
+                  </AvatarFallback>
+                </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" class="w-56">
               <div class="flex items-center gap-2 p-2">
-                <div
-                  class="flex aspect-square size-8 items-center justify-center rounded-lg bg-muted"
-                >
-                  <component :is="roleIcon" class="size-4" />
-                </div>
+                <Avatar class="size-8">
+                  <AvatarImage v-if="currentAvatarUrl" :src="currentAvatarUrl" />
+                  <AvatarFallback class="bg-primary/10 text-primary">
+                    {{ getInitials(userName) }}
+                  </AvatarFallback>
+                </Avatar>
                 <div class="grid flex-1 text-left text-sm leading-tight">
                   <span class="truncate font-semibold">{{ userName }}</span>
                   <span class="truncate text-xs text-muted-foreground">{{ userEmail }}</span>
@@ -71,15 +73,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { GraduationCap, School, Settings, LogOut, UserCog } from 'lucide-vue-next'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Settings, LogOut } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
 const { logout } = useNavigation()
-
-const userRole = computed(() => {
-  return profileStore.role || 'student'
-})
 
 const userName = computed(() => {
   return profileStore.fullName || 'User'
@@ -89,16 +88,17 @@ const userEmail = computed(() => {
   return authStore.user?.email || ''
 })
 
-const roleIcon = computed(() => {
-  switch (userRole.value) {
-    case 'teacher':
-      return School
-    case 'admin':
-      return UserCog
-    default:
-      return GraduationCap
-  }
-})
+const getInitials = (name: string): string => {
+  if (!name) return '?'
+  return name
+    .split(' ')
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+const currentAvatarUrl = computed(() => profileStore.userProfile?.avatar_url || null)
 
 const handleSignOut = logout
 </script>

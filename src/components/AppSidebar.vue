@@ -72,11 +72,12 @@
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <SidebarMenuButton size="lg">
-                <div
-                  class="flex aspect-square size-8 items-center justify-center rounded-lg bg-muted"
-                >
-                  <component :is="roleIcon" class="size-4" />
-                </div>
+                <Avatar class="size-8">
+                  <AvatarImage v-if="currentAvatarUrl" :src="currentAvatarUrl" />
+                  <AvatarFallback class="bg-primary/10 text-primary">
+                    {{ getInitials(userName) }}
+                  </AvatarFallback>
+                </Avatar>
                 <div class="grid flex-1 text-left text-sm leading-tight">
                   <span class="truncate font-semibold">{{ userName }}</span>
                   <span class="truncate text-xs">{{ userEmail }}</span>
@@ -131,6 +132,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { GraduationCap, School, Settings, LogOut, UserCog } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
@@ -160,6 +162,18 @@ const roleIcon = computed(() => {
       return GraduationCap
   }
 })
+
+const getInitials = (name: string): string => {
+  if (!name) return '?'
+  return name
+    .split(' ')
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+const currentAvatarUrl = computed(() => profileStore.userProfile?.avatar_url || null)
 
 const navigation = navigationItems
 
