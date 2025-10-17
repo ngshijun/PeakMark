@@ -2,6 +2,7 @@ import type { Tables } from '@/types/database.types'
 import { calculateStudentStats } from '@/utils/stats'
 import type { StudentStats } from '@/utils/stats'
 import { BaseService } from './base.service'
+import { storageService } from './storage.service'
 
 type UserRow = Tables<'users'>
 type QuestionAttempt = Tables<'question_attempts'>
@@ -68,6 +69,45 @@ export class ProfileService extends BaseService {
   async getStudentStatistics(userId: string): Promise<StudentStats> {
     const attempts = await this.getQuestionAttempts(userId)
     return calculateStudentStats(attempts)
+  }
+
+  /**
+   * Upload avatar and update user profile
+   * @param userId - The user ID
+   * @param file - The avatar image file
+   * @param oldAvatarUrl - The old avatar URL to delete (optional)
+   * @returns Updated user profile
+   */
+  async uploadAvatar(userId: string, file: File, oldAvatarUrl?: string): Promise<UserRow> {
+    // Delete old avatar if exists
+    if (oldAvatarUrl) {
+      try {
+        await storageService.deleteAvatar(oldAvatarUrl)
+      } catch (error) {
+        console.warn('Failed to delete old avatar:', error)
+        // Continue even if deletion fails
+      }
+    }
+
+    // Upload new avatar
+    const avatarUrl = await storageService.uploadAvatar(file, userId)
+
+    // Update user profile with new avatar URL
+    return await this.updateUserProfile(userId, { avatar_url: avatarUrl } as Partial<UserRow>)
+  }
+
+  /**
+   * Delete avatar and update user profile
+   * @param userId - The user ID
+   * @param avatarUrl - The avatar URL to delete
+   * @returns Updated user profile
+   */
+  async deleteAvatar(userId: string, avatarUrl: string): Promise<UserRow> {
+    // Delete avatar from storage
+    await storageService.deleteAvatar(avatarUrl)
+
+    // Update user profile to remove avatar URL
+    return await this.updateUserProfile(userId, { avatar_url: null } as Partial<UserRow>)
   }
 }
 

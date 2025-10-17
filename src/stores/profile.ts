@@ -114,6 +114,56 @@ export const useProfileStore = defineStore('profile', () => {
     }
   }
 
+  // Common: Upload avatar
+  const uploadAvatar = async (file: File) => {
+    const userId = authStore.user?.id
+    if (!userId) {
+      error.value = 'No user authenticated'
+      return
+    }
+
+    loading.value = true
+    error.value = null
+
+    try {
+      const oldAvatarUrl = userProfile.value?.avatar_url
+      const data = await profileService.uploadAvatar(userId, file, oldAvatarUrl || undefined)
+      userProfile.value = data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Common: Delete avatar
+  const deleteAvatar = async () => {
+    const userId = authStore.user?.id
+    if (!userId) {
+      error.value = 'No user authenticated'
+      return
+    }
+
+    const avatarUrl = userProfile.value?.avatar_url
+    if (!avatarUrl) {
+      return
+    }
+
+    loading.value = true
+    error.value = null
+
+    try {
+      const data = await profileService.deleteAvatar(userId, avatarUrl)
+      userProfile.value = data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   // ===================================
   // UTILITY METHODS
   // ===================================
@@ -152,6 +202,8 @@ export const useProfileStore = defineStore('profile', () => {
     fetchUserProfile,
     fetchStudentStats,
     updateProfile,
+    uploadAvatar,
+    deleteAvatar,
     clearProfile,
   }
 })

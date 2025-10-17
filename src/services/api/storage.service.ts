@@ -9,6 +9,7 @@ import { AppError } from '@/utils/errors'
 export class StorageService extends BaseService {
   private readonly QUESTION_IMAGES_BUCKET = 'question-images'
   private readonly DOCUMENTS_BUCKET = 'documents'
+  private readonly AVATARS_BUCKET = 'avatars'
 
   /**
    * Upload a question image to storage
@@ -163,6 +164,84 @@ export class StorageService extends BaseService {
    */
   getDocumentUrl(filePath: string): string {
     const { data } = this.client.storage.from(this.DOCUMENTS_BUCKET).getPublicUrl(filePath)
+
+    return data.publicUrl
+  }
+
+  /**
+   * Upload an avatar image to storage
+   * @param file - The image file to upload
+   * @param userId - The user ID for unique naming
+   * @returns The public URL of the uploaded avatar
+   */
+  async uploadAvatar(file: File, userId: string): Promise<string> {
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      throw new AppError('File must be an image', 'INVALID_FILE_TYPE', 400)
+    }
+
+    // Validate file size (5MB max)
+    const MAX_SIZE = MAX_IMAGE_SIZE * 1024 * 1024
+    if (file.size > MAX_SIZE) {
+      throw new AppError('File size must be less than 5MB', 'FILE_TOO_LARGE', 400)
+    }
+
+    // Generate unique file path
+    const fileExt = file.name.split('.').pop()
+    const timestamp = Date.now()
+    const filePath = `${userId}/avatar-${timestamp}.${fileExt}`
+
+    // Upload to storage
+    const { data, error } = await this.client.storage
+      .from(this.AVATARS_BUCKET)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true, // Allow overwriting old avatars
+      })
+
+    if (error) {
+      throw new AppError(`Failed to upload avatar: ${error.message}`, 'STORAGE_UPLOAD_ERROR', 500)
+    }
+
+    // Get public URL
+    const { data: urlData } = this.client.storage.from(this.AVATARS_BUCKET).getPublicUrl(data.path)
+
+    return urlData.publicUrl
+  }
+
+  /**
+   * Delete an avatar from storage
+   * @param avatarUrl - The public URL of the avatar to delete
+   */
+  async deleteAvatar(avatarUrl: string): Promise<void> {
+    if (!avatarUrl) return
+
+    // Extract file path from URL
+    const url = new URL(avatarUrl)
+    const pathParts = url.pathname.split('/')
+    const bucketIndex = pathParts.indexOf(this.AVATARS_BUCKET)
+
+    if (bucketIndex === -1) {
+      throw new AppError('Invalid avatar URL', 'INVALID_URL', 400)
+    }
+
+    const filePath = pathParts.slice(bucketIndex + 1).join('/')
+
+    // Delete from storage
+    const { error } = await this.client.storage.from(this.AVATARS_BUCKET).remove([filePath])
+
+    if (error) {
+      throw new AppError(`Failed to delete avatar: ${error.message}`, 'STORAGE_DELETE_ERROR', 500)
+    }
+  }
+
+  /**
+   * Get public URL for an avatar
+   * @param filePath - The storage file path
+   * @returns The public URL
+   */
+  getAvatarUrl(filePath: string): string {
+    const { data } = this.client.storage.from(this.AVATARS_BUCKET).getPublicUrl(filePath)
 
     return data.publicUrl
   }

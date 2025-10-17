@@ -107,6 +107,12 @@ const router = createRouter({
       meta: { requiresAuth: true, role: ['teacher', 'student'] },
     },
     {
+      path: '/settings',
+      name: 'settings',
+      component: () => import('@/views/wrappers/SettingsPageWrapper.vue'),
+      meta: { requiresAuth: true, role: ['teacher', 'student'] },
+    },
+    {
       path: '/classroom/:classroomId/settings',
       name: 'classroom-settings',
       component: () => import('@/views/wrappers/ClassroomSettingsPageWrapper.vue'),
