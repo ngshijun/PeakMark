@@ -86,6 +86,31 @@
 
             <FormField
               v-slot="{ value, handleChange }"
+              name="is_public"
+              :validateOnBlur="hasAttemptSubmit"
+              :validateOnModelUpdate="hasAttemptSubmit"
+            >
+              <FormItem>
+                <div class="flex items-center justify-between rounded-lg border p-4">
+                  <div class="space-y-0.5">
+                    <FormLabel class="text-sm font-medium">Public Classroom</FormLabel>
+                    <div class="text-sm text-muted-foreground">
+                      Make this classroom discoverable to all students
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      :model-value="value"
+                      @update:model-value="handleChange"
+                      :disabled="isSubmitting"
+                    />
+                  </FormControl>
+                </div>
+              </FormItem>
+            </FormField>
+
+            <FormField
+              v-slot="{ value, handleChange }"
               name="allow_new_students"
               :validateOnBlur="hasAttemptSubmit"
               :validateOnModelUpdate="hasAttemptSubmit"
@@ -212,6 +237,7 @@ const formSchema = toTypedSchema(
   z.object({
     name: z.string().min(1, 'Classroom name is required'),
     description: z.string().optional(),
+    is_public: z.boolean(),
     allow_new_students: z.boolean(),
   }),
 )
@@ -222,6 +248,7 @@ const { handleSubmit, resetForm } = useForm({
   initialValues: {
     name: '',
     description: '',
+    is_public: false,
     allow_new_students: true,
   },
 })
@@ -248,6 +275,7 @@ const onSubmit = handleSubmit(async (formValues) => {
     const updates = {
       name: formValues.name,
       description: formValues.description || null,
+      is_public: formValues.is_public,
       allow_new_students: formValues.allow_new_students,
     }
 
@@ -296,6 +324,7 @@ onMounted(async () => {
       values: {
         name: classroom.value.name,
         description: classroom.value.description || '',
+        is_public: classroom.value.is_public,
         allow_new_students: classroom.value.allow_new_students,
       },
     })

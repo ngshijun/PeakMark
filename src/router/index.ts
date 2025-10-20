@@ -107,6 +107,12 @@ const router = createRouter({
       meta: { requiresAuth: true, role: ['teacher', 'student'] },
     },
     {
+      path: '/public-classrooms',
+      name: 'public-classrooms',
+      component: () => import('@/views/PublicClassroomsPage.vue'),
+      meta: { requiresAuth: true, role: ['student'] },
+    },
+    {
       path: '/settings',
       name: 'settings',
       component: () => import('@/views/wrappers/SettingsPageWrapper.vue'),

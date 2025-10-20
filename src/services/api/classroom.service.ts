@@ -98,6 +98,58 @@ export class ClassroomService extends BaseService {
   }
 
   /**
+   * Get all public classrooms that a student can join
+   * Excludes classrooms the student is already a member of
+   */
+  async getPublicClassrooms(studentId?: string): Promise<ClassroomWithMemberCount[]> {
+    let query = this.client
+      .from('classrooms')
+      .select(
+        `
+        *,
+        classroom_members(count),
+        users!classrooms_teacher_id_fkey(
+          full_name
+        )
+      `,
+      )
+      .eq('is_public', true)
+      .eq('allow_new_students', true)
+      .order('created_at', { ascending: false })
+
+    const { data, error } = await query
+
+    if (error) {
+      this.handleError(error)
+    }
+
+    const classrooms = (data || []).map((classroom) => {
+      const rawData = classroom as unknown as Classroom & {
+        classroom_members: { count: number }[] | null
+        users?: { full_name?: string }
+      }
+      return {
+        ...rawData,
+        member_count: rawData.classroom_members?.[0]?.count || 0,
+        teacher_name: rawData.users?.full_name || 'Unknown Teacher',
+      }
+    })
+
+    // If studentId is provided, filter out classrooms the student is already a member of
+    if (studentId) {
+      const { data: memberships } = await this.client
+        .from('classroom_members')
+        .select('classroom_id')
+        .eq('student_id', studentId)
+
+      const memberClassroomIds = new Set(memberships?.map((m) => m.classroom_id) || [])
+      return classrooms.filter((c) => !memberClassroomIds.has(c.id))
+    }
+
+    return classrooms
+  }
+
+  /**
    * Get a single classroom by ID
    */
   async getClassroomById(id: string): Promise<ClassroomWithMemberCount> {

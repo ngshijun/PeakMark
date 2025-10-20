@@ -16,6 +16,7 @@ export type { ClassroomWithMemberCount }
 export const useClassroomStore = defineStore('classroom', () => {
   const teacherClassrooms = ref<ClassroomWithMemberCount[]>([])
   const studentClassrooms = ref<ClassroomWithMemberCount[]>([])
+  const publicClassrooms = ref<ClassroomWithMemberCount[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -47,6 +48,23 @@ export const useClassroomStore = defineStore('classroom', () => {
       const data = await classroomService.getStudentClassrooms(studentId)
       studentClassrooms.value = data
       return studentClassrooms.value
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Fetch all public classrooms (excluding ones student has already joined)
+  const fetchPublicClassrooms = async (studentId?: string) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const data = await classroomService.getPublicClassrooms(studentId)
+      publicClassrooms.value = data
+      return publicClassrooms.value
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'An error occurred'
       throw err
@@ -297,6 +315,7 @@ export const useClassroomStore = defineStore('classroom', () => {
     // State
     teacherClassrooms,
     studentClassrooms,
+    publicClassrooms,
     loading,
     error,
     studentExp,
@@ -304,6 +323,7 @@ export const useClassroomStore = defineStore('classroom', () => {
     // Actions
     fetchTeacherClassrooms,
     fetchStudentClassrooms,
+    fetchPublicClassrooms,
     createClassroom,
     updateClassroom,
     deleteClassroom,

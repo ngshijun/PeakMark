@@ -7,10 +7,16 @@
           <h1 class="text-3xl font-bold tracking-tight">My Classrooms</h1>
           <p class="text-muted-foreground">View and join classrooms</p>
         </div>
-        <Button @click="isJoinDialogOpen = true">
-          <Plus class="mr-2 h-4 w-4" />
-          Join Classroom
-        </Button>
+        <div class="flex gap-2">
+          <Button @click="goToPublicClassrooms" variant="outline">
+            <Globe class="mr-2 h-4 w-4" />
+            Browse Public
+          </Button>
+          <Button @click="isJoinDialogOpen = true">
+            <Plus class="mr-2 h-4 w-4" />
+            Join with Code
+          </Button>
+        </div>
       </div>
 
       <!-- Classrooms Grid -->
@@ -147,19 +153,25 @@ import ClassroomSelectionLayout from '@/layouts/ClassroomSelectionLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore, type ClassroomWithMemberCount } from '@/stores/classrooms'
 import { toTypedSchema } from '@vee-validate/zod'
-import { Plus, School, UserCircle } from 'lucide-vue-next'
+import { Plus, School, UserCircle, Globe } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import * as z from 'zod'
 
 const classroomStore = useClassroomStore()
 const authStore = useAuthStore()
 const { goToClassroom } = useNavigation()
+const router = useRouter()
 
 const isJoinDialogOpen = ref(false)
 const hasAttemptSubmit = ref(false)
 const isSubmitting = computed(() => classroomStore.loading)
+
+const goToPublicClassrooms = () => {
+  router.push({ name: 'public-classrooms' })
+}
 
 // Form Schema
 const formSchema = toTypedSchema(
