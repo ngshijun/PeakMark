@@ -40,8 +40,17 @@
             <div
               v-for="classroom in classroomStore.teacherClassrooms"
               :key="classroom.id"
-              class="group rounded-lg border bg-card hover:shadow-lg transition-shadow"
+              class="group rounded-lg border bg-card hover:shadow-lg transition-shadow relative"
             >
+              <!-- Collaborator Badge -->
+              <Badge
+                v-if="classroom.userRole === 'collaborator'"
+                variant="secondary"
+                class="absolute top-3 right-3"
+              >
+                Collaborator
+              </Badge>
+
               <div class="p-6 space-y-4">
                 <!-- Classroom Info -->
                 <div class="space-y-2">
@@ -152,7 +161,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { useNavigation } from '@/composables/useNavigation'
 import ClassroomSelectionLayout from '@/layouts/ClassroomSelectionLayout.vue'
 import { useAuthStore } from '@/stores/auth'
-import { useClassroomStore, type ClassroomWithMemberCount } from '@/stores/classrooms'
+import { useClassroomStore, type ClassroomWithRole } from '@/stores/classrooms'
+import { Badge } from '@/components/ui/badge'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Plus, School, Users } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
@@ -229,7 +239,7 @@ const closeDialog = () => {
   isDialogOpen.value = false
 }
 
-const selectClassroom = (classroom: ClassroomWithMemberCount) => {
+const selectClassroom = (classroom: ClassroomWithRole) => {
   goToClassroom(classroom)
 }
 

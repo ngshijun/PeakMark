@@ -6,6 +6,8 @@ import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
 /**
  * Classroom access guard
  * Verifies user has access to the classroom in the route
+ * - Teachers: Must be owner OR collaborator
+ * - Students: Must be a member
  * Optimized: Checks cached store data first before making DB queries
  */
 export async function classroomAccessGuard(

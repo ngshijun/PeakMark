@@ -213,7 +213,6 @@
               </button>
             </div>
 
-
             <div
               v-if="showingResult && currentQuestion.explanation"
               class="p-4 rounded-lg border bg-muted/30"

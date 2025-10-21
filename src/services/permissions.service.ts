@@ -1,6 +1,7 @@
 import type { RouteLocationNormalized } from 'vue-router'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabaseClient'
+import { classroomService } from './api/classroom.service'
 
 /**
  * Permission and authorization service
@@ -9,30 +10,29 @@ import { supabase } from '@/lib/supabaseClient'
 export class PermissionsService {
   /**
    * Check if a user has access to a classroom
-   * - Teachers: Must own the classroom
+   * - Teachers: Must own the classroom OR be a collaborator
    * - Students: Must be a member of the classroom
    * - Admins: Have access to all classrooms
    */
   async canAccessClassroom(userId: string, classroomId: string, role: string): Promise<boolean> {
     try {
-      // Teachers: check if they own the classroom
+      // Teachers: check if they own the classroom OR are a collaborator
       if (role === 'teacher') {
-        const { data } = await supabase
-          .from('classrooms')
-          .select('id')
-          .eq('id', classroomId)
-          .eq('teacher_id', userId)
-          .maybeSingle()
-        return !!data
+        const isOwner = await classroomService.isOwner(classroomId, userId)
+        if (isOwner) return true
+
+        const isCollaborator = await classroomService.isCollaborator(classroomId, userId)
+        return isCollaborator
       }
 
-      // Students: check if they are a member
+      // Students: check if they are a member (role = 'student')
       if (role === 'student') {
         const { data } = await supabase
           .from('classroom_members')
           .select('id')
           .eq('classroom_id', classroomId)
-          .eq('student_id', userId)
+          .eq('user_id', userId)
+          .eq('role', 'student')
           .maybeSingle()
         return !!data
       }
@@ -76,26 +76,38 @@ export class PermissionsService {
 
   /**
    * Check if user can manage questions in a classroom
-   * Only teachers who own the classroom or admins can manage questions
+   * Teachers who own the classroom or are collaborators can manage questions
    */
   async canManageQuestions(userId: string, classroomId: string, role: string): Promise<boolean> {
-    return this.canManageClassroom(userId, classroomId, role)
+    if (role === 'admin') {
+      return true
+    }
+
+    if (role === 'teacher') {
+      const isOwner = await classroomService.isOwner(classroomId, userId)
+      if (isOwner) return true
+
+      const isCollaborator = await classroomService.isCollaborator(classroomId, userId)
+      return isCollaborator
+    }
+
+    return false
   }
 
   /**
    * Check if user can manage videos in a classroom
-   * Only teachers who own the classroom or admins can manage videos
+   * Teachers who own the classroom or are collaborators can manage videos
    */
   async canManageVideos(userId: string, classroomId: string, role: string): Promise<boolean> {
-    return this.canManageClassroom(userId, classroomId, role)
+    return this.canManageQuestions(userId, classroomId, role)
   }
 
   /**
    * Check if user can view students in a classroom
-   * Teachers who own the classroom and admins can view students
+   * Teachers who own the classroom or are collaborators can view students
    */
   async canViewStudents(userId: string, classroomId: string, role: string): Promise<boolean> {
-    return this.canManageClassroom(userId, classroomId, role)
+    return this.canManageQuestions(userId, classroomId, role)
   }
 
   /**
@@ -172,6 +184,39 @@ export class PermissionsService {
    */
   isAdmin(user: User | null): boolean {
     return user?.user_metadata?.role === 'admin'
+  }
+
+  /**
+   * Check if user is the owner of a classroom
+   */
+  async isClassroomOwner(userId: string, classroomId: string): Promise<boolean> {
+    return classroomService.isOwner(classroomId, userId)
+  }
+
+  /**
+   * Check if user is a collaborator in a classroom
+   */
+  async isClassroomCollaborator(userId: string, classroomId: string): Promise<boolean> {
+    return classroomService.isCollaborator(classroomId, userId)
+  }
+
+  /**
+   * Check if user can manage collaborators (only owners)
+   */
+  async canManageCollaborators(
+    userId: string,
+    classroomId: string,
+    role: string,
+  ): Promise<boolean> {
+    if (role === 'admin') {
+      return true
+    }
+
+    if (role === 'teacher') {
+      return classroomService.isOwner(classroomId, userId)
+    }
+
+    return false
   }
 }
 

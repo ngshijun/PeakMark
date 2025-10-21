@@ -14,24 +14,27 @@ export type Database = {
           created_at: string
           id: string
           joined_at: string
-          student_id: string
+          role: string | null
           updated_at: string
+          user_id: string
         }
         Insert: {
           classroom_id: string
           created_at?: string
           id?: string
           joined_at?: string
-          student_id: string
+          role?: string | null
           updated_at?: string
+          user_id: string
         }
         Update: {
           classroom_id?: string
           created_at?: string
           id?: string
           joined_at?: string
-          student_id?: string
+          role?: string | null
           updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -42,8 +45,8 @@ export type Database = {
             referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'classroom_members_student_id_fkey'
-            columns: ['student_id']
+            foreignKeyName: 'classroom_members_user_id_fkey'
+            columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'users'
             referencedColumns: ['id']
@@ -547,6 +550,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string | null
           dob: string | null
+          email: string | null
           full_name: string
           id: string
           role: string | null
@@ -556,6 +560,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           dob?: string | null
+          email?: string | null
           full_name: string
           id: string
           role?: string | null
@@ -565,6 +570,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           dob?: string | null
+          email?: string | null
           full_name?: string
           id?: string
           role?: string | null

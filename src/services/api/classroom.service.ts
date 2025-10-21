@@ -28,16 +28,33 @@ export interface StudentWithStats {
   avatar_url: string | null
 }
 
+export interface CollaboratorWithUser {
+  id: string
+  user_id: string
+  classroom_id: string
+  joined_at: string
+  users?: {
+    id: string
+    full_name: string
+    avatar_url: string | null
+  }
+}
+
+export interface ClassroomWithRole extends ClassroomWithMemberCount {
+  userRole?: 'owner' | 'collaborator'
+}
+
 /**
  * Classroom service
  * Handles all classroom-related API operations
  */
 export class ClassroomService extends BaseService {
   /**
-   * Get all classrooms created by a teacher
+   * Get all classrooms created by a teacher (owned + collaborated)
    */
-  async getTeacherClassrooms(teacherId: string): Promise<ClassroomWithMemberCount[]> {
-    const { data, error } = await this.client
+  async getTeacherClassrooms(teacherId: string): Promise<ClassroomWithRole[]> {
+    // Get owned classrooms
+    const { data: ownedData, error: ownedError } = await this.client
       .from('classrooms')
       .select(
         `
@@ -48,19 +65,26 @@ export class ClassroomService extends BaseService {
       .eq('teacher_id', teacherId)
       .order('created_at', { ascending: false })
 
-    if (error) {
-      this.handleError(error)
+    if (ownedError) {
+      this.handleError(ownedError)
     }
 
-    return (data || []).map((classroom) => {
+    const ownedClassrooms: ClassroomWithRole[] = (ownedData || []).map((classroom) => {
       const rawData = classroom as unknown as Classroom & {
         classroom_members: { count: number }[] | null
       }
       return {
         ...rawData,
         member_count: rawData.classroom_members?.[0]?.count || 0,
+        userRole: 'owner' as const,
       }
     })
+
+    // Get collaborated classrooms
+    const collaboratedClassrooms = await this.getCollaboratedClassrooms(teacherId)
+
+    // Combine and return
+    return [...ownedClassrooms, ...collaboratedClassrooms]
   }
 
   /**
@@ -79,7 +103,8 @@ export class ClassroomService extends BaseService {
         )
       `,
       )
-      .eq('student_id', studentId)
+      .eq('user_id', studentId)
+      .eq('role', 'student')
       .order('joined_at', { ascending: false })
 
     if (error) {
@@ -140,7 +165,8 @@ export class ClassroomService extends BaseService {
       const { data: memberships } = await this.client
         .from('classroom_members')
         .select('classroom_id')
-        .eq('student_id', studentId)
+        .eq('user_id', studentId)
+        .eq('role', 'student')
 
       const memberClassroomIds = new Set(memberships?.map((m) => m.classroom_id) || [])
       return classrooms.filter((c) => !memberClassroomIds.has(c.id))
@@ -220,7 +246,7 @@ export class ClassroomService extends BaseService {
   }
 
   /**
-   * Get all members of a classroom
+   * Get all members of a classroom (students only)
    */
   async getClassroomMembers(classroomId: string): Promise<ClassroomMemberWithUser[]> {
     const { data, error } = await this.client
@@ -228,7 +254,7 @@ export class ClassroomService extends BaseService {
       .select(
         `
         *,
-        users!classroom_members_student_id_fkey(
+        users!classroom_members_user_id_fkey(
           id,
           full_name,
           created_at
@@ -236,6 +262,7 @@ export class ClassroomService extends BaseService {
       `,
       )
       .eq('classroom_id', classroomId)
+      .eq('role', 'student')
       .order('joined_at', { ascending: false })
 
     if (error) {
@@ -263,7 +290,7 @@ export class ClassroomService extends BaseService {
       .select(
         `
         joined_at,
-        users!classroom_members_student_id_fkey(
+        users!classroom_members_user_id_fkey(
           id,
           full_name,
           avatar_url
@@ -271,6 +298,7 @@ export class ClassroomService extends BaseService {
       `,
       )
       .eq('classroom_id', classroomId)
+      .eq('role', 'student')
       .order('joined_at', { ascending: false })
 
     if (error) {
@@ -321,7 +349,8 @@ export class ClassroomService extends BaseService {
       .from('classroom_members')
       .insert({
         classroom_id: classroomId,
-        student_id: studentId,
+        user_id: studentId,
+        role: 'student',
       })
       .select()
       .single()
@@ -341,7 +370,8 @@ export class ClassroomService extends BaseService {
       .from('classroom_members')
       .delete()
       .eq('classroom_id', classroomId)
-      .eq('student_id', studentId)
+      .eq('user_id', studentId)
+      .eq('role', 'student')
 
     if (error) {
       this.handleError(error)
@@ -356,7 +386,8 @@ export class ClassroomService extends BaseService {
       .from('classroom_members')
       .select('id')
       .eq('classroom_id', classroomId)
-      .eq('student_id', studentId)
+      .eq('user_id', studentId)
+      .eq('role', 'student')
       .maybeSingle()
 
     if (error) {
@@ -375,6 +406,148 @@ export class ClassroomService extends BaseService {
       .select('id')
       .eq('id', classroomId)
       .eq('allow_new_students', true)
+      .maybeSingle()
+
+    if (error) {
+      return false
+    }
+
+    return !!data
+  }
+
+  /**
+   * Get classrooms where teacher is a collaborator
+   */
+  async getCollaboratedClassrooms(teacherId: string): Promise<ClassroomWithRole[]> {
+    const { data, error } = await this.client
+      .from('classroom_members')
+      .select(
+        `
+        classrooms!classroom_members_classroom_id_fkey(
+          *,
+          classroom_members(count),
+          users!classrooms_teacher_id_fkey(
+            full_name
+          )
+        )
+      `,
+      )
+      .eq('user_id', teacherId)
+      .eq('role', 'collaborator')
+      .order('joined_at', { ascending: false })
+
+    if (error) {
+      this.handleError(error)
+    }
+
+    return (data || []).map((member) => {
+      const rawData = member as unknown as {
+        classrooms: Classroom & {
+          classroom_members: { count: number }[] | null
+          users?: { full_name?: string }
+        }
+      }
+      return {
+        ...rawData.classrooms,
+        member_count: rawData.classrooms.classroom_members?.[0]?.count || 0,
+        teacher_name: rawData.classrooms.users?.full_name || 'Unknown Teacher',
+        userRole: 'collaborator' as const,
+      }
+    })
+  }
+
+  /**
+   * Get all collaborators for a classroom
+   */
+  async getCollaborators(classroomId: string): Promise<CollaboratorWithUser[]> {
+    const { data, error } = await this.client
+      .from('classroom_members')
+      .select(
+        `
+        *,
+        users!classroom_members_user_id_fkey(
+          id,
+          full_name,
+          avatar_url
+        )
+      `,
+      )
+      .eq('classroom_id', classroomId)
+      .eq('role', 'collaborator')
+      .order('joined_at', { ascending: false })
+
+    if (error) {
+      this.handleError(error)
+    }
+
+    return data || []
+  }
+
+  /**
+   * Add a teacher as collaborator to a classroom
+   */
+  async addCollaborator(classroomId: string, teacherId: string): Promise<ClassroomMember> {
+    const { data, error } = await this.client
+      .from('classroom_members')
+      .insert({
+        classroom_id: classroomId,
+        user_id: teacherId,
+        role: 'collaborator',
+      })
+      .select()
+      .single()
+
+    if (error) {
+      this.handleError(error)
+    }
+
+    return data
+  }
+
+  /**
+   * Remove a collaborator from a classroom
+   */
+  async removeCollaborator(classroomId: string, teacherId: string): Promise<void> {
+    const { error } = await this.client
+      .from('classroom_members')
+      .delete()
+      .eq('classroom_id', classroomId)
+      .eq('user_id', teacherId)
+      .eq('role', 'collaborator')
+
+    if (error) {
+      this.handleError(error)
+    }
+  }
+
+  /**
+   * Check if a user is a collaborator in a classroom
+   */
+  async isCollaborator(classroomId: string, userId: string): Promise<boolean> {
+    const { data, error } = await this.client
+      .from('classroom_members')
+      .select('id')
+      .eq('classroom_id', classroomId)
+      .eq('user_id', userId)
+      .eq('role', 'collaborator')
+      .maybeSingle()
+
+    if (error) {
+      return false
+    }
+
+    return !!data
+  }
+
+  /**
+   * Check if a user is the owner of a classroom
+   */
+  async isOwner(classroomId: string, userId: string): Promise<boolean> {
+    const { data, error } = await this.client
+      .from('classrooms')
+      .select('id')
+      .eq('id', classroomId)
+      .eq('teacher_id', userId)
       .maybeSingle()
 
     if (error) {

@@ -41,7 +41,16 @@
         <div class="rounded-lg border bg-card p-6 space-y-4">
           <div>
             <h2 class="text-xl font-semibold">Classroom Settings</h2>
-            <p class="text-sm text-muted-foreground">Update your classroom configuration</p>
+            <p class="text-sm text-muted-foreground">
+              {{
+                isCollaborator
+                  ? 'View classroom configuration (read-only)'
+                  : 'Update your classroom configuration'
+              }}
+            </p>
+            <Badge v-if="isCollaborator" variant="secondary" class="mt-2">
+              Collaborator - Settings are read-only
+            </Badge>
           </div>
 
           <form @submit="onSubmit" class="space-y-4">
@@ -57,7 +66,7 @@
                   <Input
                     v-bind="componentField"
                     placeholder="e.g. Grade 10 Mathematics"
-                    :disabled="isSubmitting"
+                    :disabled="isSubmitting || isCollaborator"
                   />
                 </FormControl>
                 <FormMessage />
@@ -77,7 +86,7 @@
                     v-bind="componentField"
                     placeholder="Enter classroom description (optional)"
                     rows="3"
-                    :disabled="isSubmitting"
+                    :disabled="isSubmitting || isCollaborator"
                   />
                 </FormControl>
                 <FormMessage />
@@ -102,7 +111,7 @@
                     <Switch
                       :model-value="value"
                       @update:model-value="handleChange"
-                      :disabled="isSubmitting"
+                      :disabled="isSubmitting || isCollaborator"
                     />
                   </FormControl>
                 </div>
@@ -127,14 +136,14 @@
                     <Switch
                       :model-value="value"
                       @update:model-value="handleChange"
-                      :disabled="isSubmitting"
+                      :disabled="isSubmitting || isCollaborator"
                     />
                   </FormControl>
                 </div>
               </FormItem>
             </FormField>
 
-            <div class="flex justify-end">
+            <div v-if="!isCollaborator" class="flex justify-end">
               <Button type="submit" :disabled="isSubmitting" @click="hasAttemptSubmit = true">
                 {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
               </Button>
@@ -142,8 +151,80 @@
           </form>
         </div>
 
-        <!-- Danger Zone -->
-        <div class="rounded-lg border border-destructive bg-card p-6 space-y-4">
+        <!-- Collaborators Section (Owner only) -->
+        <div v-if="isOwner" class="rounded-lg border bg-card p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl font-semibold">Collaborators</h2>
+              <p class="text-sm text-muted-foreground">
+                Invite other teachers to collaborate on this classroom
+              </p>
+            </div>
+            <Button @click="openInviteDialog">
+              <UserPlus class="mr-2 h-4 w-4" />
+              Invite Collaborator
+            </Button>
+          </div>
+
+          <!-- Collaborators List -->
+          <div v-if="classroomStore.collaborators.length > 0" class="space-y-2">
+            <div
+              v-for="collaborator in classroomStore.collaborators"
+              :key="collaborator.id"
+              class="flex items-center justify-between rounded-lg border p-4"
+            >
+              <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                  <span class="text-sm font-medium">
+                    {{ collaborator.users?.full_name?.charAt(0).toUpperCase() || '?' }}
+                  </span>
+                </div>
+                <div>
+                  <p class="text-sm font-medium">
+                    {{ collaborator.users?.full_name || 'Unknown' }}
+                  </p>
+                  <p class="text-xs text-muted-foreground">
+                    Joined {{ new Date(collaborator.joined_at).toLocaleDateString() }}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                @click="handleRemoveCollaborator(collaborator.user_id)"
+                :disabled="classroomStore.loading"
+              >
+                <UserMinus class="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <div v-else class="text-center py-8 text-sm text-muted-foreground">
+            No collaborators yet. Invite teachers to help manage this classroom.
+          </div>
+        </div>
+
+        <!-- Leave Classroom (Collaborator only) -->
+        <div
+          v-if="isCollaborator && canLeaveClassroom"
+          class="rounded-lg border bg-card p-6 space-y-4"
+        >
+          <div>
+            <h2 class="text-xl font-semibold">Leave Classroom</h2>
+            <p class="text-sm text-muted-foreground">
+              You can leave this classroom at any time. You won't have access to it anymore.
+            </p>
+          </div>
+          <div class="flex items-center justify-between rounded-lg border p-4">
+            <div class="space-y-0.5">
+              <div class="text-sm font-medium">Leave as Collaborator</div>
+              <div class="text-sm text-muted-foreground">Remove yourself from this classroom</div>
+            </div>
+            <Button variant="destructive" @click="handleLeaveClassroom"> Leave Classroom </Button>
+          </div>
+        </div>
+
+        <!-- Danger Zone (Owner only) -->
+        <div v-if="isOwner" class="rounded-lg border border-destructive bg-card p-6 space-y-4">
           <div>
             <h2 class="text-xl font-semibold text-destructive">Danger Zone</h2>
             <p class="text-sm text-muted-foreground">Irreversible actions for this classroom</p>
@@ -188,6 +269,46 @@
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <!-- Invite Collaborator Dialog -->
+      <Dialog :open="isInviteDialogOpen" @update:open="closeInviteDialog">
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite Collaborator</DialogTitle>
+            <DialogDescription>
+              Enter the email address of the teacher you want to invite as a collaborator.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div class="space-y-4 py-4">
+            <div class="space-y-2">
+              <label class="text-sm font-medium">Email Address</label>
+              <Input
+                v-model="inviteEmail"
+                type="email"
+                placeholder="teacher@example.com"
+                :disabled="classroomStore.loading"
+                @keyup.enter="handleInviteCollaborator"
+              />
+              <p class="text-xs text-muted-foreground">
+                The teacher must have an account on the platform.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" @click="closeInviteDialog" :disabled="classroomStore.loading">
+              Cancel
+            </Button>
+            <Button
+              @click="handleInviteCollaborator"
+              :disabled="classroomStore.loading || !inviteEmail.trim()"
+            >
+              {{ classroomStore.loading ? 'Inviting...' : 'Send Invite' }}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   </MainLayout>
 </template>
@@ -207,26 +328,38 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
 import { useNavigation } from '@/composables/useNavigation'
+import { useClassroomRole } from '@/composables/useClassroomRole'
 import MainLayout from '@/layouts/MainLayout.vue'
+import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore } from '@/stores/classrooms'
 import type { Tables } from '@/types/database.types'
 import { toTypedSchema } from '@vee-validate/zod'
-import { Copy } from 'lucide-vue-next'
+import { Copy, UserMinus, UserPlus, X } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
 import * as z from 'zod'
+import { getErrorMessage } from '@/utils/errors'
 
 type Classroom = Tables<'classrooms'>
 
 const route = useRoute()
+const authStore = useAuthStore()
 const classroomStore = useClassroomStore()
 const { goToClassroomSelection } = useNavigation()
 
+const classroomId = computed(() => route.params.classroomId as string)
+const { isOwner, isCollaborator, canEditSettings, canLeaveClassroom } = useClassroomRole(
+  classroomId.value,
+)
+
 const classroom = ref<Classroom | null>(null)
 const isDeleteDialogOpen = ref(false)
+const isInviteDialogOpen = ref(false)
+const inviteEmail = ref('')
 const hasAttemptSubmit = ref(false)
 
 // Breadcrumbs
@@ -315,11 +448,58 @@ const confirmDelete = async () => {
   }
 }
 
+// Collaborator management
+const openInviteDialog = () => {
+  inviteEmail.value = ''
+  isInviteDialogOpen.value = true
+}
+
+const closeInviteDialog = () => {
+  if (classroomStore.loading) return
+  inviteEmail.value = ''
+  isInviteDialogOpen.value = false
+}
+
+const handleInviteCollaborator = async () => {
+  if (!classroom.value || !inviteEmail.value.trim()) return
+
+  try {
+    await classroomStore.inviteCollaborator(classroom.value.id, inviteEmail.value.trim())
+    toast.success('Collaborator invited successfully')
+    closeInviteDialog()
+  } catch (error) {
+    toast.error(getErrorMessage(error))
+  }
+}
+
+const handleRemoveCollaborator = async (userId: string) => {
+  if (!classroom.value) return
+
+  try {
+    await classroomStore.removeCollaborator(classroom.value.id, userId)
+    toast.success('Collaborator removed successfully')
+  } catch (error) {
+    toast.error(getErrorMessage(error))
+  }
+}
+
+const handleLeaveClassroom = async () => {
+  if (!classroom.value || !authStore.user) return
+
+  try {
+    await classroomStore.leaveAsCollaborator(authStore.user.id, classroom.value.id)
+    toast.success('You have left the classroom')
+    goToClassroomSelection()
+  } catch (error) {
+    toast.error(getErrorMessage(error))
+  }
+}
+
 onMounted(async () => {
   try {
-    classroom.value = await classroomStore.fetchClassroomSettings(
-      route.params.classroomId as string,
-    )
+    const classroomIdParam = route.params.classroomId as string
+
+    classroom.value = await classroomStore.fetchClassroomSettings(classroomIdParam)
     resetForm({
       values: {
         name: classroom.value.name,
@@ -328,6 +508,11 @@ onMounted(async () => {
         allow_new_students: classroom.value.allow_new_students,
       },
     })
+
+    // Fetch collaborators if user is owner
+    if (isOwner.value) {
+      await classroomStore.fetchCollaborators(classroomIdParam)
+    }
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to load classroom settings'

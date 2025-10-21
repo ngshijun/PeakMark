@@ -1,6 +1,10 @@
 import { classroomService } from '@/services/api/classroom.service'
 import { expService } from '@/services/api/exp.service'
-import type { ClassroomWithMemberCount } from '@/services/api/classroom.service'
+import type {
+  ClassroomWithMemberCount,
+  ClassroomWithRole,
+  CollaboratorWithUser,
+} from '@/services/api/classroom.service'
 import type { Tables, TablesInsert, TablesUpdate } from '@/types/database.types'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
@@ -11,12 +15,13 @@ type ClassroomInsert = TablesInsert<'classrooms'>
 type ClassroomUpdate = TablesUpdate<'classrooms'>
 type ExpRow = Tables<'student_exp'>
 
-export type { ClassroomWithMemberCount }
+export type { ClassroomWithMemberCount, ClassroomWithRole }
 
 export const useClassroomStore = defineStore('classroom', () => {
-  const teacherClassrooms = ref<ClassroomWithMemberCount[]>([])
+  const teacherClassrooms = ref<ClassroomWithRole[]>([])
   const studentClassrooms = ref<ClassroomWithMemberCount[]>([])
   const publicClassrooms = ref<ClassroomWithMemberCount[]>([])
+  const collaborators = ref<CollaboratorWithUser[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -296,6 +301,104 @@ export const useClassroomStore = defineStore('classroom', () => {
     }
   }
 
+  // Fetch collaborators for a classroom
+  const fetchCollaborators = async (classroomId: string) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const data = await classroomService.getCollaborators(classroomId)
+      collaborators.value = data
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Invite a collaborator by email
+  const inviteCollaborator = async (classroomId: string, email: string) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      // Import userService here to avoid circular dependency
+      const { userService } = await import('@/services/api/user.service')
+
+      // Look up user by email
+      const user = await userService.getUserByEmail(email)
+
+      if (!user) {
+        error.value = 'User not found'
+        throw new Error('User not found')
+      }
+
+      if (user.role !== 'teacher') {
+        error.value = 'User is not a teacher'
+        throw new Error('User is not a teacher')
+      }
+
+      // Check if already a collaborator
+      const isAlreadyCollaborator = await classroomService.isCollaborator(classroomId, user.id)
+      if (isAlreadyCollaborator) {
+        error.value = 'User is already a collaborator'
+        throw new Error('User is already a collaborator')
+      }
+
+      // Check if user is the owner
+      const isOwnerUser = await classroomService.isOwner(classroomId, user.id)
+      if (isOwnerUser) {
+        error.value = 'Cannot invite the classroom owner as collaborator'
+        throw new Error('Cannot invite the classroom owner as collaborator')
+      }
+
+      // Add as collaborator
+      await classroomService.addCollaborator(classroomId, user.id)
+
+      // Refresh collaborators list
+      await fetchCollaborators(classroomId)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Remove a collaborator
+  const removeCollaborator = async (classroomId: string, teacherId: string) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      await classroomService.removeCollaborator(classroomId, teacherId)
+      collaborators.value = collaborators.value.filter((c) => c.user_id !== teacherId)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Leave as collaborator
+  const leaveAsCollaborator = async (teacherId: string, classroomId: string) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      await classroomService.removeCollaborator(classroomId, teacherId)
+      teacherClassrooms.value = teacherClassrooms.value.filter((c) => c.id !== classroomId)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   // Clear error
   const clearError = () => {
     error.value = null
@@ -316,6 +419,7 @@ export const useClassroomStore = defineStore('classroom', () => {
     teacherClassrooms,
     studentClassrooms,
     publicClassrooms,
+    collaborators,
     loading,
     error,
     studentExp,
@@ -334,6 +438,10 @@ export const useClassroomStore = defineStore('classroom', () => {
     fetchStudentExp,
     updateStudentExp,
     addStudentExp,
+    fetchCollaborators,
+    inviteCollaborator,
+    removeCollaborator,
+    leaveAsCollaborator,
     clearError,
     isStudentMemberFromStore,
     isTeacherOwnerFromStore,
