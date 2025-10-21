@@ -38,7 +38,6 @@
               <TableRow>
                 <TableHead class="min-w-[15rem]">Student Name</TableHead>
                 <TableHead class="w-[10rem]">Experience (XP)</TableHead>
-                <TableHead class="w-[10rem]">ELO Rating</TableHead>
                 <TableHead class="w-[12rem]">Joined Date</TableHead>
               </TableRow>
             </TableHeader>
@@ -48,14 +47,13 @@
                 <TableRow v-for="i in 8" :key="i">
                   <TableCell><Skeleton class="h-5 w-full" /></TableCell>
                   <TableCell><Skeleton class="h-5 w-20" /></TableCell>
-                  <TableCell><Skeleton class="h-5 w-20" /></TableCell>
                   <TableCell><Skeleton class="h-5 w-24" /></TableCell>
                 </TableRow>
               </template>
 
               <!-- Empty State -->
               <TableRow v-else-if="filteredStudents.length === 0">
-                <TableCell colspan="4" class="h-24 text-center">
+                <TableCell colspan="3" class="h-24 text-center">
                   <p class="text-sm text-muted-foreground">
                     No students found. Students will appear here once they join your classroom.
                   </p>
@@ -79,15 +77,6 @@
                     <span class="text-sm font-medium">{{ student.exp.toLocaleString() }}</span>
                     <span class="text-xs text-muted-foreground">XP</span>
                   </div>
-                </TableCell>
-                <TableCell>
-                  <span
-                    v-if="student.elo_rating !== null"
-                    class="text-sm font-medium px-2 py-1 rounded bg-secondary/10 text-secondary-foreground"
-                  >
-                    {{ student.elo_rating }}
-                  </span>
-                  <span v-else class="text-sm text-muted-foreground">-</span>
                 </TableCell>
                 <TableCell>
                   <span class="text-xs text-muted-foreground">

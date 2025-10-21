@@ -59,7 +59,7 @@ export class ClassroomService extends BaseService {
       .select(
         `
         *,
-        classroom_members(count)
+        classroom_members!classroom_members_classroom_id_fkey(role)
       `,
       )
       .eq('teacher_id', teacherId)
@@ -71,11 +71,14 @@ export class ClassroomService extends BaseService {
 
     const ownedClassrooms: ClassroomWithRole[] = (ownedData || []).map((classroom) => {
       const rawData = classroom as unknown as Classroom & {
-        classroom_members: { count: number }[] | null
+        classroom_members: { role: string }[] | null
       }
+      // Count only students
+      const studentCount =
+        rawData.classroom_members?.filter((m) => m.role === 'student').length || 0
       return {
         ...rawData,
-        member_count: rawData.classroom_members?.[0]?.count || 0,
+        member_count: studentCount,
         userRole: 'owner' as const,
       }
     })
@@ -132,7 +135,7 @@ export class ClassroomService extends BaseService {
       .select(
         `
         *,
-        classroom_members(count),
+        classroom_members!classroom_members_classroom_id_fkey(role),
         users!classrooms_teacher_id_fkey(
           full_name
         )
@@ -150,12 +153,15 @@ export class ClassroomService extends BaseService {
 
     const classrooms = (data || []).map((classroom) => {
       const rawData = classroom as unknown as Classroom & {
-        classroom_members: { count: number }[] | null
+        classroom_members: { role: string }[] | null
         users?: { full_name?: string }
       }
+      // Count only students
+      const studentCount =
+        rawData.classroom_members?.filter((m) => m.role === 'student').length || 0
       return {
         ...rawData,
-        member_count: rawData.classroom_members?.[0]?.count || 0,
+        member_count: studentCount,
         teacher_name: rawData.users?.full_name || 'Unknown Teacher',
       }
     })
@@ -425,7 +431,7 @@ export class ClassroomService extends BaseService {
         `
         classrooms!classroom_members_classroom_id_fkey(
           *,
-          classroom_members(count),
+          classroom_members!classroom_members_classroom_id_fkey(role),
           users!classrooms_teacher_id_fkey(
             full_name
           )
@@ -443,13 +449,16 @@ export class ClassroomService extends BaseService {
     return (data || []).map((member) => {
       const rawData = member as unknown as {
         classrooms: Classroom & {
-          classroom_members: { count: number }[] | null
+          classroom_members: { role: string }[] | null
           users?: { full_name?: string }
         }
       }
+      // Count only students
+      const studentCount =
+        rawData.classrooms.classroom_members?.filter((m) => m.role === 'student').length || 0
       return {
         ...rawData.classrooms,
-        member_count: rawData.classrooms.classroom_members?.[0]?.count || 0,
+        member_count: studentCount,
         teacher_name: rawData.classrooms.users?.full_name || 'Unknown Teacher',
         userRole: 'collaborator' as const,
       }
