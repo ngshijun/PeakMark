@@ -205,7 +205,6 @@ export class QuestionService extends BaseService {
     recentQuestionIds: string[] = [],
     eloRange: number = 150,
   ): Promise<NextQuestionResult | null> {
-    console.log('test', studentId, categoryId, classroomId, recentQuestionIds, eloRange)
     const { data, error } = await this.client.rpc('get_next_question', {
       p_student_id: studentId,
       p_category_id: categoryId,
@@ -214,8 +213,6 @@ export class QuestionService extends BaseService {
       p_elo_range: eloRange,
     })
     if (error) this.handleError(error)
-
-    console.log('data', data)
 
     // The function returns an array, get first result
     if (!data || data.length === 0) return null

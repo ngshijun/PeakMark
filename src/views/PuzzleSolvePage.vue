@@ -314,8 +314,6 @@ const selectClue = (clue: PlacedWord) => {
   currentClue.value = clue
   currentDirection.value = clue.direction
 
-  console.log('Clue selected:', clue.number, clue.direction)
-
   // Focus the first cell of the clue with the correct direction
   if (gridRef.value) {
     gridRef.value.focusCell(clue.row, clue.col, clue.direction)

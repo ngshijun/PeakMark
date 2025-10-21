@@ -267,7 +267,6 @@ export type Database = {
           created_at: string
           id: string
           is_correct: boolean
-          next_review_date: string | null
           question_elo_after: number | null
           question_elo_before: number | null
           question_id: string
@@ -282,7 +281,6 @@ export type Database = {
           created_at?: string
           id?: string
           is_correct: boolean
-          next_review_date?: string | null
           question_elo_after?: number | null
           question_elo_before?: number | null
           question_id: string
@@ -297,7 +295,6 @@ export type Database = {
           created_at?: string
           id?: string
           is_correct?: boolean
-          next_review_date?: string | null
           question_elo_after?: number | null
           question_elo_before?: number | null
           question_id?: string

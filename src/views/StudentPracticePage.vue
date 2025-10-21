@@ -47,10 +47,6 @@
             </CardHeader>
             <CardContent class="space-y-3">
               <div class="flex items-center justify-between">
-                <span class="text-sm text-muted-foreground">Your ELO</span>
-                <span class="text-lg font-bold">{{ getStudentEloForCategory(category.id) }}</span>
-              </div>
-              <div class="flex items-center justify-between">
                 <span class="text-sm text-muted-foreground">Accuracy</span>
                 <span class="text-sm font-medium">{{ getAccuracyForCategory(category.id) }}%</span>
               </div>
@@ -84,7 +80,7 @@
         </div>
 
         <!-- Stats Bar -->
-        <div class="grid gap-4 grid-cols-2 md:grid-cols-4">
+        <div class="grid gap-4 grid-cols-3">
           <Card>
             <CardHeader class="pb-2">
               <CardDescription>Current Streak</CardDescription>
@@ -113,47 +109,34 @@
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader class="pb-2">
-              <CardDescription>Last ELO Change</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div
-                :class="[
-                  'text-2xl font-bold',
-                  questionStore.practiceStats.lastEloChange > 0
-                    ? 'text-green-600'
-                    : questionStore.practiceStats.lastEloChange < 0
-                      ? 'text-red-600'
-                      : '',
-                ]"
-              >
-                {{ questionStore.practiceStats.lastEloChange > 0 ? '+' : ''
-                }}{{ questionStore.practiceStats.lastEloChange || '-' }}
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         <!-- Question Card -->
-        <Card v-if="currentQuestion && !showingResult" class="flex-1">
-          <CardHeader>
-            <div class="flex items-center justify-between">
-              <Badge variant="secondary">ELO: {{ currentQuestion.question_elo }}</Badge>
-              <Badge
-                :class="
-                  currentQuestion.expected_success_rate > 0.7
-                    ? 'bg-green-100 text-green-700'
-                    : currentQuestion.expected_success_rate > 0.4
-                      ? 'bg-yellow-100 text-yellow-700'
-                      : 'bg-red-100 text-red-700'
-                "
-              >
-                {{ Math.round(currentQuestion.expected_success_rate * 100) }}% expected
-              </Badge>
-            </div>
-          </CardHeader>
+        <Card v-if="currentQuestion" class="flex-1">
           <CardContent class="space-y-6">
+            <!-- Result Feedback (shown after submission) -->
+            <div v-if="showingResult && lastResult" class="flex items-center gap-3">
+              <div
+                :class="[
+                  'p-2 rounded-full',
+                  lastResult.isCorrect ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600',
+                ]"
+              >
+                <CheckCircle v-if="lastResult.isCorrect" class="h-5 w-5" />
+                <XCircle v-else class="h-5 w-5" />
+              </div>
+              <div>
+                <h3 class="text-lg font-bold">
+                  {{ lastResult.isCorrect ? 'Correct!' : 'Incorrect' }}
+                </h3>
+                <p class="text-sm text-muted-foreground">
+                  {{
+                    lastResult.isCorrect ? 'Great job! Keep it up!' : 'Review the explanation below'
+                  }}
+                </p>
+              </div>
+            </div>
+
             <!-- Question Text -->
             <div class="prose dark:prose-invert max-w-none">
               <p class="text-lg font-medium">{{ currentQuestion.question_text }}</p>
@@ -174,31 +157,74 @@
                 v-for="(option, index) in currentQuestion.options"
                 :key="index"
                 @click="selectAnswer(index)"
+                :disabled="showingResult"
                 :class="[
                   'w-full text-left p-4 rounded-lg border-2 transition-all',
-                  selectedAnswer === index
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/50 hover:bg-muted/50',
+                  // Correct answer (green) - always show when submitted
+                  showingResult && index === currentQuestion.correct_answer
+                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                    : // Wrong answer (red) - show when user selected it and it's wrong
+                      showingResult &&
+                        index === selectedAnswer &&
+                        selectedAnswer !== currentQuestion.correct_answer
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                      : // Not submitted yet - normal styling
+                        selectedAnswer === index
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50 hover:bg-muted/50',
+                  showingResult && 'cursor-not-allowed',
                 ]"
               >
                 <div class="flex items-center gap-3">
                   <div
                     :class="[
                       'flex h-8 w-8 items-center justify-center rounded-full border-2 font-medium',
-                      selectedAnswer === index
-                        ? 'border-primary bg-primary text-primary-foreground'
-                        : 'border-border',
+                      // Correct answer icon
+                      showingResult && index === currentQuestion.correct_answer
+                        ? 'border-green-600 bg-green-600 text-white'
+                        : // Wrong answer icon
+                          showingResult &&
+                            index === selectedAnswer &&
+                            selectedAnswer !== currentQuestion.correct_answer
+                          ? 'border-red-600 bg-red-600 text-white'
+                          : // Not submitted yet
+                            selectedAnswer === index
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border',
                     ]"
                   >
                     {{ String.fromCharCode(65 + index) }}
                   </div>
                   <span class="flex-1">{{ option }}</span>
+                  <!-- Check/X icons when submitted -->
+                  <CheckCircle
+                    v-if="showingResult && index === currentQuestion.correct_answer"
+                    class="h-5 w-5 text-green-600"
+                  />
+                  <XCircle
+                    v-if="
+                      showingResult &&
+                      index === selectedAnswer &&
+                      selectedAnswer !== currentQuestion.correct_answer
+                    "
+                    class="h-5 w-5 text-red-600"
+                  />
                 </div>
               </button>
+            </div>
+
+            <!-- Explanation (shown after submission) -->
+            <div
+              v-if="showingResult && currentQuestion.explanation"
+              class="p-4 rounded-lg border bg-muted/30"
+            >
+              <p class="text-sm font-semibold mb-2">Explanation:</p>
+              <p class="text-sm">{{ currentQuestion.explanation }}</p>
             </div>
           </CardContent>
           <CardFooter>
             <Button
+              v-if="!showingResult"
               class="w-full"
               size="lg"
               :disabled="selectedAnswer === null || submitting"
@@ -206,72 +232,7 @@
             >
               {{ submitting ? 'Submitting...' : 'Submit Answer' }}
             </Button>
-          </CardFooter>
-        </Card>
-
-        <!-- Result Card -->
-        <Card v-else-if="showingResult && lastResult" class="flex-1">
-          <CardHeader>
-            <div class="flex items-center gap-3">
-              <div
-                :class="[
-                  'p-3 rounded-full',
-                  lastResult.isCorrect ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600',
-                ]"
-              >
-                <CheckCircle v-if="lastResult.isCorrect" class="h-8 w-8" />
-                <XCircle v-else class="h-8 w-8" />
-              </div>
-              <div>
-                <h3 class="text-2xl font-bold">
-                  {{ lastResult.isCorrect ? 'Correct!' : 'Incorrect' }}
-                </h3>
-                <p class="text-sm text-muted-foreground">
-                  Your ELO {{ lastResult.eloChange > 0 ? 'increased' : 'decreased' }} by
-                  {{ Math.abs(lastResult.eloChange) }}
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent class="space-y-4">
-            <!-- ELO Changes -->
-            <div class="grid grid-cols-2 gap-4 p-4 rounded-lg bg-muted/50">
-              <div>
-                <p class="text-sm text-muted-foreground">Your ELO</p>
-                <p class="text-xl font-bold">
-                  {{ lastResult.studentEloBefore }} → {{ lastResult.studentEloAfter }}
-                </p>
-              </div>
-              <div>
-                <p class="text-sm text-muted-foreground">Question ELO</p>
-                <p class="text-xl font-bold">
-                  {{ lastResult.questionEloBefore }} → {{ lastResult.questionEloAfter }}
-                </p>
-              </div>
-            </div>
-
-            <!-- Correct Answer -->
-            <div
-              v-if="!lastResult.isCorrect"
-              class="p-4 rounded-lg border bg-green-50 dark:bg-green-900/10"
-            >
-              <p class="text-sm font-semibold text-green-700 dark:text-green-400 mb-2">
-                Correct Answer:
-              </p>
-              <p class="font-medium">
-                {{ String.fromCharCode(65 + currentQuestion!.correct_answer) }}.
-                {{ currentQuestion!.options[currentQuestion!.correct_answer] }}
-              </p>
-            </div>
-
-            <!-- Explanation -->
-            <div v-if="currentQuestion!.explanation" class="p-4 rounded-lg border bg-card">
-              <p class="text-sm font-semibold mb-2">Explanation:</p>
-              <p class="text-sm text-muted-foreground">{{ currentQuestion!.explanation }}</p>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button class="w-full" size="lg" @click="nextQuestion">
+            <Button v-else class="w-full" size="lg" @click="nextQuestion">
               <ArrowRight class="mr-2 h-4 w-4" />
               Next Question
             </Button>
@@ -293,7 +254,6 @@
 </template>
 
 <script setup lang="ts">
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -346,11 +306,6 @@ const selectedCategoryName = computed(() => {
 })
 
 // Helper Functions
-const getStudentEloForCategory = (categoryId: string) => {
-  const studentElo = questionStore.studentElos.find((e) => e.category_id === categoryId)
-  return studentElo?.elo_rating || 1500
-}
-
 const getAccuracyForCategory = (categoryId: string) => {
   const studentElo = questionStore.studentElos.find((e) => e.category_id === categoryId)
   if (!studentElo || !studentElo.total_attempts) return 0
@@ -443,7 +398,7 @@ const nextQuestion = async () => {
   await loadNextQuestion()
 }
 
-const endPractice = () => {
+const endPractice = async () => {
   practiceStarted.value = false
   selectedCategoryId.value = ''
   selectedAnswer.value = null
@@ -451,6 +406,13 @@ const endPractice = () => {
   questionIndex.value = 0
   lastResult.value = null
   questionStore.clearPractice()
+
+  // Refresh student ELO data to update accuracy and questions attempted
+  try {
+    await questionStore.fetchStudentElosByClassroom(authStore.user!.id, selectedClassroomId.value!)
+  } catch (error) {
+    console.error('Error refreshing student stats:', error)
+  }
 }
 
 // Lifecycle
