@@ -196,7 +196,7 @@
                     {{ String.fromCharCode(65 + index) }}
                   </div>
                   <span class="flex-1">{{ option }}</span>
-                  <!-- Check/X icons when submitted -->
+
                   <CheckCircle
                     v-if="showingResult && index === currentQuestion.correct_answer"
                     class="h-5 w-5 text-green-600"
@@ -207,13 +207,13 @@
                       index === selectedAnswer &&
                       selectedAnswer !== currentQuestion.correct_answer
                     "
-                    class="h-5 w-5 text-red-600"
+                    class="h-5 text-red-600"
                   />
                 </div>
               </button>
             </div>
 
-            <!-- Explanation (shown after submission) -->
+
             <div
               v-if="showingResult && currentQuestion.explanation"
               class="p-4 rounded-lg border bg-muted/30"
