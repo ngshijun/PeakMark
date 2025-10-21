@@ -364,11 +364,21 @@ const getAttemptsForCategory = (categoryId: string) => {
 
 // Actions
 const selectCategory = async (categoryId: string) => {
-  selectedCategoryId.value = categoryId
-  questionStore.startPractice()
-  practiceStarted.value = true
-  questionIndex.value = 0
-  await loadNextQuestion()
+  try {
+    selectedCategoryId.value = categoryId
+    questionStore.startPractice()
+    practiceStarted.value = true
+    questionIndex.value = 0
+
+    // Ensure student_elo entry exists before starting practice
+    await questionStore.ensureStudentElo(authStore.user!.id, categoryId, selectedClassroomId.value!)
+
+    await loadNextQuestion()
+  } catch (error) {
+    console.error('Error starting practice:', error)
+    toast.error('Failed to start practice')
+    practiceStarted.value = false
+  }
 }
 
 const loadNextQuestion = async () => {

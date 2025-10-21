@@ -205,6 +205,7 @@ export class QuestionService extends BaseService {
     recentQuestionIds: string[] = [],
     eloRange: number = 150,
   ): Promise<NextQuestionResult | null> {
+    console.log('test', studentId, categoryId, classroomId, recentQuestionIds, eloRange)
     const { data, error } = await this.client.rpc('get_next_question', {
       p_student_id: studentId,
       p_category_id: categoryId,
@@ -212,8 +213,9 @@ export class QuestionService extends BaseService {
       p_recent_question_ids: recentQuestionIds,
       p_elo_range: eloRange,
     })
-
     if (error) this.handleError(error)
+
+    console.log('data', data)
 
     // The function returns an array, get first result
     if (!data || data.length === 0) return null
@@ -281,6 +283,41 @@ export class QuestionService extends BaseService {
 
     if (error) this.handleError(error)
     return data || []
+  }
+
+  /**
+   * Ensure a student_elo entry exists for the given student, category, and classroom
+   * If the entry doesn't exist, create it with default ELO of 1500
+   * @returns The existing or newly created StudentElo entry
+   */
+  async ensureStudentElo(
+    studentId: string,
+    categoryId: string,
+    classroomId: string,
+  ): Promise<StudentElo> {
+    // First, check if entry exists
+    const existing = await this.getStudentElo(studentId, categoryId, classroomId)
+
+    if (existing) {
+      return existing
+    }
+
+    // If not, create a new entry with default ELO
+    const { data, error } = await this.client
+      .from('student_elo')
+      .insert({
+        user_id: studentId,
+        category_id: categoryId,
+        classroom_id: classroomId,
+        elo_rating: 1500,
+        total_attempts: 0,
+        total_correct: 0,
+      })
+      .select()
+      .single()
+
+    if (error) this.handleError(error)
+    return data
   }
 
   /**

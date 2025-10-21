@@ -388,6 +388,13 @@
                     }}</span>
                     <Input
                       :model-value="(values.options || ['', '', '', ''])[index]"
+                      @update:model-value="
+                        (newValue) => {
+                          const currentOptions = [...(values.options || [])]
+                          currentOptions[index] = String(newValue)
+                          setFieldValue('options', currentOptions, hasAttemptSubmit)
+                        }
+                      "
                       :placeholder="`Option ${String.fromCharCode(65 + index)}`"
                       class="flex-1"
                       :disabled="isSubmitting"
@@ -1000,7 +1007,7 @@ const onSubmit = handleSubmit(async (formValues) => {
         category_id,
         classroom_id: selectedClassroomId.value,
         created_by: authStore.user!.id,
-        image: null, // Will be updated after upload
+        image: null,
       })
 
       // Upload image if one was selected

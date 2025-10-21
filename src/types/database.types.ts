@@ -665,25 +665,14 @@ export type Database = {
         }[]
       }
       update_elos_atomic: {
-        Args:
-          | {
-              p_category_id: string
-              p_classroom_id: string
-              p_is_correct: boolean
-              p_question_id: string
-              p_selected_answer?: number
-              p_session_id: string
-              p_student_id: string
-              p_time_taken_seconds?: number
-            }
-          | {
-              p_category_id: string
-              p_classroom_id: string
-              p_is_correct: boolean
-              p_question_id: string
-              p_selected_answer?: number
-              p_student_id: string
-            }
+        Args: {
+          p_category_id: string
+          p_classroom_id: string
+          p_is_correct: boolean
+          p_question_id: string
+          p_selected_answer?: number
+          p_student_id: string
+        }
         Returns: Json
       }
     }

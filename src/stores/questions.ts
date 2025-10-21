@@ -272,6 +272,33 @@ export const useQuestionStore = defineStore('question', () => {
     }
   }
 
+  const ensureStudentElo = async (studentId: string, categoryId: string, classroomId: string) => {
+    loading.value = true
+    error.value = null
+    try {
+      const data = await questionService.ensureStudentElo(studentId, categoryId, classroomId)
+
+      // Update the studentElos array if needed
+      const existingIndex = studentElos.value.findIndex(
+        (e) =>
+          e.user_id === studentId && e.category_id === categoryId && e.classroom_id === classroomId,
+      )
+
+      if (existingIndex === -1) {
+        studentElos.value.push(data)
+      } else {
+        studentElos.value[existingIndex] = data
+      }
+
+      return data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to ensure student ELO'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   const fetchStudentAttempts = async (studentId: string, categoryId: string, limit?: number) => {
     loading.value = true
     error.value = null
@@ -358,6 +385,7 @@ export const useQuestionStore = defineStore('question', () => {
     getNextPracticeQuestion,
     submitAnswer,
     fetchStudentElo,
+    ensureStudentElo,
     fetchStudentElosByClassroom,
     fetchStudentAttempts,
     getCategoryStats,
