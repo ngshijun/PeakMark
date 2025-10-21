@@ -64,12 +64,12 @@ const router = createRouter({
       component: () => import('@/views/StudentLeaderboardPage.vue'),
       meta: { requiresAuth: true, role: ['student', 'teacher'] },
     },
-    // {
-    //   path: '/classroom/:classroomId/practice',
-    //   name: 'practice',
-    //   component: () => import('@/views/PracticePage.vue'),
-    //   meta: { requiresAuth: true, role: ['student'] },
-    // },
+    {
+      path: '/classroom/:classroomId/practice',
+      name: 'practice',
+      component: () => import('@/views/StudentPracticePage.vue'),
+      meta: { requiresAuth: true, role: ['student'] },
+    },
     // {
     //   path: '/classroom/:classroomId/practice/questions',
     //   name: 'practice-questions',

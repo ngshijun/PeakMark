@@ -158,47 +158,6 @@ export type Database = {
           },
         ]
       }
-      practice_session: {
-        Row: {
-          created_at: string
-          ended_at: string | null
-          id: string
-          is_active: boolean
-          questions_attempted: number
-          started_at: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          ended_at?: string | null
-          id?: string
-          is_active?: boolean
-          questions_attempted?: number
-          started_at?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          ended_at?: string | null
-          id?: string
-          is_active?: boolean
-          questions_attempted?: number
-          started_at?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'practice_session_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
-          },
-        ]
-      }
       puzzle_attempts: {
         Row: {
           attempted_by: string
@@ -304,39 +263,45 @@ export type Database = {
       question_attempts: {
         Row: {
           attempted_by: string
+          category_id: string | null
           created_at: string
           id: string
           is_correct: boolean
           next_review_date: string | null
+          question_elo_after: number | null
           question_elo_before: number | null
           question_id: string
-          session_id: string
+          selected_answer: number | null
           student_elo_after: number | null
           student_elo_before: number | null
           updated_at: string | null
         }
         Insert: {
           attempted_by: string
+          category_id?: string | null
           created_at?: string
           id?: string
           is_correct: boolean
           next_review_date?: string | null
+          question_elo_after?: number | null
           question_elo_before?: number | null
           question_id: string
-          session_id: string
+          selected_answer?: number | null
           student_elo_after?: number | null
           student_elo_before?: number | null
           updated_at?: string | null
         }
         Update: {
           attempted_by?: string
+          category_id?: string | null
           created_at?: string
           id?: string
           is_correct?: boolean
           next_review_date?: string | null
+          question_elo_after?: number | null
           question_elo_before?: number | null
           question_id?: string
-          session_id?: string
+          selected_answer?: number | null
           student_elo_after?: number | null
           student_elo_before?: number | null
           updated_at?: string | null
@@ -357,55 +322,113 @@ export type Database = {
             referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'question_attemps_session_id_fkey'
-            columns: ['session_id']
+            foreignKeyName: 'question_attempts_category_id_fkey'
+            columns: ['category_id']
             isOneToOne: false
-            referencedRelation: 'practice_session'
+            referencedRelation: 'question_categories'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      question_categories: {
+        Row: {
+          classroom_id: string
+          created_at: string | null
+          created_by: string
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          classroom_id: string
+          created_at?: string | null
+          created_by: string
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          classroom_id?: string
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'question_categories_classroom_id_fkey'
+            columns: ['classroom_id']
+            isOneToOne: false
+            referencedRelation: 'classrooms'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'question_categories_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'users'
             referencedColumns: ['id']
           },
         ]
       }
       questions: {
         Row: {
+          category_id: string | null
           classroom_id: string | null
           correct_answer: number
           created_at: string
           created_by: string
-          difficulty: number
+          elo: number
           explanation: string | null
           id: string
           image: string | null
           options: string[]
           question: string
+          total_attempts: number
+          total_corrects: number
           updated_at: string
         }
         Insert: {
+          category_id?: string | null
           classroom_id?: string | null
           correct_answer: number
           created_at?: string
           created_by: string
-          difficulty: number
+          elo?: number
           explanation?: string | null
           id?: string
           image?: string | null
           options: string[]
           question: string
+          total_attempts?: number
+          total_corrects?: number
           updated_at?: string
         }
         Update: {
+          category_id?: string | null
           classroom_id?: string | null
           correct_answer?: number
           created_at?: string
           created_by?: string
-          difficulty?: number
+          elo?: number
           explanation?: string | null
           id?: string
           image?: string | null
           options?: string[]
           question?: string
+          total_attempts?: number
+          total_corrects?: number
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: 'questions_category_id_fkey'
+            columns: ['category_id']
+            isOneToOne: false
+            referencedRelation: 'question_categories'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'questions_classroom_id_fkey'
             columns: ['classroom_id']
@@ -424,30 +447,46 @@ export type Database = {
       }
       student_elo: {
         Row: {
+          category_id: string | null
           classroom_id: string | null
           created_at: string
           elo_rating: number
           id: string
+          total_attempts: number | null
+          total_correct: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          category_id?: string | null
           classroom_id?: string | null
           created_at?: string
           elo_rating?: number
           id?: string
+          total_attempts?: number | null
+          total_correct?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          category_id?: string | null
           classroom_id?: string | null
           created_at?: string
           elo_rating?: number
           id?: string
+          total_attempts?: number | null
+          total_correct?: number | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: 'student_elo_category_id_fkey'
+            columns: ['category_id']
+            isOneToOne: false
+            referencedRelation: 'question_categories'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'student_elo_classroom_id_fkey'
             columns: ['classroom_id']
@@ -605,7 +644,48 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_next_question: {
+        Args: {
+          p_category_id: string
+          p_classroom_id: string
+          p_elo_range?: number
+          p_recent_question_ids?: string[]
+          p_student_id: string
+        }
+        Returns: {
+          correct_answer: number
+          expected_success_rate: number
+          explanation: string
+          image: string
+          options: string[]
+          question_elo: number
+          question_id: string
+          question_text: string
+          student_elo: number
+        }[]
+      }
+      update_elos_atomic: {
+        Args:
+          | {
+              p_category_id: string
+              p_classroom_id: string
+              p_is_correct: boolean
+              p_question_id: string
+              p_selected_answer?: number
+              p_session_id: string
+              p_student_id: string
+              p_time_taken_seconds?: number
+            }
+          | {
+              p_category_id: string
+              p_classroom_id: string
+              p_is_correct: boolean
+              p_question_id: string
+              p_selected_answer?: number
+              p_student_id: string
+            }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

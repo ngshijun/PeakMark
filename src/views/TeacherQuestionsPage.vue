@@ -21,25 +21,35 @@
             />
           </div>
 
-          <!-- Difficulty Filter -->
-          <Select v-model="selectedDifficulty">
+          <!-- Category Filter -->
+          <Select v-model="selectedCategory">
             <SelectTrigger class="w-full sm:w-[11.25rem]">
-              <SelectValue placeholder="All Difficulties" />
+              <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Difficulties</SelectItem>
-              <span v-for="difficulty in DIFFICULTY" :key="difficulty">
-                <SelectItem :value="difficulty">{{ difficulty }}</SelectItem>
-              </span>
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem
+                v-for="category in categoryStore.categories"
+                :key="category.id"
+                :value="category.id"
+              >
+                {{ category.name }}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        <!-- Create Question Button -->
-        <Button @click="isCreateDialogOpen = true">
-          <Plus class="mr-2 h-4 w-4" />
-          Create Question
-        </Button>
+        <!-- Action Buttons -->
+        <div class="flex gap-2">
+          <Button variant="outline" @click="isCategoryDialogOpen = true">
+            <Plus class="mr-2 h-4 w-4" />
+            Manage Categories
+          </Button>
+          <Button @click="isCreateDialogOpen = true">
+            <Plus class="mr-2 h-4 w-4" />
+            Create Question
+          </Button>
+        </div>
       </div>
 
       <!-- Questions Data Table -->
@@ -50,12 +60,13 @@
           >
             <TableHeader class="sticky top-0 z-10 bg-card shadow-sm">
               <TableRow>
-                <TableHead class="w-[6rem]">Difficulty</TableHead>
+                <TableHead class="w-[8rem]">Category</TableHead>
+                <TableHead class="w-[6rem]">ELO</TableHead>
                 <TableHead class="min-w-[15rem]">Question</TableHead>
                 <TableHead class="min-w-[12rem]">Answer Options</TableHead>
                 <TableHead class="min-w-[10rem]">Correct Answer</TableHead>
                 <TableHead class="min-w-[15rem]">Explanation</TableHead>
-                <TableHead class="w-[8rem]">Created</TableHead>
+                <TableHead class="w-[8rem]">Stats</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -86,10 +97,23 @@
                   <TableRow class="cursor-pointer">
                     <TableCell>
                       <span
-                        class="text-xs font-medium rounded-full bg-secondary/10 px-2 py-1 text-secondary-foreground"
+                        class="text-xs font-medium rounded-full bg-primary/10 px-2 py-1 text-primary"
                       >
-                        Level {{ question.difficulty }}
+                        {{ getCategoryName(question.category_id) }}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      <div class="flex items-center gap-1">
+                        <span class="text-sm font-semibold">{{ question.elo }}</span>
+                        <span
+                          :class="[
+                            'text-xs px-1.5 py-0.5 rounded',
+                            getEloDifficultyColor(question.elo),
+                          ]"
+                        >
+                          {{ getEloDifficultyLabel(question.elo) }}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div class="max-w-md">
@@ -124,9 +148,22 @@
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span class="text-xs text-muted-foreground">
-                        {{ new Date(question.created_at || '').toLocaleDateString() }}
-                      </span>
+                      <div class="space-y-1">
+                        <div class="text-xs text-muted-foreground">
+                          {{ question.total_attempts }} attempt{{
+                            question.total_attempts !== 1 ? 's' : ''
+                          }}
+                        </div>
+                        <div class="text-xs font-medium">
+                          {{
+                            question.total_attempts > 0
+                              ? Math.round(
+                                  (question.total_corrects / question.total_attempts) * 100,
+                                )
+                              : 0
+                          }}% correct
+                        </div>
+                      </div>
                     </TableCell>
                   </TableRow>
                 </ContextMenuTrigger>
@@ -213,31 +250,34 @@
         </DialogHeader>
 
         <form @submit="onSubmit" class="space-y-6">
-          <!-- Year, Subject and Difficulty -->
+          <!-- Category Selection -->
           <FormField
             v-slot="{ componentField }"
-            name="difficulty"
+            name="category_id"
             :validateOnBlur="hasAttemptSubmit"
             :validateOnModelUpdate="hasAttemptSubmit"
           >
             <FormItem>
-              <FormLabel>Difficulty Level</FormLabel>
+              <FormLabel>Category</FormLabel>
               <Select v-bind="componentField" :disabled="isSubmitting">
                 <FormControl>
                   <SelectTrigger class="w-full">
-                    <SelectValue placeholder="Select difficulty" />
+                    <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   <SelectItem
-                    v-for="difficulty in DIFFICULTY"
-                    :key="difficulty"
-                    :value="difficulty"
+                    v-for="category in categoryStore.categories"
+                    :key="category.id"
+                    :value="category.id"
                   >
-                    {{ difficulty }}
+                    {{ category.name }}
                   </SelectItem>
                 </SelectContent>
               </Select>
+              <FormDescription v-if="categoryStore.categories.length === 0" class="text-amber-600">
+                No categories available. Please create a category first.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           </FormField>
@@ -519,6 +559,90 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Category Management Dialog -->
+    <Dialog v-model:open="isCategoryDialogOpen">
+      <DialogContent class="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Manage Categories</DialogTitle>
+          <DialogDescription>
+            Create and manage question categories for better organization.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div class="space-y-4">
+          <!-- Create New Category -->
+          <div class="flex gap-2">
+            <Input
+              v-model="newCategoryName"
+              placeholder="Enter category name..."
+              @keyup.enter="createCategory"
+            />
+            <Button @click="createCategory" :disabled="!newCategoryName.trim()">
+              <Plus class="mr-2 h-4 w-4" />
+              Add
+            </Button>
+          </div>
+
+          <!-- Category List -->
+          <div class="space-y-2">
+            <div
+              v-for="category in categoryStore.categories"
+              :key="category.id"
+              class="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50"
+            >
+              <div class="flex-1">
+                <div class="font-medium">{{ category.name }}</div>
+                <div class="text-xs text-muted-foreground">
+                  {{ getQuestionCountByCategory(category.id) }} question{{
+                    getQuestionCountByCategory(category.id) !== 1 ? 's' : ''
+                  }}
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <Button variant="ghost" size="icon" @click="editCategory(category)" class="h-8 w-8">
+                  <Pencil class="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  @click="deleteCategory(category.id)"
+                  class="h-8 w-8 text-destructive hover:text-destructive"
+                >
+                  <Trash2 class="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div
+              v-if="categoryStore.categories.length === 0"
+              class="text-center py-8 text-muted-foreground"
+            >
+              No categories yet. Create your first category above.
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" @click="isCategoryDialogOpen = false">Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Edit Category Dialog -->
+    <Dialog v-model:open="isEditCategoryDialogOpen">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Category</DialogTitle>
+          <DialogDescription>Update the category name.</DialogDescription>
+        </DialogHeader>
+        <Input v-model="editCategoryName" placeholder="Category name..." />
+        <DialogFooter>
+          <Button variant="outline" @click="isEditCategoryDialogOpen = false">Cancel</Button>
+          <Button @click="updateCategory">Update</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </MainLayout>
 </template>
 
@@ -567,12 +691,13 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
+import { FormDescription } from '@/components/ui/form'
 import { useNavigation } from '@/composables/useNavigation'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useClassroomStore } from '@/stores/classrooms'
+import { useQuestionCategoriesStore } from '@/stores/question-categories'
 import { useQuestionStore } from '@/stores/questions'
-import { DIFFICULTY } from '@/types/constants'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Eye, Pencil, Plus, Search, Trash2, Upload, X } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
@@ -583,13 +708,14 @@ import * as z from 'zod'
 const breadcrumbs = [{ label: 'Questions' }]
 
 const questionStore = useQuestionStore()
+const categoryStore = useQuestionCategoriesStore()
 const authStore = useAuthStore()
 const classroomStore = useClassroomStore()
 const { selectedClassroomId } = useNavigation()
 
 // Search and Filter State
 const searchQuery = ref('')
-const selectedDifficulty = ref('all')
+const selectedCategory = ref('all')
 
 // Pagination State
 const currentPage = ref(1)
@@ -609,6 +735,13 @@ const isPreviewOpen = ref(false)
 const hasAttemptSubmit = ref(false)
 const isDeleteDialogOpen = ref(false)
 const questionToDelete = ref<string | null>(null)
+const isCategoryDialogOpen = ref(false)
+const isEditCategoryDialogOpen = ref(false)
+
+// Category Management State
+const newCategoryName = ref('')
+const editCategoryName = ref('')
+const categoryToEdit = ref<string | null>(null)
 
 // Edit Mode State
 const isEditMode = ref(false)
@@ -624,7 +757,7 @@ const imageRemovedByUser = ref(false)
 // Form Schema
 const formSchema = toTypedSchema(
   z.object({
-    difficulty: z.string().min(1, 'Please select a difficulty level'),
+    category_id: z.string().min(1, 'Please select a category'),
     question: z.string().min(1, 'Question content is required'),
     options: z.array(z.string().min(1, 'Option cannot be blank')),
     correctAnswer: z.string(),
@@ -637,7 +770,7 @@ const { handleSubmit, setFieldValue, values, resetForm } = useForm({
   validationSchema: formSchema,
   keepValuesOnUnmount: true,
   initialValues: {
-    difficulty: '',
+    category_id: '',
     question: '',
     options: ['', '', '', ''],
     correctAnswer: '0',
@@ -651,7 +784,7 @@ watch(isCreateDialogOpen, async (newValue) => {
     // Dialog is closing - reset everything
     resetForm({
       values: {
-        difficulty: '',
+        category_id: '',
         question: '',
         options: ['', '', '', ''],
         correctAnswer: '0',
@@ -749,9 +882,9 @@ const filteredQuestions = computed(() => {
     filtered = filtered.filter((q) => q.question.toLowerCase().includes(query))
   }
 
-  // Filter by difficulty
-  if (selectedDifficulty.value !== 'all') {
-    filtered = filtered.filter((q) => q.difficulty === parseInt(selectedDifficulty.value))
+  // Filter by category
+  if (selectedCategory.value !== 'all') {
+    filtered = filtered.filter((q) => q.category_id === selectedCategory.value)
   }
 
   return filtered
@@ -770,15 +903,16 @@ const paginatedQuestions = computed(() => {
 })
 
 // Reset to first page when filters change
-watch([searchQuery, selectedDifficulty], () => {
+watch([searchQuery, selectedCategory], () => {
   currentPage.value = 1
 })
 
-// Fetch questions on mount
+// Fetch questions and categories on mount
 onMounted(async () => {
   await Promise.all([
     questionStore.fetchQuestions(selectedClassroomId.value!),
     classroomStore.fetchTeacherClassrooms(authStore.user!.id),
+    categoryStore.fetchCategoriesByClassroom(selectedClassroomId.value!),
   ])
 })
 
@@ -789,7 +923,7 @@ const onSubmit = handleSubmit(async (formValues) => {
       return
     }
 
-    const { correctAnswer, difficulty, ...rest } = formValues
+    const { correctAnswer, category_id, ...rest } = formValues
 
     // Edit Mode: Update existing question
     if (isEditMode.value && questionToEdit.value) {
@@ -797,13 +931,13 @@ const onSubmit = handleSubmit(async (formValues) => {
         question: string
         options: string[]
         correct_answer: number
-        difficulty: number
+        category_id: string
         explanation?: string
         image?: string | null
       } = {
         ...rest,
         correct_answer: parseInt(correctAnswer),
-        difficulty: parseInt(difficulty),
+        category_id,
       }
 
       // Handle image updates
@@ -863,7 +997,7 @@ const onSubmit = handleSubmit(async (formValues) => {
       const createdQuestion = await questionStore.createQuestion({
         ...rest,
         correct_answer: parseInt(correctAnswer),
-        difficulty: parseInt(difficulty),
+        category_id,
         classroom_id: selectedClassroomId.value,
         created_by: authStore.user!.id,
         image: null, // Will be updated after upload
@@ -914,7 +1048,7 @@ const editQuestion = (question: (typeof questionStore.questions)[0]) => {
   // Populate form with question data
   resetForm({
     values: {
-      difficulty: String(question.difficulty),
+      category_id: question.category_id || '',
       question: question.question,
       options: question.options,
       correctAnswer: String(question.correct_answer),
@@ -961,5 +1095,93 @@ const confirmDelete = async () => {
 const cancelDelete = () => {
   isDeleteDialogOpen.value = false
   questionToDelete.value = null
+}
+
+// Category Management Functions
+const createCategory = async () => {
+  if (!newCategoryName.value.trim()) return
+
+  try {
+    await categoryStore.createCategory({
+      name: newCategoryName.value.trim(),
+      classroom_id: selectedClassroomId.value!,
+      created_by: authStore.user!.id,
+    })
+    toast.success('Category created successfully')
+    newCategoryName.value = ''
+  } catch (error) {
+    console.error('Error creating category:', error)
+    toast.error('Failed to create category')
+  }
+}
+
+const editCategory = (category: (typeof categoryStore.categories)[0]) => {
+  categoryToEdit.value = category.id
+  editCategoryName.value = category.name
+  isEditCategoryDialogOpen.value = true
+}
+
+const updateCategory = async () => {
+  if (!categoryToEdit.value || !editCategoryName.value.trim()) return
+
+  try {
+    await categoryStore.updateCategory(categoryToEdit.value, {
+      name: editCategoryName.value.trim(),
+    })
+    toast.success('Category updated successfully')
+    isEditCategoryDialogOpen.value = false
+    categoryToEdit.value = null
+    editCategoryName.value = ''
+  } catch (error) {
+    console.error('Error updating category:', error)
+    toast.error('Failed to update category')
+  }
+}
+
+const deleteCategory = async (categoryId: string) => {
+  // Check if any questions use this category
+  const questionsInCategory = questionStore.questions.filter((q) => q.category_id === categoryId)
+
+  if (questionsInCategory.length > 0) {
+    toast.error(
+      `Cannot delete category. ${questionsInCategory.length} question(s) are using this category.`,
+    )
+    return
+  }
+
+  try {
+    await categoryStore.deleteCategory(categoryId)
+    toast.success('Category deleted successfully')
+  } catch (error) {
+    console.error('Error deleting category:', error)
+    toast.error('Failed to delete category')
+  }
+}
+
+// Helper Functions
+const getCategoryName = (categoryId: string | null) => {
+  if (!categoryId) return 'Uncategorized'
+  const category = categoryStore.categories.find((c) => c.id === categoryId)
+  return category?.name || 'Unknown'
+}
+
+const getQuestionCountByCategory = (categoryId: string) => {
+  return questionStore.questions.filter((q) => q.category_id === categoryId).length
+}
+
+const getEloDifficultyLabel = (elo: number) => {
+  if (elo < 1200) return 'Easy'
+  if (elo < 1400) return 'Medium'
+  if (elo < 1600) return 'Hard'
+  if (elo < 1800) return 'V. Hard'
+  return 'Expert'
+}
+
+const getEloDifficultyColor = (elo: number) => {
+  if (elo < 1200) return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+  if (elo < 1400) return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+  if (elo < 1600) return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'
+  if (elo < 1800) return 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400'
+  return 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
 }
 </script>
