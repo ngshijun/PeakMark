@@ -61,7 +61,6 @@
             <TableHeader class="sticky top-0 z-10 bg-card shadow-sm">
               <TableRow>
                 <TableHead class="w-[8rem]">Category</TableHead>
-                <TableHead class="w-[6rem]">ELO</TableHead>
                 <TableHead class="min-w-[15rem]">Question</TableHead>
                 <TableHead class="min-w-[12rem]">Answer Options</TableHead>
                 <TableHead class="min-w-[10rem]">Correct Answer</TableHead>
@@ -101,19 +100,6 @@
                       >
                         {{ getCategoryName(question.category_id) }}
                       </span>
-                    </TableCell>
-                    <TableCell>
-                      <div class="flex items-center gap-1">
-                        <span class="text-sm font-semibold">{{ question.elo }}</span>
-                        <span
-                          :class="[
-                            'text-xs px-1.5 py-0.5 rounded',
-                            getEloDifficultyColor(question.elo),
-                          ]"
-                        >
-                          {{ getEloDifficultyLabel(question.elo) }}
-                        </span>
-                      </div>
                     </TableCell>
                     <TableCell>
                       <div class="max-w-md">
@@ -1174,21 +1160,5 @@ const getCategoryName = (categoryId: string | null) => {
 
 const getQuestionCountByCategory = (categoryId: string) => {
   return questionStore.questions.filter((q) => q.category_id === categoryId).length
-}
-
-const getEloDifficultyLabel = (elo: number) => {
-  if (elo < 1200) return 'Easy'
-  if (elo < 1400) return 'Medium'
-  if (elo < 1600) return 'Hard'
-  if (elo < 1800) return 'V. Hard'
-  return 'Expert'
-}
-
-const getEloDifficultyColor = (elo: number) => {
-  if (elo < 1200) return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-  if (elo < 1400) return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
-  if (elo < 1600) return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'
-  if (elo < 1800) return 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400'
-  return 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
 }
 </script>
