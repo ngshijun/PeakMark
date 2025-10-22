@@ -98,6 +98,10 @@ const getCellBackgroundClass = (row: number, col: number): string => {
   font-size: clamp(10px, 1.2vw, 16px);
   background-color: rgb(31, 41, 55); /* gray-800 */
   margin: 0 auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 /* Thumbnail mode: Use container-based sizing to avoid viewport issues */
@@ -114,6 +118,10 @@ const getCellBackgroundClass = (row: number, col: number): string => {
   height: 100%;
   min-width: 0;
   min-height: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 @media (max-width: 768px) {
