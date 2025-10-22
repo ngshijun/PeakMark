@@ -130,7 +130,7 @@ export class ClassroomService extends BaseService {
    * Excludes classrooms the student is already a member of
    */
   async getPublicClassrooms(studentId?: string): Promise<ClassroomWithMemberCount[]> {
-    let query = this.client
+    const query = this.client
       .from('classrooms')
       .select(
         `

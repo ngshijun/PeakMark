@@ -106,7 +106,13 @@ const isIncorrect = (row: number, col: number) => {
 
 const handleInput = (event: Event, row: number, col: number) => {
   const target = event.target as HTMLInputElement
-  const value = target.value.toUpperCase()
+  let value = target.value.toUpperCase()
+
+  // Only keep the last character if somehow multiple characters exist
+  if (value.length > 1) {
+    value = value.slice(-1)
+    target.value = value
+  }
 
   // Update user answers
   const newAnswers = props.userAnswers.map((r, i) =>
@@ -124,8 +130,16 @@ const handleKeydown = async (event: KeyboardEvent, row: number, col: number) => 
   let nextRow = row
   let nextCol = col
 
-  if (event.key === 'Backspace' && props.userAnswers[row]?.[col] === '') {
+  if (event.key === 'Backspace') {
     event.preventDefault()
+
+    // Clear current cell
+    const newAnswers = props.userAnswers.map((r, i) =>
+      r.map((c, j) => (i === row && j === col ? '' : c)),
+    )
+    emit('update:userAnswers', newAnswers)
+
+    // Move to previous cell
     if (currentDirection.value === 'across') {
       nextCol--
     } else {
@@ -156,6 +170,11 @@ const handleKeydown = async (event: KeyboardEvent, row: number, col: number) => 
 
 const handleFocus = (row: number, col: number) => {
   selectClueForCell(row, col)
+  // Select all text so typing replaces it
+  const cell = cellRefs.value[`${row}-${col}`]
+  if (cell) {
+    cell.select()
+  }
 }
 
 const handleClick = (row: number, col: number) => {
