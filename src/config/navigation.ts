@@ -118,8 +118,8 @@ export const roleNavigation: RoleNavigation = {
           icon: Puzzle,
         },
         {
-          title: 'Question Sets',
-          url: '/question-sets',
+          title: 'Problem Sets',
+          url: '/problem-sets',
           icon: FolderOpen,
         },
         {

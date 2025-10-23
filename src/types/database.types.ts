@@ -372,6 +372,202 @@ export type Database = {
           },
         ]
       }
+      question_set_answers: {
+        Row: {
+          answered_at: string | null
+          attempt_id: string
+          created_at: string | null
+          id: string
+          is_correct: boolean | null
+          question_id: string
+          selected_answer: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          answered_at?: string | null
+          attempt_id: string
+          created_at?: string | null
+          id?: string
+          is_correct?: boolean | null
+          question_id: string
+          selected_answer?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          answered_at?: string | null
+          attempt_id?: string
+          created_at?: string | null
+          id?: string
+          is_correct?: boolean | null
+          question_id?: string
+          selected_answer?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'question_set_answers_attempt_id_fkey'
+            columns: ['attempt_id']
+            isOneToOne: false
+            referencedRelation: 'question_set_attempts'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'question_set_answers_question_id_fkey'
+            columns: ['question_id']
+            isOneToOne: false
+            referencedRelation: 'question_set_questions'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      question_set_attempts: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_completed: boolean | null
+          question_set_id: string
+          score: number | null
+          started_at: string | null
+          student_id: string
+          submitted_at: string | null
+          total_questions: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          question_set_id: string
+          score?: number | null
+          started_at?: string | null
+          student_id: string
+          submitted_at?: string | null
+          total_questions?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          question_set_id?: string
+          score?: number | null
+          started_at?: string | null
+          student_id?: string
+          submitted_at?: string | null
+          total_questions?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'question_set_attempts_question_set_id_fkey'
+            columns: ['question_set_id']
+            isOneToOne: false
+            referencedRelation: 'question_sets'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'question_set_attempts_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      question_set_questions: {
+        Row: {
+          correct_answer: number
+          created_at: string
+          explanation: string | null
+          id: string
+          image: string | null
+          options: string[]
+          order: number
+          question: string
+          question_set_id: string
+          updated_at: string
+        }
+        Insert: {
+          correct_answer?: number
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          image?: string | null
+          options?: string[]
+          order: number
+          question?: string
+          question_set_id: string
+          updated_at?: string
+        }
+        Update: {
+          correct_answer?: number
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          image?: string | null
+          options?: string[]
+          order?: number
+          question?: string
+          question_set_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'question_set_questions_question_set_id_fkey'
+            columns: ['question_set_id']
+            isOneToOne: false
+            referencedRelation: 'question_sets'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      question_sets: {
+        Row: {
+          classroom_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_published: boolean | null
+          name: string
+          show_explanations: boolean | null
+          total_points: number | null
+          updated_at: string
+        }
+        Insert: {
+          classroom_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_published?: boolean | null
+          name: string
+          show_explanations?: boolean | null
+          total_points?: number | null
+          updated_at?: string
+        }
+        Update: {
+          classroom_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean | null
+          name?: string
+          show_explanations?: boolean | null
+          total_points?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'question_sets_classroom_id_fkey'
+            columns: ['classroom_id']
+            isOneToOne: false
+            referencedRelation: 'classrooms'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       questions: {
         Row: {
           category_id: string | null

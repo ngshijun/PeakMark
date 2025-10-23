@@ -101,6 +101,36 @@ const router = createRouter({
       meta: { requiresAuth: true, role: ['student'] },
     },
     {
+      path: '/classroom/:classroomId/problem-sets',
+      name: 'problem-sets',
+      component: () => import('@/views/wrappers/ProblemSetsPageWrapper.vue'),
+      meta: { requiresAuth: true, role: ['teacher', 'student'] },
+    },
+    {
+      path: '/classroom/:classroomId/problem-sets/create',
+      name: 'problem-sets-create',
+      component: () => import('@/views/QuestionSetBuilderPage.vue'),
+      meta: { requiresAuth: true, role: ['teacher'] },
+    },
+    {
+      path: '/classroom/:classroomId/problem-sets/:setId/edit',
+      name: 'problem-sets-edit',
+      component: () => import('@/views/QuestionSetBuilderPage.vue'),
+      meta: { requiresAuth: true, role: ['teacher'] },
+    },
+    {
+      path: '/classroom/:classroomId/problem-sets/:setId/attempt/:attemptId',
+      name: 'problem-set-attempt',
+      component: () => import('@/views/QuestionSetAttemptPage.vue'),
+      meta: { requiresAuth: true, role: ['student'] },
+    },
+    {
+      path: '/classroom/:classroomId/problem-sets/results/:attemptId',
+      name: 'problem-set-results',
+      component: () => import('@/views/QuestionSetResultsPage.vue'),
+      meta: { requiresAuth: true, role: ['student'] },
+    },
+    {
       path: '/classrooms',
       name: 'classrooms',
       component: () => import('@/views/wrappers/ClassroomsPageWrapper.vue'),
