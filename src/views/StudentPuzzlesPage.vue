@@ -54,7 +54,16 @@
               <!-- Puzzle Thumbnail -->
               <div class="aspect-video flex items-center justify-center relative">
                 <div class="h-full aspect-square">
-                  <CrosswordThumbnail :grid="puzzle.grid" :placed-words="puzzle.placed_words" />
+                  <CrosswordThumbnail
+                    v-if="puzzle.puzzle_type === 'crossword'"
+                    :grid="puzzle.grid"
+                    :placed-words="puzzle.placed_words"
+                  />
+                  <WordsearchThumbnail
+                    v-else-if="puzzle.puzzle_type === 'wordsearch'"
+                    :grid="puzzle.grid"
+                    :placed-words="puzzle.placed_words"
+                  />
                 </div>
                 <!-- Status Badge -->
                 <div class="absolute top-2 right-2">
@@ -156,11 +165,23 @@
 
     <!-- Crossword Viewer Dialog -->
     <CrosswordViewerDialog
+      v-if="selectedPuzzle?.puzzle_type === 'crossword'"
       :open="isViewerDialogOpen"
       :puzzle="selectedPuzzle"
       :show-solution-toggle="false"
       :puzzle-status="selectedPuzzleStatus"
       :saved-grid="selectedPuzzleSavedGrid"
+      @update:open="(val) => (isViewerDialogOpen = val)"
+    />
+
+    <!-- Wordsearch Viewer Dialog -->
+    <WordsearchViewerDialog
+      v-else-if="selectedPuzzle?.puzzle_type === 'wordsearch'"
+      :open="isViewerDialogOpen"
+      :puzzle="selectedPuzzle"
+      :show-solution-toggle="false"
+      :puzzle-status="selectedPuzzleStatus"
+      :found-words="selectedPuzzleFoundWords"
       @update:open="(val) => (isViewerDialogOpen = val)"
     />
   </MainLayout>
@@ -169,6 +190,8 @@
 <script setup lang="ts">
 import CrosswordThumbnail from '@/components/Puzzles/CrosswordThumbnail.vue'
 import CrosswordViewerDialog from '@/components/Puzzles/CrosswordViewerDialog.vue'
+import WordsearchThumbnail from '@/components/Puzzles/WordsearchThumbnail.vue'
+import WordsearchViewerDialog from '@/components/Puzzles/WordsearchViewerDialog.vue'
 import { Input } from '@/components/ui/input'
 import {
   Pagination,
@@ -222,6 +245,7 @@ const isViewerDialogOpen = ref(false)
 const selectedPuzzle = ref<PuzzleType | null>(null)
 const selectedPuzzleStatus = ref<'not-started' | 'in-progress' | 'completed'>('not-started')
 const selectedPuzzleSavedGrid = ref<string[][]>([])
+const selectedPuzzleFoundWords = ref<string[]>([])
 const puzzleAttempts = ref<PuzzleAttempt[]>([])
 const attemptsLoading = ref(false)
 
@@ -286,7 +310,7 @@ const handlePuzzleClick = (puzzle: PuzzleType) => {
   selectedPuzzle.value = puzzle
   selectedPuzzleStatus.value = getPuzzleStatus(puzzle.id)
 
-  // Get saved grid based on puzzle status
+  // Get saved grid/data based on puzzle status
   let attemptToShow = null
 
   if (selectedPuzzleStatus.value === 'completed') {
@@ -300,16 +324,28 @@ const handlePuzzleClick = (puzzle: PuzzleType) => {
   }
 
   if (attemptToShow && attemptToShow.grid) {
-    // Parse saved grid from database
-    selectedPuzzleSavedGrid.value = attemptToShow.grid.map((rowString) => {
+    if (puzzle.puzzle_type === 'wordsearch') {
+      // For wordsearch, grid contains found words as JSON array
       try {
-        return JSON.parse(rowString)
+        selectedPuzzleFoundWords.value = JSON.parse(attemptToShow.grid[0] || '[]')
       } catch {
-        return []
+        selectedPuzzleFoundWords.value = []
       }
-    })
+      selectedPuzzleSavedGrid.value = []
+    } else {
+      // For crossword, parse saved grid from database
+      selectedPuzzleSavedGrid.value = attemptToShow.grid.map((rowString) => {
+        try {
+          return JSON.parse(rowString)
+        } catch {
+          return []
+        }
+      })
+      selectedPuzzleFoundWords.value = []
+    }
   } else {
     selectedPuzzleSavedGrid.value = []
+    selectedPuzzleFoundWords.value = []
   }
 
   isViewerDialogOpen.value = true

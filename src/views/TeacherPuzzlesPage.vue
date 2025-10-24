@@ -17,9 +17,13 @@
 
         <!-- Action Buttons -->
         <div class="flex gap-2">
-          <Button @click="isGeneratorDialogOpen = true">
+          <Button @click="isCrosswordDialogOpen = true">
             <Grid3x3 class="mr-2 h-4 w-4" />
             Create Crossword
+          </Button>
+          <Button @click="isWordsearchDialogOpen = true" variant="outline">
+            <Search class="mr-2 h-4 w-4" />
+            Create Wordsearch
           </Button>
         </div>
       </div>
@@ -62,7 +66,16 @@
                   <!-- Puzzle Thumbnail -->
                   <div class="aspect-video flex items-center justify-center">
                     <div class="h-full aspect-square">
-                      <CrosswordThumbnail :grid="puzzle.grid" :placed-words="puzzle.placed_words" />
+                      <CrosswordThumbnail
+                        v-if="puzzle.puzzle_type === 'crossword'"
+                        :grid="puzzle.grid"
+                        :placed-words="puzzle.placed_words"
+                      />
+                      <WordsearchThumbnail
+                        v-else-if="puzzle.puzzle_type === 'wordsearch'"
+                        :grid="puzzle.grid"
+                        :placed-words="puzzle.placed_words"
+                      />
                     </div>
                   </div>
 
@@ -151,13 +164,29 @@
 
     <!-- Crossword Generator Dialog -->
     <CrosswordGeneratorDialog
-      :open="isGeneratorDialogOpen"
-      @update:open="(val) => (isGeneratorDialogOpen = val)"
-      @save="handleSavePuzzle"
+      :open="isCrosswordDialogOpen"
+      @update:open="(val) => (isCrosswordDialogOpen = val)"
+      @save="handleSaveCrossword"
+    />
+
+    <!-- Wordsearch Generator Dialog -->
+    <WordsearchGeneratorDialog
+      :open="isWordsearchDialogOpen"
+      @update:open="(val) => (isWordsearchDialogOpen = val)"
+      @save="handleSaveWordsearch"
     />
 
     <!-- Crossword Viewer Dialog -->
     <CrosswordViewerDialog
+      v-if="selectedPuzzle?.puzzle_type === 'crossword'"
+      :open="isViewerDialogOpen"
+      :puzzle="selectedPuzzle"
+      @update:open="(val) => (isViewerDialogOpen = val)"
+    />
+
+    <!-- Wordsearch Viewer Dialog -->
+    <WordsearchViewerDialog
+      v-else-if="selectedPuzzle?.puzzle_type === 'wordsearch'"
       :open="isViewerDialogOpen"
       :puzzle="selectedPuzzle"
       @update:open="(val) => (isViewerDialogOpen = val)"
@@ -190,6 +219,9 @@
 import CrosswordGeneratorDialog from '@/components/Puzzles/CrosswordGeneratorDialog.vue'
 import CrosswordThumbnail from '@/components/Puzzles/CrosswordThumbnail.vue'
 import CrosswordViewerDialog from '@/components/Puzzles/CrosswordViewerDialog.vue'
+import WordsearchGeneratorDialog from '@/components/Puzzles/WordsearchGeneratorDialog.vue'
+import WordsearchThumbnail from '@/components/Puzzles/WordsearchThumbnail.vue'
+import WordsearchViewerDialog from '@/components/Puzzles/WordsearchViewerDialog.vue'
 import { Button } from '@/components/ui/button'
 import {
   ContextMenu,
@@ -229,6 +261,7 @@ import { useAuthStore } from '@/stores/auth'
 import { usePuzzleStore } from '@/stores/puzzles'
 import type { Tables } from '@/types/database.types'
 import type { PlacedWord } from '@/utils/crossword-generator'
+import type { PlacedWord as WordsearchPlacedWord } from '@/utils/wordsearch-generator'
 import { Grid3x3, Pencil, Search, Trash2, Puzzle } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
@@ -253,7 +286,8 @@ const itemsPerPageString = computed({
   },
 })
 
-const isGeneratorDialogOpen = ref(false)
+const isCrosswordDialogOpen = ref(false)
+const isWordsearchDialogOpen = ref(false)
 const isViewerDialogOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
 const selectedPuzzle = ref<Puzzle | null>(null)
@@ -302,7 +336,7 @@ const editPuzzle = (puzzle: Puzzle) => {
   toast.info('Edit functionality coming soon')
 }
 
-const handleSavePuzzle = async (data: {
+const handleSaveCrossword = async (data: {
   title: string
   grid: string[][]
   placedWords: PlacedWord[]
@@ -321,10 +355,36 @@ const handleSavePuzzle = async (data: {
       exp: data.exp,
     })
 
-    toast.success('Puzzle created successfully')
-    isGeneratorDialogOpen.value = false
+    toast.success('Crossword puzzle created successfully')
+    isCrosswordDialogOpen.value = false
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : 'Failed to create puzzle')
+    toast.error(error instanceof Error ? error.message : 'Failed to create crossword')
+  }
+}
+
+const handleSaveWordsearch = async (data: {
+  title: string
+  grid: string[][]
+  placedWords: WordsearchPlacedWord[]
+  exp: number
+}) => {
+  if (!selectedClassroomId.value || !authStore.user) return
+
+  try {
+    await puzzleStore.createPuzzle({
+      title: data.title,
+      puzzle_type: 'wordsearch',
+      grid: [JSON.stringify(data.grid)],
+      placed_words: [JSON.stringify(data.placedWords)],
+      classroom_id: selectedClassroomId.value,
+      created_by: authStore.user.id,
+      exp: data.exp,
+    })
+
+    toast.success('Wordsearch puzzle created successfully')
+    isWordsearchDialogOpen.value = false
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : 'Failed to create wordsearch')
   }
 }
 

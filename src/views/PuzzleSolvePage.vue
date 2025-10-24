@@ -28,8 +28,8 @@
         </div>
       </div>
 
-      <!-- Puzzle Content -->
-      <div v-else class="flex-1 min-h-0 rounded-xl border bg-card overflow-hidden">
+      <!-- Puzzle Content - Crossword -->
+      <div v-else-if="isCrossword" class="flex-1 min-h-0 rounded-xl border bg-card overflow-hidden">
         <div class="h-full overflow-auto">
           <div class="container mx-auto p-6">
             <div class="flex flex-col lg:flex-row gap-8">
@@ -138,6 +138,83 @@
           </div>
         </div>
       </div>
+
+      <!-- Puzzle Content - Wordsearch -->
+      <div v-else-if="isWordsearch" class="flex-1 min-h-0 rounded-xl border bg-card overflow-hidden">
+        <div class="h-full overflow-auto">
+          <div class="container mx-auto p-6">
+            <div class="flex flex-col lg:flex-row gap-8">
+              <!-- Left Panel: Wordsearch Grid and Controls -->
+              <div class="flex-1 flex flex-col gap-4">
+                <div class="bg-white rounded-lg border p-4 sm:p-6">
+                  <div class="w-full h-full max-w-[600px] max-h-[600px] mx-auto">
+                    <InteractiveWordsearchGrid
+                      :grid="grid"
+                      :placed-words="wordsearchPlacedWords"
+                      :found-words="foundWords"
+                      @word-found="handleWordFound"
+                    />
+                  </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="bg-white rounded-lg border p-4 flex flex-col sm:flex-row gap-3">
+                  <Button @click="clearWordsearchProgress" variant="outline" class="w-full sm:flex-1">
+                    <Eraser class="h-4 w-4 mr-2" />
+                    Clear
+                  </Button>
+                  <Button @click="handleSave" variant="outline" class="w-full sm:flex-1">
+                    <Save class="h-4 w-4 mr-2" />
+                    Save Progress
+                  </Button>
+                  <Button @click="openSubmitDialog" variant="default" class="w-full sm:flex-1">
+                    <CheckCircle class="h-4 w-4 mr-2" />
+                    Submit
+                  </Button>
+                </div>
+              </div>
+
+              <!-- Right Panel: Word List -->
+              <div class="w-full lg:w-96 flex flex-col">
+                <div class="bg-white rounded-lg border p-6 flex flex-col h-full">
+                  <h3 class="text-lg font-semibold mb-4">Words to Find</h3>
+
+                  <div class="space-y-2 overflow-auto">
+                    <div
+                      v-for="(word, idx) in wordsearchPlacedWords"
+                      :key="idx"
+                      class="flex gap-3 p-3 rounded border transition-all"
+                      :class="{
+                        'bg-green-50 border-green-200': foundWords.has(word.word),
+                        'bg-white': !foundWords.has(word.word),
+                      }"
+                    >
+                      <div class="flex items-center gap-2 min-w-[2rem]">
+                        <span class="font-semibold text-sm text-muted-foreground">{{ idx + 1 }}.</span>
+                        <CheckCircle
+                          v-if="foundWords.has(word.word)"
+                          class="h-4 w-4 text-green-600"
+                        />
+                      </div>
+                      <div class="flex-1">
+                        <p class="text-sm font-medium">{{ word.word }}</p>
+                        <p v-if="word.hint" class="text-sm text-muted-foreground">{{ word.hint }}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Progress Summary -->
+                  <div class="mt-6 p-4 bg-muted/50 rounded-lg">
+                    <p class="text-sm font-medium">
+                      Progress: {{ foundWords.size }} / {{ wordsearchPlacedWords.length }} words found
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Submit Confirmation Dialog -->
@@ -200,12 +277,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import InteractiveCrosswordGrid from '@/components/Puzzles/InteractiveCrosswordGrid.vue'
+import InteractiveWordsearchGrid from '@/components/Puzzles/InteractiveWordsearchGrid.vue'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { puzzleAttemptService } from '@/services/api/puzzle-attempt.service'
 import { useAuthStore } from '@/stores/auth'
 import { usePuzzleStore } from '@/stores/puzzles'
 import { useClassroomStore } from '@/stores/classrooms'
 import type { PlacedWord } from '@/utils/crossword-generator'
+import type { PlacedWord as WordsearchPlacedWord } from '@/utils/wordsearch-generator'
 import {
   ArrowDown,
   ArrowLeft,
@@ -234,7 +313,7 @@ const breadcrumbs = computed(() => [
   { label: 'Solve' },
 ])
 
-// Reactive state
+// Reactive state - Crossword
 const userAnswers = ref<string[][]>([])
 const checkedAnswers = ref<boolean[][]>([])
 const incorrectAnswers = ref<boolean[][]>([])
@@ -250,8 +329,15 @@ const submitStats = ref({
   expEarned: 0,
 })
 
+// Reactive state - Wordsearch
+const foundWords = ref<Set<string>>(new Set())
+
 // Get puzzle from store
 const puzzle = computed(() => puzzleStore.selectedPuzzle)
+
+// Determine puzzle type
+const isCrossword = computed(() => puzzle.value?.puzzle_type === 'crossword')
+const isWordsearch = computed(() => puzzle.value?.puzzle_type === 'wordsearch')
 
 // Parse grid from JSON string array
 const grid = computed<string[][]>(() => {
@@ -292,6 +378,22 @@ const acrossClues = computed(() =>
 const downClues = computed(() =>
   placedWords.value.filter((w) => w.direction === 'down').sort((a, b) => a.number - b.number),
 )
+
+// Parse wordsearch placed words
+const wordsearchPlacedWords = computed<WordsearchPlacedWord[]>(() => {
+  if (!isWordsearch.value || !puzzle.value?.placed_words?.length) return []
+
+  try {
+    const placedWordsData = puzzle.value.placed_words[0]
+    if (!placedWordsData) return []
+
+    const parsed = JSON.parse(placedWordsData)
+    return Array.isArray(parsed) ? parsed : []
+  } catch (error) {
+    console.error('Failed to parse wordsearch placed words:', error)
+    return []
+  }
+})
 
 // Initialize user answers grid
 const initializeUserAnswers = () => {
@@ -335,10 +437,15 @@ const handleSave = async () => {
     // Check if there's an existing incomplete attempt
     const existingAttempt = await puzzleAttemptService.getLatestAttempt(puzzleId, authStore.user.id)
 
+    // Prepare grid data based on puzzle type
+    const gridData = isWordsearch.value
+      ? [JSON.stringify(Array.from(foundWords.value))]
+      : userAnswers.value.map((row) => JSON.stringify(row))
+
     if (existingAttempt && !existingAttempt.is_completed) {
       // Update existing incomplete attempt
       await puzzleAttemptService.updateAttempt(existingAttempt.id, {
-        grid: userAnswers.value.map((row) => JSON.stringify(row)),
+        grid: gridData,
       })
       toast.success('Progress saved!')
     } else {
@@ -346,7 +453,7 @@ const handleSave = async () => {
       await puzzleAttemptService.createAttempt({
         puzzle_id: puzzleId,
         attempted_by: authStore.user.id,
-        grid: userAnswers.value.map((row) => JSON.stringify(row)),
+        grid: gridData,
         exp_earned: null,
         is_completed: false,
       })
@@ -427,7 +534,20 @@ const handleCheckAnswers = () => {
 const openSubmitDialog = () => {
   if (!puzzle.value) return
 
-  const { correctCount, totalCount } = calculateAnswers()
+  let correctCount = 0
+  let totalCount = 0
+
+  if (isWordsearch.value) {
+    // For wordsearch, count found words
+    correctCount = foundWords.value.size
+    totalCount = wordsearchPlacedWords.value.length
+  } else {
+    // For crossword, use the existing calculateAnswers function
+    const answers = calculateAnswers()
+    correctCount = answers.correctCount
+    totalCount = answers.totalCount
+  }
+
   const accuracy = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0
   const correctRate = totalCount > 0 ? correctCount / totalCount : 0
   const expEarned = Math.ceil(puzzle.value.exp * correctRate)
@@ -452,9 +572,25 @@ const handleSubmit = async () => {
   isSubmitting.value = true
 
   try {
-    const { correctCount, totalCount } = calculateAnswers()
+    let correctCount = 0
+    let totalCount = 0
+
+    if (isWordsearch.value) {
+      correctCount = foundWords.value.size
+      totalCount = wordsearchPlacedWords.value.length
+    } else {
+      const answers = calculateAnswers()
+      correctCount = answers.correctCount
+      totalCount = answers.totalCount
+    }
+
     const correctRate = totalCount > 0 ? correctCount / totalCount : 0
     const expEarned = Math.ceil(puzzle.value.exp * correctRate)
+
+    // Prepare grid data based on puzzle type
+    const gridData = isWordsearch.value
+      ? [JSON.stringify(Array.from(foundWords.value))]
+      : userAnswers.value.map((row) => JSON.stringify(row))
 
     // Check if there's an existing incomplete attempt
     const existingAttempt = await puzzleAttemptService.getLatestAttempt(puzzleId, authStore.user.id)
@@ -462,7 +598,7 @@ const handleSubmit = async () => {
     if (existingAttempt && !existingAttempt.is_completed) {
       // Update existing incomplete attempt with final results
       await puzzleAttemptService.updateAttempt(existingAttempt.id, {
-        grid: userAnswers.value.map((row) => JSON.stringify(row)),
+        grid: gridData,
         exp_earned: expEarned,
         is_completed: true,
       })
@@ -471,7 +607,7 @@ const handleSubmit = async () => {
       await puzzleAttemptService.createAttempt({
         puzzle_id: puzzleId,
         attempted_by: authStore.user.id,
-        grid: userAnswers.value.map((row) => JSON.stringify(row)),
+        grid: gridData,
         exp_earned: expEarned,
         is_completed: true,
       })
@@ -509,6 +645,17 @@ const clearGrid = () => {
   toast.info('Grid cleared')
 }
 
+// Wordsearch-specific handlers
+const handleWordFound = (word: string) => {
+  foundWords.value.add(word)
+  toast.success(`Found: ${word}!`)
+}
+
+const clearWordsearchProgress = () => {
+  foundWords.value.clear()
+  toast.info('Progress cleared')
+}
+
 const handleBack = () => {
   router.push({ name: 'puzzles', params: { classroomId } })
 }
@@ -521,14 +668,28 @@ const loadSavedProgress = async () => {
     const existingAttempt = await puzzleAttemptService.getLatestAttempt(puzzleId, authStore.user.id)
 
     if (existingAttempt && !existingAttempt.is_completed && existingAttempt.grid) {
-      userAnswers.value = existingAttempt.grid.map((rowString) => {
+      if (isWordsearch.value) {
+        // For wordsearch, grid contains found words as JSON string
         try {
-          return JSON.parse(rowString)
-        } catch {
-          return []
+          const foundWordsArray = JSON.parse(existingAttempt.grid[0] || '[]')
+          foundWords.value = new Set(foundWordsArray)
+          if (foundWordsArray.length > 0) {
+            toast.info('Loaded saved progress')
+          }
+        } catch (error) {
+          console.error('Failed to parse wordsearch progress:', error)
         }
-      })
-      toast.info('Loaded saved progress')
+      } else {
+        // For crossword, grid contains user answers
+        userAnswers.value = existingAttempt.grid.map((rowString) => {
+          try {
+            return JSON.parse(rowString)
+          } catch {
+            return []
+          }
+        })
+        toast.info('Loaded saved progress')
+      }
     }
   } catch (error) {
     console.error('Failed to load saved progress:', error)

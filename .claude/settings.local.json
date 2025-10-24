@@ -20,7 +20,8 @@
       "Read(//private/tmp/**)",
       "Read(//tmp/clinic-inventory-manager/src/components/ui/**)",
       "Read(//tmp/clinic-inventory-manager/src/views/**)",
-      "Read(//tmp/clinic-inventory-manager/src/**)"
+      "Read(//tmp/clinic-inventory-manager/src/**)",
+      "WebFetch(domain:www.shadcn-vue.com)"
     ],
     "deny": [],
     "ask": []
