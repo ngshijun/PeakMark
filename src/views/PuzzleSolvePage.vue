@@ -140,7 +140,10 @@
       </div>
 
       <!-- Puzzle Content - Wordsearch -->
-      <div v-else-if="isWordsearch" class="flex-1 min-h-0 rounded-xl border bg-card overflow-hidden">
+      <div
+        v-else-if="isWordsearch"
+        class="flex-1 min-h-0 rounded-xl border bg-card overflow-hidden"
+      >
         <div class="h-full overflow-auto">
           <div class="container mx-auto p-6">
             <div class="flex flex-col lg:flex-row gap-8">
@@ -159,7 +162,11 @@
 
                 <!-- Controls -->
                 <div class="bg-white rounded-lg border p-4 flex flex-col sm:flex-row gap-3">
-                  <Button @click="clearWordsearchProgress" variant="outline" class="w-full sm:flex-1">
+                  <Button
+                    @click="clearWordsearchProgress"
+                    variant="outline"
+                    class="w-full sm:flex-1"
+                  >
                     <Eraser class="h-4 w-4 mr-2" />
                     Clear
                   </Button>
@@ -190,7 +197,9 @@
                       }"
                     >
                       <div class="flex items-center gap-2 min-w-[2rem]">
-                        <span class="font-semibold text-sm text-muted-foreground">{{ idx + 1 }}.</span>
+                        <span class="font-semibold text-sm text-muted-foreground"
+                          >{{ idx + 1 }}.</span
+                        >
                         <CheckCircle
                           v-if="foundWords.has(word.word)"
                           class="h-4 w-4 text-green-600"
@@ -198,7 +207,9 @@
                       </div>
                       <div class="flex-1">
                         <p class="text-sm font-medium">{{ word.word }}</p>
-                        <p v-if="word.hint" class="text-sm text-muted-foreground">{{ word.hint }}</p>
+                        <p v-if="word.hint" class="text-sm text-muted-foreground">
+                          {{ word.hint }}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -206,7 +217,8 @@
                   <!-- Progress Summary -->
                   <div class="mt-6 p-4 bg-muted/50 rounded-lg">
                     <p class="text-sm font-medium">
-                      Progress: {{ foundWords.size }} / {{ wordsearchPlacedWords.length }} words found
+                      Progress: {{ foundWords.size }} / {{ wordsearchPlacedWords.length }} words
+                      found
                     </p>
                   </div>
                 </div>

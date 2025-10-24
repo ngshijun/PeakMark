@@ -54,10 +54,7 @@
             >
               <div class="flex items-center gap-2 min-w-[2rem]">
                 <span class="font-semibold text-sm text-muted-foreground">{{ idx + 1 }}.</span>
-                <CheckCircle2
-                  v-if="foundWordsSet.has(word.word)"
-                  class="h-4 w-4 text-green-600"
-                />
+                <CheckCircle2 v-if="foundWordsSet.has(word.word)" class="h-4 w-4 text-green-600" />
               </div>
               <div class="flex-1">
                 <p class="text-sm font-medium">{{ word.word }}</p>
@@ -178,7 +175,7 @@ const showSolution = ref(false)
 
 const handleShowSolutionChange = (value: boolean) => {
   showSolution.value = value
-  console.log("show solution", value)
+  console.log('show solution', value)
 }
 
 // Convert found words array to Set for efficient lookup

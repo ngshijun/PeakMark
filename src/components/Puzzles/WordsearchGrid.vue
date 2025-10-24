@@ -53,16 +53,21 @@ const props = withDefaults(
   },
 )
 
-// Determine cell background color based on whether it's part of a found word
+// Determine cell background color based on whether it's part of a found word or solution
 const getCellBackgroundClass = (row: number, col: number): string => {
-  if (!props.showSolution || !props.placedWords) {
+  if (!props.placedWords) {
     return 'bg-white'
   }
 
-  // Check if this cell is part of any found word
+  // When showing solution, highlight all words in green
+  if (props.showSolution) {
+    const isPartOfWord = props.placedWords.some((word) => isCellInWord(row, col, word))
+    return isPartOfWord ? 'bg-green-100' : 'bg-white'
+  }
+
+  // When not showing solution, only highlight found words
   const isPartOfFoundWord = props.placedWords.some((word) => {
     if (!props.foundWords?.has(word.word)) return false
-
     return isCellInWord(row, col, word)
   })
 

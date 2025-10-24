@@ -217,10 +217,7 @@ const checkWordFound = () => {
     if (props.foundWords.has(word.word)) return false // Already found
 
     // Check if the selected word matches this placed word (forward or backward)
-    return (
-      selectedWord === word.word ||
-      selectedWord === word.word.split('').reverse().join('')
-    )
+    return selectedWord === word.word || selectedWord === word.word.split('').reverse().join('')
   })
 
   if (matchingWord) {

@@ -2,10 +2,10 @@
   <Dialog :open="open" @update:open="handleOpenChange">
     <DialogContent class="max-w-7xl max-h-[90vh] flex flex-col p-0 min-w-[80rem] min-h-[50rem]">
       <DialogHeader class="px-6 pt-6">
-        <DialogTitle class="text-xl flex items-center gap-3"> Create Wordsearch Puzzle </DialogTitle>
-        <DialogDescription>
-          Add words and optional hints to see a live preview
-        </DialogDescription>
+        <DialogTitle class="text-xl flex items-center gap-3">
+          Create Wordsearch Puzzle
+        </DialogTitle>
+        <DialogDescription> Add words and optional hints to see a live preview </DialogDescription>
       </DialogHeader>
 
       <form @submit.prevent="onSubmit" class="flex-1 overflow-hidden flex">
@@ -194,7 +194,9 @@
                     }"
                   >
                     <div class="font-medium text-sm">{{ word.answer }}</div>
-                    <div v-if="word.hint" class="text-sm text-muted-foreground">{{ word.hint }}</div>
+                    <div v-if="word.hint" class="text-sm text-muted-foreground">
+                      {{ word.hint }}
+                    </div>
                   </div>
                   <Button
                     variant="ghost"
@@ -226,7 +228,9 @@
                     class="bg-white border-2 border-gray-800"
                     style="width: 32px; height: 32px"
                   >
-                    <div class="w-full h-full flex items-center justify-center text-sm font-bold text-gray-800">
+                    <div
+                      class="w-full h-full flex items-center justify-center text-sm font-bold text-gray-800"
+                    >
                       {{ cell }}
                     </div>
                   </div>
@@ -242,17 +246,22 @@
                   <span class="font-semibold">{{ idx + 1 }}.</span>
                   <div>
                     <span class="font-medium">{{ word.word }}</span>
-                    <span v-if="word.hint" class="text-muted-foreground ml-2">- {{ word.hint }}</span>
+                    <span v-if="word.hint" class="text-muted-foreground ml-2"
+                      >- {{ word.hint }}</span
+                    >
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- Unused Words Warning -->
-            <div v-if="unusedWords.length > 0" class="p-4 bg-red-50 border border-red-200 rounded-md">
+            <div
+              v-if="unusedWords.length > 0"
+              class="p-4 bg-red-50 border border-red-200 rounded-md"
+            >
               <p class="text-sm text-red-800">
-                <strong>Warning:</strong> {{ unusedWords.length }} word(s) couldn't fit in the grid. Try
-                increasing grid size or adjusting directions.
+                <strong>Warning:</strong> {{ unusedWords.length }} word(s) couldn't fit in the grid.
+                Try increasing grid size or adjusting directions.
               </p>
             </div>
           </div>
