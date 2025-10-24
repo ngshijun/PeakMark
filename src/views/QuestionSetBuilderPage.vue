@@ -24,66 +24,69 @@
 
       <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- Left Panel: Problem Set Info -->
-        <div class="lg:col-span-1 space-y-4">
-          <div class="rounded-xl border bg-card p-6 space-y-4">
-            <h2 class="text-lg font-semibold">Problem Set Details</h2>
+        <div class="lg:col-span-1 flex flex-col min-h-0">
+          <div class="flex-1 min-h-0 rounded-xl border bg-card overflow-hidden">
+            <div class="h-full overflow-y-auto p-6 space-y-4">
+              <h2 class="text-lg font-semibold">Problem Set Details</h2>
 
-            <!-- Name -->
-            <div class="space-y-2">
-              <Label for="name">Name *</Label>
-              <Input
-                id="name"
-                v-model="questionSetForm.name"
-                placeholder="Enter problem set name"
-              />
-            </div>
-
-            <!-- Description -->
-            <div class="space-y-2">
-              <Label for="description">Description</Label>
-              <Textarea
-                id="description"
-                v-model="questionSetForm.description"
-                placeholder="Enter description"
-                rows="4"
-              />
-            </div>
-
-            <!-- Settings -->
-            <div class="space-y-3 pt-2">
-              <h3 class="text-sm font-medium">Settings</h3>
-
-              <div class="flex items-center justify-between">
-                <Label for="show-explanations" class="text-sm font-normal">
-                  Show explanations after submission
-                </Label>
-                <Switch
-                  id="show-explanations"
-                  v-model:checked="questionSetForm.show_explanations"
+              <!-- Name -->
+              <div class="space-y-2">
+                <Label for="name">Name *</Label>
+                <Input
+                  id="name"
+                  v-model="questionSetForm.name"
+                  placeholder="Enter problem set name"
                 />
               </div>
-            </div>
 
-            <!-- Stats -->
-            <div v-if="isEditMode" class="pt-4 border-t space-y-2">
-              <div class="flex justify-between text-sm">
-                <span class="text-muted-foreground">Total Questions:</span>
-                <span class="font-medium">{{ questions.length }}</span>
+              <!-- Description -->
+              <div class="space-y-2">
+                <Label for="description">Description</Label>
+                <Textarea
+                  id="description"
+                  v-model="questionSetForm.description"
+                  placeholder="Enter description"
+                  rows="4"
+                />
               </div>
-              <div class="flex justify-between text-sm">
-                <span class="text-muted-foreground">Status:</span>
-                <Badge :variant="isPublished ? 'default' : 'secondary'">
-                  {{ isPublished ? 'Published' : 'Draft' }}
-                </Badge>
+
+              <!-- Settings -->
+              <div class="space-y-3 pt-2">
+                <h3 class="text-sm font-medium">Settings</h3>
+
+                <div class="flex items-center justify-between">
+                  <Label for="show-explanations" class="text-sm font-normal">
+                    Show explanations after submission
+                  </Label>
+                  <Switch
+                    id="show-explanations"
+                    v-model:checked="questionSetForm.show_explanations"
+                  />
+                </div>
+              </div>
+
+              <!-- Stats -->
+              <div v-if="isEditMode" class="pt-4 border-t space-y-2">
+                <div class="flex justify-between text-sm">
+                  <span class="text-muted-foreground">Total Questions:</span>
+                  <span class="font-medium">{{ questions.length }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-muted-foreground">Status:</span>
+                  <Badge :variant="isPublished ? 'default' : 'secondary'">
+                    {{ isPublished ? 'Published' : 'Draft' }}
+                  </Badge>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Right Panel: Questions -->
-        <div class="lg:col-span-2 space-y-4 overflow-y-auto">
-          <div class="rounded-xl border bg-card p-6">
-            <div class="flex items-center justify-between mb-4">
+        <div class="lg:col-span-2 flex flex-col min-h-0">
+          <div class="flex-1 min-h-0 rounded-xl border bg-card overflow-hidden flex flex-col">
+            <!-- Fixed Header -->
+            <div class="flex items-center justify-between p-6 pb-4 border-b flex-shrink-0">
               <h2 class="text-lg font-semibold">Questions</h2>
               <Button @click="addQuestion" size="sm">
                 <Plus class="mr-2 h-4 w-4" />
@@ -91,59 +94,62 @@
               </Button>
             </div>
 
-            <!-- Empty State -->
-            <div
-              v-if="questions.length === 0"
-              class="text-center py-12 border-2 border-dashed rounded-lg"
-            >
-              <FileQuestion class="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p class="text-sm text-muted-foreground mb-4">
-                No questions yet. Add your first question to get started.
-              </p>
-              <Button @click="addQuestion" variant="outline">
-                <Plus class="mr-2 h-4 w-4" />
-                Add Question
-              </Button>
-            </div>
-
-            <!-- Questions List -->
-            <div v-else class="space-y-3">
+            <!-- Scrollable Questions List -->
+            <div class="flex-1 min-h-0 overflow-y-auto p-6 pt-4">
+              <!-- Empty State -->
               <div
-                v-for="(question, index) in questions"
-                :key="question.id || index"
-                class="border rounded-lg p-4 space-y-3"
+                v-if="questions.length === 0"
+                class="text-center py-12 border-2 border-dashed rounded-lg"
               >
-                <div class="flex items-start justify-between">
-                  <div class="flex items-start gap-3 flex-1">
-                    <div
-                      class="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-medium text-sm flex-shrink-0"
-                    >
-                      {{ index + 1 }}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <p class="font-medium text-sm">
-                        {{ question.question || 'New Question' }}
-                      </p>
-                      <div class="flex flex-wrap gap-1 mt-2">
-                        <Badge
-                          v-for="(opt, optIndex) in question.options"
-                          :key="optIndex"
-                          :variant="question.correct_answer === optIndex ? 'default' : 'outline'"
-                          class="text-xs"
-                        >
-                          {{ String.fromCharCode(65 + optIndex) }}. {{ opt.substring(0, 20)
-                          }}{{ opt.length > 20 ? '...' : '' }}
-                        </Badge>
+                <FileQuestion class="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                <p class="text-sm text-muted-foreground mb-4">
+                  No questions yet. Add your first question to get started.
+                </p>
+                <Button @click="addQuestion" variant="outline">
+                  <Plus class="mr-2 h-4 w-4" />
+                  Add Question
+                </Button>
+              </div>
+
+              <!-- Questions List -->
+              <div v-else class="space-y-3">
+                <div
+                  v-for="(question, index) in questions"
+                  :key="question.id || index"
+                  class="border rounded-lg p-4 space-y-3"
+                >
+                  <div class="flex items-start justify-between">
+                    <div class="flex items-start gap-3 flex-1">
+                      <div
+                        class="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-medium text-sm flex-shrink-0"
+                      >
+                        {{ index + 1 }}
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <p class="font-medium text-sm">
+                          {{ question.question || 'New Question' }}
+                        </p>
+                        <div class="flex flex-wrap gap-1 mt-2">
+                          <Badge
+                            v-for="(opt, optIndex) in question.options"
+                            :key="optIndex"
+                            :variant="question.correct_answer === optIndex ? 'default' : 'outline'"
+                            class="text-xs"
+                          >
+                            {{ String.fromCharCode(65 + optIndex) }}. {{ opt.substring(0, 20)
+                            }}{{ opt.length > 20 ? '...' : '' }}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div class="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" @click="editQuestion(index)">
-                      <Pencil class="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" @click="deleteQuestion(index)">
-                      <Trash2 class="h-4 w-4 text-destructive" />
-                    </Button>
+                    <div class="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" @click="editQuestion(index)">
+                        <Pencil class="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" @click="deleteQuestion(index)">
+                        <Trash2 class="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>

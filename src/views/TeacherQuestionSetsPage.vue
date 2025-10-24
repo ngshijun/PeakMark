@@ -9,23 +9,23 @@
         </p>
       </div>
 
-      <!-- Search and Actions Bar -->
+      <!-- Actions Bar -->
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div class="flex flex-1 flex-col gap-4 sm:flex-row sm:items-center">
-          <!-- Search Input -->
-          <div class="relative flex-1 sm:max-w-md">
-            <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              v-model="searchQuery"
-              type="search"
-              placeholder="Search problem sets..."
-              class="pl-8"
-            />
-          </div>
+        <!-- Search Input -->
+        <div class="relative flex-1 sm:max-w-md">
+          <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            v-model="searchQuery"
+            type="search"
+            placeholder="Search problem sets..."
+            class="pl-8"
+          />
+        </div>
 
-          <!-- Status Filter -->
+        <!-- Action Buttons -->
+        <div class="flex gap-2">
           <Select v-model="statusFilter">
-            <SelectTrigger class="w-full sm:w-[11.25rem]">
+            <SelectTrigger class="w-[11.25rem]">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent>
@@ -34,98 +34,153 @@
               <SelectItem value="draft">Draft</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-
-        <!-- Create Button -->
-        <Button @click="createNewQuestionSet">
-          <Plus class="mr-2 h-4 w-4" />
-          Create Problem Set
-        </Button>
-      </div>
-
-      <!-- Problem Sets Grid -->
-      <div class="flex-1 min-h-0">
-        <div v-if="questionSetsStore.loading" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div v-for="i in 6" :key="i" class="rounded-xl border bg-card p-6">
-            <Skeleton class="h-6 w-3/4 mb-2" />
-            <Skeleton class="h-4 w-full mb-4" />
-            <Skeleton class="h-4 w-1/2" />
-          </div>
-        </div>
-
-        <div
-          v-else-if="filteredQuestionSets.length === 0"
-          class="flex flex-col items-center justify-center h-full text-center py-12"
-        >
-          <FileText class="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 class="text-lg font-semibold mb-2">No problem sets found</h3>
-          <p class="text-sm text-muted-foreground mb-4">
-            Create your first problem set to get started
-          </p>
           <Button @click="createNewQuestionSet">
             <Plus class="mr-2 h-4 w-4" />
             Create Problem Set
           </Button>
         </div>
+      </div>
 
-        <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pb-4">
-          <ContextMenu v-for="set in filteredQuestionSets" :key="set.id">
-            <ContextMenuTrigger as-child>
-              <div
-                class="rounded-xl border bg-card p-6 hover:bg-accent/50 transition-colors cursor-pointer"
-                @click="viewQuestionSet(set.id)"
-              >
-                <!-- Status Badge -->
-                <div class="flex items-start justify-between mb-3">
-                  <Badge :variant="set.is_published ? 'default' : 'secondary'">
-                    {{ set.is_published ? 'Published' : 'Draft' }}
-                  </Badge>
-                  <div class="text-xs text-muted-foreground">
-                    {{ formatDate(set.created_at) }}
-                  </div>
-                </div>
-
-                <!-- Title -->
-                <h3 class="text-lg font-semibold mb-2 line-clamp-2">
-                  {{ set.name }}
-                </h3>
-
-                <!-- Description -->
-                <p class="text-sm text-muted-foreground mb-4 line-clamp-2">
-                  {{ set.description || 'No description' }}
-                </p>
-
-                <!-- Stats -->
-                <div class="flex items-center gap-4 text-xs text-muted-foreground">
-                  <div class="flex items-center gap-1">
-                    <FileQuestion class="h-3.5 w-3.5" />
-                    <span>{{ set.total_points }} questions</span>
-                  </div>
-                  <div v-if="set.is_published" class="flex items-center gap-1">
-                    <Users class="h-3.5 w-3.5" />
-                    <span>View attempts</span>
-                  </div>
-                </div>
+      <!-- Problem Sets Grid -->
+      <div class="flex-1 min-h-0 rounded-xl border bg-card overflow-hidden">
+        <div class="h-full overflow-auto">
+          <div
+            v-if="questionSetsStore.loading"
+            class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 p-4"
+          >
+            <div v-for="i in 8" :key="i" class="rounded-lg border bg-card overflow-hidden">
+              <Skeleton class="aspect-video w-full" />
+              <div class="p-4 space-y-2">
+                <Skeleton class="h-5 w-3/4" />
+                <Skeleton class="h-4 w-1/2" />
               </div>
-            </ContextMenuTrigger>
-            <ContextMenuContent class="w-48">
-              <ContextMenuItem @click="editQuestionSet(set.id)">
-                <Pencil class="mr-2 h-4 w-4" />
-                Edit
-              </ContextMenuItem>
-              <ContextMenuItem @click="togglePublish(set.id, !set.is_published)">
-                <Eye class="mr-2 h-4 w-4" v-if="!set.is_published" />
-                <EyeOff class="mr-2 h-4 w-4" v-else />
-                {{ set.is_published ? 'Unpublish' : 'Publish' }}
-              </ContextMenuItem>
-              <ContextMenuSeparator />
-              <ContextMenuItem @click="openDeleteDialog(set.id)" class="text-destructive">
-                <Trash2 class="mr-2 h-4 w-4" />
-                Delete
-              </ContextMenuItem>
-            </ContextMenuContent>
-          </ContextMenu>
+            </div>
+          </div>
+
+          <div
+            v-else-if="filteredQuestionSets.length === 0"
+            class="flex items-center justify-center h-full text-center"
+          >
+            <div class="space-y-2">
+              <FileText class="mx-auto h-12 w-12 text-muted-foreground" />
+              <p class="text-muted-foreground">
+                {{
+                  searchQuery
+                    ? 'No problem sets found'
+                    : 'No problem sets yet. Create your first problem set!'
+                }}
+              </p>
+            </div>
+          </div>
+
+          <div v-else class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 p-4">
+            <ContextMenu v-for="set in paginatedQuestionSets" :key="set.id">
+              <ContextMenuTrigger as-child>
+                <div
+                  class="group rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col"
+                  @click="viewQuestionSet(set.id)"
+                >
+                  <!-- Visual -->
+                  <div
+                    class="aspect-video bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center relative"
+                  >
+                    <div class="text-center space-y-2">
+                      <FileQuestion class="h-16 w-16 mx-auto text-primary/60" />
+                      <div class="text-2xl font-bold text-primary/80">
+                        {{ set.total_points }}
+                        {{ set.total_points === 1 ? 'Question' : 'Questions' }}
+                      </div>
+                    </div>
+                    <!-- Status Badge -->
+                    <div class="absolute top-2 right-2">
+                      <Badge :variant="set.is_published ? 'default' : 'secondary'">
+                        {{ set.is_published ? 'Published' : 'Draft' }}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <!-- Problem Set Info -->
+                  <div class="p-4 flex flex-col flex-1">
+                    <div class="flex-1 space-y-2">
+                      <div>
+                        <h3 class="font-semibold line-clamp-2 mb-1">{{ set.name }}</h3>
+                      </div>
+                      <div class="text-sm text-muted-foreground space-y-1">
+                        <p class="line-clamp-2">{{ set.description || 'No description' }}</p>
+                        <p>{{ formatDate(set.created_at) }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ContextMenuTrigger>
+              <ContextMenuContent class="w-48">
+                <ContextMenuItem @click="editQuestionSet(set.id)">
+                  <Pencil class="mr-2 h-4 w-4" />
+                  Edit
+                </ContextMenuItem>
+                <ContextMenuItem @click="togglePublish(set.id, !set.is_published)">
+                  <Eye class="mr-2 h-4 w-4" v-if="!set.is_published" />
+                  <EyeOff class="mr-2 h-4 w-4" v-else />
+                  {{ set.is_published ? 'Unpublish' : 'Publish' }}
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+                <ContextMenuItem @click="openDeleteDialog(set.id)" class="text-destructive">
+                  <Trash2 class="mr-2 h-4 w-4" />
+                  Delete
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenu>
+          </div>
         </div>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="filteredQuestionSets.length > 0" class="grid grid-cols-3 items-center gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-muted-foreground whitespace-nowrap">Rows per page:</span>
+          <Select v-model="itemsPerPageString">
+            <SelectTrigger class="w-[5rem] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="12">12</SelectItem>
+              <SelectItem value="24">24</SelectItem>
+              <SelectItem value="48">48</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div class="flex justify-center">
+          <Pagination
+            v-if="totalPages > 1"
+            v-slot="{ page }"
+            :items-per-page="itemsPerPage"
+            :total="filteredQuestionSets.length"
+            :sibling-count="1"
+            :show-edges="true"
+            v-model:page="currentPage"
+          >
+            <PaginationContent v-slot="{ items }">
+              <PaginationPrevious />
+
+              <template v-for="(item, index) in items" :key="index">
+                <PaginationEllipsis v-if="item.type === 'ellipsis'" :index="index" />
+                <PaginationItem v-else :value="item.value" :is-active="item.value === page">
+                  {{ item.value }}
+                </PaginationItem>
+              </template>
+
+              <PaginationNext />
+            </PaginationContent>
+          </Pagination>
+        </div>
+
+        <p class="flex items-center justify-end text-sm text-muted-foreground whitespace-nowrap">
+          Showing {{ (currentPage - 1) * itemsPerPage + 1 }}-{{
+            Math.min(currentPage * itemsPerPage, filteredQuestionSets.length)
+          }}
+          of {{ filteredQuestionSets.length }}
+        </p>
       </div>
     </div>
 
@@ -171,6 +226,14 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -181,17 +244,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useNavigation } from '@/composables/useNavigation'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useQuestionSetsStore } from '@/stores/question-sets'
-import {
-  Eye,
-  EyeOff,
-  FileQuestion,
-  FileText,
-  Pencil,
-  Plus,
-  Search,
-  Trash2,
-  Users,
-} from 'lucide-vue-next'
+import { Eye, EyeOff, FileQuestion, FileText, Pencil, Plus, Search, Trash2 } from 'lucide-vue-next'
 
 const breadcrumbs = [{ label: 'Problem Sets' }]
 
@@ -204,6 +257,18 @@ const searchQuery = ref('')
 const statusFilter = ref('all')
 const isDeleteDialogOpen = ref(false)
 const setToDelete = ref<string | null>(null)
+
+// Pagination
+const currentPage = ref(1)
+const itemsPerPage = ref(parseInt(localStorage.getItem('problemSetsPerPage') || '12'))
+const itemsPerPageString = computed({
+  get: () => String(itemsPerPage.value),
+  set: (value: string) => {
+    itemsPerPage.value = parseInt(value)
+    currentPage.value = 1
+    localStorage.setItem('problemSetsPerPage', value)
+  },
+})
 
 // Computed
 const filteredQuestionSets = computed(() => {
@@ -226,6 +291,16 @@ const filteredQuestionSets = computed(() => {
   }
 
   return filtered
+})
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredQuestionSets.value.length / itemsPerPage.value)
+})
+
+const paginatedQuestionSets = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  const end = start + itemsPerPage.value
+  return filteredQuestionSets.value.slice(start, end)
 })
 
 // Methods

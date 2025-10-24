@@ -383,6 +383,64 @@ export const useQuestionSetsStore = defineStore('questionSets', () => {
     }
   }
 
+  /**
+   * Select an answer locally (no database write)
+   */
+  const selectAnswer = (questionId: string, selectedAnswer: number) => {
+    if (!currentAttempt.value) {
+      throw new Error('No active attempt')
+    }
+
+    // Update local state only
+    currentAnswers.value.set(questionId, selectedAnswer)
+  }
+
+  /**
+   * Save all answers to database (batch operation)
+   */
+  const saveAnswers = async () => {
+    if (!currentAttempt.value) {
+      throw new Error('No active attempt')
+    }
+
+    if (currentAnswers.value.size === 0) {
+      return // Nothing to save
+    }
+
+    loading.value = true
+    error.value = null
+    try {
+      const savePromises: Promise<QuestionSetAnswer>[] = []
+
+      currentAnswers.value.forEach((selectedAnswer, questionId) => {
+        const question = selectedQuestionSet.value?.questions.find((q) => q.id === questionId)
+        if (!question) return
+
+        const isCorrect = selectedAnswer === question.correct_answer
+
+        const answerInput: QuestionSetAnswerInsert = {
+          attempt_id: currentAttempt.value!.id,
+          question_id: questionId,
+          selected_answer: selectedAnswer,
+          is_correct: isCorrect,
+        }
+
+        savePromises.push(questionSetService.recordAnswer(answerInput))
+      })
+
+      await Promise.all(savePromises)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to save answers'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Record a single answer to database (for backwards compatibility)
+   * @deprecated Use selectAnswer() for local updates and saveAnswers() to persist
+   */
   const recordAnswer = async (questionId: string, selectedAnswer: number) => {
     if (!currentAttempt.value) {
       throw new Error('No active attempt')
@@ -391,7 +449,6 @@ export const useQuestionSetsStore = defineStore('questionSets', () => {
     loading.value = true
     error.value = null
     try {
-      // Check if question exists in selectedQuestionSet
       const question = selectedQuestionSet.value?.questions.find((q) => q.id === questionId)
       if (!question) {
         throw new Error('Question not found')
@@ -407,8 +464,6 @@ export const useQuestionSetsStore = defineStore('questionSets', () => {
       }
 
       const data = await questionSetService.recordAnswer(answerInput)
-
-      // Update local state
       currentAnswers.value.set(questionId, selectedAnswer)
 
       return data
@@ -428,6 +483,9 @@ export const useQuestionSetsStore = defineStore('questionSets', () => {
     loading.value = true
     error.value = null
     try {
+      // Save all answers before submitting
+      await saveAnswers()
+
       const data = await questionSetService.submitAttempt(currentAttempt.value.id)
       currentAttempt.value = data
 
@@ -555,6 +613,8 @@ export const useQuestionSetsStore = defineStore('questionSets', () => {
     // Attempt Actions
     startAttempt,
     checkActiveAttempt,
+    selectAnswer,
+    saveAnswers,
     recordAnswer,
     submitAttempt,
     fetchAttemptResults,

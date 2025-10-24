@@ -385,16 +385,44 @@ export class QuestionSetService extends BaseService {
 
   /**
    * Record an answer to a question
+   * Uses upsert to update existing answer or insert new one
    */
   async recordAnswer(answer: QuestionSetAnswerInsert): Promise<QuestionSetAnswer> {
-    const { data, error } = await this.client
+    // First, check if an answer already exists for this attempt + question
+    const { data: existing } = await this.client
       .from('question_set_answers')
-      .insert(answer)
-      .select()
-      .single()
+      .select('id')
+      .eq('attempt_id', answer.attempt_id)
+      .eq('question_id', answer.question_id)
+      .maybeSingle()
 
-    if (error) this.handleError(error)
-    return data
+    const answerData = {
+      ...answer,
+      answered_at: new Date().toISOString(),
+    }
+
+    if (existing) {
+      // Update existing answer
+      const { data, error } = await this.client
+        .from('question_set_answers')
+        .update(answerData)
+        .eq('id', existing.id)
+        .select()
+        .single()
+
+      if (error) this.handleError(error)
+      return data
+    } else {
+      // Insert new answer
+      const { data, error } = await this.client
+        .from('question_set_answers')
+        .insert(answerData)
+        .select()
+        .single()
+
+      if (error) this.handleError(error)
+      return data
+    }
   }
 
   /**

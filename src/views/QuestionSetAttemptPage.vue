@@ -11,7 +11,14 @@
             {{ questionSetsStore.selectedQuestionSet?.description || '' }}
           </p>
         </div>
-        <Button variant="outline" @click="goBack">Exit</Button>
+        <div class="flex gap-2">
+          <Button variant="outline" @click="handleSaveAndExit" :disabled="saving">
+            {{ saving ? 'Saving...' : 'Save & Exit' }}
+          </Button>
+          <Button variant="outline" @click="handleSave" :disabled="saving">
+            {{ saving ? 'Saving...' : 'Save' }}
+          </Button>
+        </div>
       </div>
 
       <!-- Progress Bar -->
@@ -156,6 +163,7 @@ const breadcrumbs = [
 // State
 const loading = ref(true)
 const submitting = ref(false)
+const saving = ref(false)
 const showSubmitDialog = ref(false)
 
 // Computed
@@ -177,12 +185,38 @@ const goBack = () => {
   })
 }
 
-const selectAnswer = async (questionId: string, answerIndex: number) => {
+const selectAnswer = (questionId: string, answerIndex: number) => {
+  // Update local state only (no database write)
+  questionSetsStore.selectAnswer(questionId, answerIndex)
+}
+
+const handleSave = async () => {
+  if (saving.value) return
+
+  saving.value = true
   try {
-    await questionSetsStore.recordAnswer(questionId, answerIndex)
+    await questionSetsStore.saveAnswers()
+    toast.success('Answers saved successfully!')
   } catch (error) {
-    console.error('Error recording answer:', error)
-    toast.error('Failed to save answer')
+    console.error('Error saving answers:', error)
+    toast.error('Failed to save answers')
+  } finally {
+    saving.value = false
+  }
+}
+
+const handleSaveAndExit = async () => {
+  if (saving.value) return
+
+  saving.value = true
+  try {
+    await questionSetsStore.saveAnswers()
+    toast.success('Answers saved!')
+    goBack()
+  } catch (error) {
+    console.error('Error saving answers:', error)
+    toast.error('Failed to save answers')
+    saving.value = false
   }
 }
 

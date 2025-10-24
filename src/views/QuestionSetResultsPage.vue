@@ -1,6 +1,6 @@
 <template>
   <MainLayout :breadcrumbs="breadcrumbs">
-    <div class="flex flex-col h-full space-y-6">
+    <div class="flex flex-col h-full space-y-4">
       <!-- Loading State -->
       <div v-if="loading" class="space-y-4">
         <Skeleton class="h-32 w-full" />
@@ -9,35 +9,35 @@
 
       <template v-else-if="results">
         <!-- Header with Score -->
-        <div class="rounded-xl border bg-card p-8 text-center space-y-4">
-          <div class="space-y-2">
-            <h1 class="text-3xl font-bold">Results</h1>
-            <p class="text-muted-foreground">
+        <div class="rounded-xl border bg-card p-6 text-center space-y-3 flex-shrink-0">
+          <div class="space-y-1">
+            <h1 class="text-2xl font-bold">Results</h1>
+            <p class="text-sm text-muted-foreground">
               {{ results.question_set?.name || 'Problem Set' }}
             </p>
           </div>
 
           <!-- Score Display -->
-          <div class="flex items-center justify-center gap-8 py-6">
+          <div class="flex items-center justify-center gap-6 py-3">
             <div class="text-center">
-              <div class="text-5xl font-bold text-primary">
+              <div class="text-4xl font-bold text-primary">
                 {{ results.score }}
               </div>
-              <div class="text-sm text-muted-foreground mt-2">Correct</div>
+              <div class="text-xs text-muted-foreground mt-1">Correct</div>
             </div>
-            <div class="text-4xl text-muted-foreground">/</div>
+            <div class="text-3xl text-muted-foreground">/</div>
             <div class="text-center">
-              <div class="text-5xl font-bold">
+              <div class="text-4xl font-bold">
                 {{ results.total_questions }}
               </div>
-              <div class="text-sm text-muted-foreground mt-2">Total</div>
+              <div class="text-xs text-muted-foreground mt-1">Total</div>
             </div>
           </div>
 
           <!-- Percentage -->
           <div class="space-y-2">
-            <div class="text-2xl font-bold">{{ percentage }}%</div>
-            <div class="w-full max-w-md mx-auto bg-secondary h-3 rounded-full overflow-hidden">
+            <div class="text-xl font-bold">{{ percentage }}%</div>
+            <div class="w-full max-w-md mx-auto bg-secondary h-2.5 rounded-full overflow-hidden">
               <div
                 class="bg-primary h-full transition-all duration-500"
                 :style="{ width: `${percentage}%` }"
@@ -46,105 +46,111 @@
           </div>
 
           <!-- Back Button -->
-          <div class="pt-4">
-            <Button @click="goBack">Back to Problem Sets</Button>
+          <div class="pt-2">
+            <Button @click="goBack" size="sm">Back to Problem Sets</Button>
           </div>
         </div>
 
         <!-- Questions Review -->
-        <div v-if="showExplanations" class="space-y-4">
-          <h2 class="text-xl font-semibold">Review Answers</h2>
+        <div v-if="showExplanations" class="flex-1 min-h-0 flex flex-col">
+          <h2 class="text-lg font-semibold mb-3 flex-shrink-0">Review Answers</h2>
 
-          <div
-            v-for="(question, index) in questions"
-            :key="question.id"
-            class="rounded-xl border bg-card p-6 space-y-4"
-          >
-            <!-- Question Header -->
-            <div class="flex gap-4">
-              <div
-                :class="[
-                  'flex items-center justify-center w-10 h-10 rounded-full font-bold flex-shrink-0',
-                  getAnswer(question.id)?.is_correct
-                    ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                    : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400',
-                ]"
-              >
-                {{ index + 1 }}
-              </div>
-              <div class="flex-1">
-                <div class="flex items-center gap-2 mb-2">
-                  <Badge :variant="getAnswer(question.id)?.is_correct ? 'default' : 'destructive'">
-                    {{ getAnswer(question.id)?.is_correct ? 'Correct' : 'Incorrect' }}
-                  </Badge>
-                </div>
-                <p class="text-base font-medium">{{ question.question }}</p>
-
-                <!-- Image if exists -->
-                <div v-if="question.image" class="mt-3">
-                  <img
-                    :src="question.image"
-                    alt="Question image"
-                    class="max-w-full max-h-64 rounded-lg border"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Answer Options -->
-            <div class="space-y-2 pl-14">
-              <div
-                v-for="(option, optIndex) in question.options"
-                :key="optIndex"
-                :class="[
-                  'w-full text-left p-4 rounded-lg border-2',
-                  question.correct_answer === optIndex
-                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                    : getAnswer(question.id)?.selected_answer === optIndex
-                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
-                      : 'border-border',
-                ]"
-              >
-                <div class="flex items-center gap-3">
-                  <div
-                    :class="[
-                      'flex items-center justify-center w-6 h-6 rounded-full border-2',
-                      question.correct_answer === optIndex
-                        ? 'border-green-600 bg-green-600 text-white'
-                        : getAnswer(question.id)?.selected_answer === optIndex
-                          ? 'border-red-600 bg-red-600 text-white'
-                          : 'border-muted-foreground',
-                    ]"
-                  >
-                    <span class="text-xs font-medium">
-                      {{ String.fromCharCode(65 + optIndex) }}
-                    </span>
-                  </div>
-                  <span class="text-sm flex-1">{{ option }}</span>
-                  <div class="flex gap-1">
-                    <Check
-                      v-if="question.correct_answer === optIndex"
-                      class="h-5 w-5 text-green-600"
-                    />
-                    <X
-                      v-if="
-                        getAnswer(question.id)?.selected_answer === optIndex &&
-                        !getAnswer(question.id)?.is_correct
-                      "
-                      class="h-5 w-5 text-red-600"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Explanation -->
+          <div class="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1">
             <div
-              v-if="question.explanation"
-              class="pl-14 p-4 rounded-lg bg-muted/50 border-l-4 border-primary"
+              v-for="(question, index) in questions"
+              :key="question.id"
+              class="rounded-xl border bg-card p-6 space-y-4"
             >
-              <p class="text-xs font-semibold text-muted-foreground uppercase mb-1">Explanation</p>
-              <p class="text-sm">{{ question.explanation }}</p>
+              <!-- Question Header -->
+              <div class="flex gap-4">
+                <div
+                  :class="[
+                    'flex items-center justify-center w-10 h-10 rounded-full font-bold flex-shrink-0',
+                    getAnswer(question.id)?.is_correct
+                      ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                      : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400',
+                  ]"
+                >
+                  {{ index + 1 }}
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-2">
+                    <Badge
+                      :variant="getAnswer(question.id)?.is_correct ? 'default' : 'destructive'"
+                    >
+                      {{ getAnswer(question.id)?.is_correct ? 'Correct' : 'Incorrect' }}
+                    </Badge>
+                  </div>
+                  <p class="text-base font-medium">{{ question.question }}</p>
+
+                  <!-- Image if exists -->
+                  <div v-if="question.image" class="mt-3">
+                    <img
+                      :src="question.image"
+                      alt="Question image"
+                      class="max-w-full max-h-64 rounded-lg border"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Answer Options -->
+              <div class="space-y-2 pl-14">
+                <div
+                  v-for="(option, optIndex) in question.options"
+                  :key="optIndex"
+                  :class="[
+                    'w-full text-left p-4 rounded-lg border-2',
+                    question.correct_answer === optIndex
+                      ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                      : getAnswer(question.id)?.selected_answer === optIndex
+                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                        : 'border-border',
+                  ]"
+                >
+                  <div class="flex items-center gap-3">
+                    <div
+                      :class="[
+                        'flex items-center justify-center w-6 h-6 rounded-full border-2',
+                        question.correct_answer === optIndex
+                          ? 'border-green-600 bg-green-600 text-white'
+                          : getAnswer(question.id)?.selected_answer === optIndex
+                            ? 'border-red-600 bg-red-600 text-white'
+                            : 'border-muted-foreground',
+                      ]"
+                    >
+                      <span class="text-xs font-medium">
+                        {{ String.fromCharCode(65 + optIndex) }}
+                      </span>
+                    </div>
+                    <span class="text-sm flex-1">{{ option }}</span>
+                    <div class="flex gap-1">
+                      <Check
+                        v-if="question.correct_answer === optIndex"
+                        class="h-5 w-5 text-green-600"
+                      />
+                      <X
+                        v-if="
+                          getAnswer(question.id)?.selected_answer === optIndex &&
+                          !getAnswer(question.id)?.is_correct
+                        "
+                        class="h-5 w-5 text-red-600"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Explanation -->
+              <div
+                v-if="question.explanation"
+                class="pl-14 p-4 rounded-lg bg-muted/50 border-l-4 border-primary"
+              >
+                <p class="text-xs font-semibold text-muted-foreground uppercase mb-1">
+                  Explanation
+                </p>
+                <p class="text-sm">{{ question.explanation }}</p>
+              </div>
             </div>
           </div>
         </div>

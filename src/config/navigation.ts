@@ -56,10 +56,10 @@ export const roleNavigation: RoleNavigation = {
           icon: Files,
         },
         {
-          title: 'Assignments',
-          url: '/assignments',
-          icon: FileText,
-          badge: 3,
+          title: 'Problem Sets',
+          url: '/problem-sets',
+          icon: FolderOpen,
+          // badge: 3,
         },
         {
           title: 'Puzzles',
