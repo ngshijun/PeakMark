@@ -219,22 +219,14 @@
 
           <div v-if="grid.length > 0" class="space-y-6">
             <!-- Grid Preview -->
-            <div class="overflow-x-auto">
-              <div class="inline-block" style="font-size: 0">
-                <div v-for="(row, i) in grid" :key="i" style="display: flex">
-                  <div
-                    v-for="(cell, j) in row"
-                    :key="j"
-                    class="bg-white border-2 border-gray-800"
-                    style="width: 32px; height: 32px"
-                  >
-                    <div
-                      class="w-full h-full flex items-center justify-center text-sm font-bold text-gray-800"
-                    >
-                      {{ cell }}
-                    </div>
-                  </div>
-                </div>
+            <div class="overflow-x-auto flex justify-center">
+              <div class="w-full max-w-[600px] max-h-[600px]">
+                <WordsearchGrid
+                  :grid="grid"
+                  :placed-words="placedWords"
+                  :show-solution="true"
+                  :found-words="allWordsSet"
+                />
               </div>
             </div>
 
@@ -317,9 +309,10 @@ import {
 import { toTypedSchema } from '@vee-validate/zod'
 import { Grid3x3, Plus, X } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
-import { nextTick, reactive, ref, watch } from 'vue'
+import { nextTick, reactive, ref, watch, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import * as z from 'zod'
+import WordsearchGrid from '@/components/Puzzles/WordsearchGrid.vue'
 
 const props = defineProps<{
   open: boolean
@@ -355,6 +348,11 @@ const config = reactive<WordsearchConfig>({
   allowVertical: true,
   allowDiagonal: true,
   allowBackwards: true,
+})
+
+// Create a Set of all placed words for the preview
+const allWordsSet = computed(() => {
+  return new Set(placedWords.value.map((word) => word.word))
 })
 
 // Form Schema
