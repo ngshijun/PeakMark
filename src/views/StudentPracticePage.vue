@@ -39,8 +39,7 @@
           <Card
             v-for="category in categoryStore.categories"
             :key="category.id"
-            class="cursor-pointer hover:border-primary transition-colors overflow-hidden"
-            @click="selectCategory(category.id)"
+            class="transition-colors overflow-hidden hover:shadow-lg"
           >
             <CardHeader>
               <CardTitle>{{ category.name }}</CardTitle>
@@ -56,7 +55,7 @@
               </div>
             </CardContent>
             <CardFooter class="bg-muted/50 border-t">
-              <Button class="w-full" size="sm">
+              <Button class="w-full cursor-pointer" size="sm" @click="selectCategory(category.id)">
                 <Play class="mr-2 h-4 w-4" />
                 Start Practice
               </Button>
@@ -66,9 +65,9 @@
       </div>
 
       <!-- Practice Session View -->
-      <div v-else class="flex-1 flex flex-col space-y-4">
+      <div v-else class="flex-1 min-h-0 flex flex-col gap-4">
         <!-- Header with Stats -->
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between flex-shrink-0">
           <div class="space-y-1">
             <h2 class="text-2xl font-bold">{{ selectedCategoryName }}</h2>
             <p class="text-sm text-muted-foreground">Question {{ questionIndex + 1 }}</p>
@@ -79,41 +78,13 @@
           </Button>
         </div>
 
-        <!-- Stats Bar -->
-        <div class="grid gap-4 grid-cols-3">
-          <Card>
-            <CardHeader class="pb-2">
-              <CardDescription>Current Streak</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div class="text-2xl font-bold">{{ questionStore.practiceStats.currentStreak }}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader class="pb-2">
-              <CardDescription>Accuracy</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div class="text-2xl font-bold">
-                {{ Math.round(questionStore.practiceAccuracy) }}%
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader class="pb-2">
-              <CardDescription>Questions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div class="text-2xl font-bold">
-                {{ questionStore.practiceStats.questionsAttempted }}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         <!-- Question Card -->
-        <Card v-if="currentQuestion" class="flex-1">
-          <CardContent class="space-y-6">
+        <div
+          v-if="currentQuestion"
+          class="flex-1 min-h-0 flex flex-col rounded-xl border bg-card overflow-hidden"
+        >
+          <!-- Scrollable Content -->
+          <div class="flex-1 min-h-0 overflow-y-auto p-6 space-y-6">
             <!-- Result Feedback (shown after submission) -->
             <div v-if="showingResult && lastResult" class="flex items-center gap-3">
               <div
@@ -220,23 +191,25 @@
               <p class="text-sm font-semibold mb-2">Explanation:</p>
               <p class="text-sm">{{ currentQuestion.explanation }}</p>
             </div>
-          </CardContent>
-          <CardFooter>
-            <Button
-              v-if="!showingResult"
-              class="w-full"
-              size="lg"
-              :disabled="selectedAnswer === null || submitting"
-              @click="submitAnswer"
-            >
-              {{ submitting ? 'Submitting...' : 'Submit Answer' }}
-            </Button>
-            <Button v-else class="w-full" size="lg" @click="nextQuestion">
-              <ArrowRight class="mr-2 h-4 w-4" />
-              Next Question
-            </Button>
-          </CardFooter>
-        </Card>
+
+            <!-- Footer Buttons -->
+            <div class="pt-2">
+              <Button
+                v-if="!showingResult"
+                class="w-full"
+                size="lg"
+                :disabled="selectedAnswer === null || submitting"
+                @click="submitAnswer"
+              >
+                {{ submitting ? 'Submitting...' : 'Submit Answer' }}
+              </Button>
+              <Button v-else class="w-full" size="lg" @click="nextQuestion">
+                <ArrowRight class="mr-2 h-4 w-4" />
+                Next Question
+              </Button>
+            </div>
+          </div>
+        </div>
 
         <!-- Loading Next Question -->
         <Card v-else class="flex-1">
@@ -254,14 +227,7 @@
 
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useNavigation } from '@/composables/useNavigation'
 import MainLayout from '@/layouts/MainLayout.vue'
@@ -384,7 +350,6 @@ const submitAnswer = async () => {
     }
 
     showingResult.value = true
-    questionIndex.value++
   } catch (error) {
     console.error('Error submitting answer:', error)
     toast.error('Failed to submit answer')
@@ -395,6 +360,7 @@ const submitAnswer = async () => {
 
 const nextQuestion = async () => {
   await loadNextQuestion()
+  questionIndex.value++
 }
 
 const endPractice = async () => {

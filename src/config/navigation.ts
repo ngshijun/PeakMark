@@ -5,7 +5,6 @@ import {
   Users,
   FileText,
   BarChart,
-  Calendar,
   type LucideIcon,
   LayoutDashboard,
   FolderOpen,
@@ -71,11 +70,6 @@ export const roleNavigation: RoleNavigation = {
           url: '/leaderboard',
           icon: Medal,
         },
-        {
-          title: 'Calendar',
-          url: '/calendar',
-          icon: Calendar,
-        },
       ],
     },
     {
@@ -126,11 +120,6 @@ export const roleNavigation: RoleNavigation = {
           title: 'Students',
           url: '/students',
           icon: Users,
-        },
-        {
-          title: 'Reports',
-          url: '/reports',
-          icon: BarChart,
         },
       ],
     },

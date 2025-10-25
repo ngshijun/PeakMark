@@ -133,7 +133,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { GraduationCap, School, Settings, LogOut, UserCog } from 'lucide-vue-next'
+import { GraduationCap, Settings, LogOut } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
@@ -150,17 +150,6 @@ const userName = computed(() => {
 
 const userEmail = computed(() => {
   return authStore.user?.email || ''
-})
-
-const roleIcon = computed(() => {
-  switch (userRole.value) {
-    case 'teacher':
-      return School
-    case 'admin':
-      return UserCog
-    default:
-      return GraduationCap
-  }
 })
 
 const getInitials = (name: string): string => {

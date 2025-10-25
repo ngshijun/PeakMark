@@ -109,25 +109,25 @@ const router = createRouter({
     {
       path: '/classroom/:classroomId/problem-sets/create',
       name: 'problem-sets-create',
-      component: () => import('@/views/QuestionSetBuilderPage.vue'),
+      component: () => import('@/views/ProblemSetBuilderPage.vue'),
       meta: { requiresAuth: true, role: ['teacher'] },
     },
     {
       path: '/classroom/:classroomId/problem-sets/:setId/edit',
       name: 'problem-sets-edit',
-      component: () => import('@/views/QuestionSetBuilderPage.vue'),
+      component: () => import('@/views/ProblemSetBuilderPage.vue'),
       meta: { requiresAuth: true, role: ['teacher'] },
     },
     {
       path: '/classroom/:classroomId/problem-sets/:setId/attempt/:attemptId',
       name: 'problem-set-attempt',
-      component: () => import('@/views/QuestionSetAttemptPage.vue'),
+      component: () => import('@/views/ProblemSetAttemptPage.vue'),
       meta: { requiresAuth: true, role: ['student'] },
     },
     {
       path: '/classroom/:classroomId/problem-sets/results/:attemptId',
       name: 'problem-set-results',
-      component: () => import('@/views/QuestionSetResultsPage.vue'),
+      component: () => import('@/views/ProblemSetResultsPage.vue'),
       meta: { requiresAuth: true, role: ['student'] },
     },
     {
